@@ -11,10 +11,23 @@ function LoginComponent({ setToken }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+      console.log('Attempting login with username:', username);  // Log username
       const response = await axios.post('http://localhost:5001/api/users/login', { username, password });
+
       const { token, user } = response.data;
+
+      if (!user) {
+        console.error('No user data received:', response.data);
+        setError('Invalid login response. Please try again.');
+        return;
+      }
+
+      console.log('Login successful, received token and user data:', { token, user });  // Log token and user data
       localStorage.setItem('authToken', token);
       localStorage.setItem('user', JSON.stringify(user)); // Store user information
+
+      console.log('User data stored in localStorage:', localStorage.getItem('user'));  // Log stored user data
+
       if (typeof setToken === 'function') {
         setToken(token);
       } else {

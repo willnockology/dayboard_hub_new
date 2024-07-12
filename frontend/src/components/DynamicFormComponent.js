@@ -53,7 +53,6 @@ const DynamicFormComponent = () => {
       const token = localStorage.getItem('authToken');
       const userJson = localStorage.getItem('user');
 
-      // Log to check the user data
       console.log('User JSON from localStorage:', userJson);
 
       if (!userJson) {
@@ -61,30 +60,34 @@ const DynamicFormComponent = () => {
         return;
       }
 
-      const user = JSON.parse(userJson);
+      let user;
+      try {
+        user = JSON.parse(userJson);
+      } catch (parseError) {
+        console.error('Error parsing user JSON:', parseError);
+        setSubmissionError('Error parsing user information. Please login again.');
+        return;
+      }
 
-      // Log to check the parsed user data
       console.log('Parsed user object:', user);
 
-      if (!user || !user.name) {
-        setSubmissionError('User information is missing. Please login again.');
+      if (!user || !user.username) {
+        setSubmissionError('User information is incomplete. Please login again.');
         return;
       }
 
       const submissionData = {
         formId: formDefinition._id,
         fields: formData,
-        completedBy: user.name,
+        completedBy: `${user.firstName} ${user.lastName}`, // Use firstName and lastName for completion
         completedAt: new Date().toISOString(),
       };
 
-      // Check that submissionData is correctly structured
       if (!submissionData.formId || !submissionData.fields || !submissionData.completedBy || !submissionData.completedAt) {
         setSubmissionError('One or more required fields are missing');
         return;
       }
 
-      // Log submission data for debugging
       console.log('Submitting form data:', submissionData);
 
       const response = await axios.post('http://localhost:5001/api/forms/data', submissionData, {

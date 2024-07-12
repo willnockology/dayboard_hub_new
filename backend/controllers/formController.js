@@ -37,11 +37,14 @@ const submitFormData = asyncHandler(async (req, res) => {
   const { formId, fields, completedBy, completedAt } = req.body;
 
   if (!formId || !fields || !completedBy || !completedAt) {
+    console.log('Form submission error: Missing fields', { formId, fields, completedBy, completedAt });
     res.status(400).json({ message: 'All fields are required' });
     return;
   }
 
   try {
+    console.log('Received form submission data:', { formId, fields, completedBy, completedAt });
+
     const newFormData = new FormData({
       formId,
       fields,
@@ -50,8 +53,10 @@ const submitFormData = asyncHandler(async (req, res) => {
     });
 
     const createdFormData = await newFormData.save();
+    console.log('Form data saved successfully:', createdFormData);
     res.status(201).json(createdFormData);
   } catch (error) {
+    console.error('Error saving form data:', error);
     res.status(500).json({ message: 'Error saving form data', error });
   }
 });

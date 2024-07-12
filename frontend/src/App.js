@@ -4,10 +4,11 @@ import DashboardComponent from './components/DashboardComponent';
 import LoginComponent from './components/LoginComponent';
 import ProfileComponent from './components/ProfileComponent';
 import DynamicFormComponent from './components/DynamicFormComponent';
-import ViewFormComponent from './components/ViewFormComponent'; // Ensure this is correctly imported
+import ViewFormComponent from './components/ViewFormComponent';
 import NavbarComponent from './components/NavbarComponent';
 import FooterComponent from './components/FooterComponent';
 import ContactComponent from './components/ContactComponent';
+import RegisterComponent from './components/RegisterComponent'; // Corrected import
 
 import './global.css';
 
@@ -29,6 +30,9 @@ const App = () => {
         <Switch>
           <Route path="/login">
             <LoginComponent setToken={setToken} />
+          </Route>
+          <Route path="/register">
+            <RegisterComponent setToken={setToken} /> {/* Corrected route */}
           </Route>
           <Route path="/profile">
             <ProfileComponent />
