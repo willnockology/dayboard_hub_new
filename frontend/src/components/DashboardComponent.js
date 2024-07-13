@@ -219,7 +219,7 @@ function DashboardComponent({ setToken }) {
     if (filterSubcategory) {
       filteredItems = filteredItems.filter(item => item.subcategory === filterSubcategory);
     }
-    if (role === 'Company User' && selectedVessel) {
+    if ((role === 'Company User' || role === 'Superuser') && selectedVessel) {
       filteredItems = filteredItems.filter(item => item.vessel && item.vessel._id === selectedVessel);
     }
     if (!sortConfig.key) return filteredItems;
@@ -423,7 +423,7 @@ function DashboardComponent({ setToken }) {
             </option>
           ))}
         </select>
-        {role === 'Company User' && (
+        {(role === 'Company User' || role === 'Superuser') && (
           <select
             name="filterVessel"
             value={selectedVessel}
@@ -442,6 +442,13 @@ function DashboardComponent({ setToken }) {
       <table>
         <thead>
           <tr>
+            {(role === 'Company User' || role === 'Superuser') && (
+              <th>
+                <button type="button" onClick={() => requestSort('vessel')}>
+                  Vessel {sortConfig.key === 'vessel' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
+                </button>
+              </th>
+            )}
             <th>
               <button type="button" onClick={() => requestSort('name')}>
                 Item {sortConfig.key === 'name' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
@@ -469,19 +476,13 @@ function DashboardComponent({ setToken }) {
                 Submitted {sortConfig.key === 'submitted' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
               </button>
             </th>
-            {role === 'Company User' && (
-              <th>
-                <button type="button" onClick={() => requestSort('vessel')}>
-                  Vessel {sortConfig.key === 'vessel' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
-                </button>
-              </th>
-            )}
             <th>Actions</th>
           </tr>
         </thead>
         <tbody>
           {sortedItems().map((item) => (
             <tr key={item._id}>
+              {(role === 'Company User' || role === 'Superuser') && <td>{item.vessel ? item.vessel.name : 'N/A'}</td>}
               <td>{item.name || item.title}</td>
               <td>{item.category}</td>
               <td>{item.subcategory || 'N/A'}</td>
@@ -516,7 +517,6 @@ function DashboardComponent({ setToken }) {
                 )}
               </td>
               <td>{item.updatedAt ? formatDate(item.updatedAt) : 'N/A'}</td>
-              {role === 'Company User' && <td>{item.vessel ? item.vessel.name : 'N/A'}</td>}
               <td>
                 <button onClick={() => handleDelete(item._id)}>Delete</button>
               </td>

@@ -33,19 +33,24 @@ const createItem = asyncHandler(async (req, res) => {
     throw new Error('Please add all fields');
   }
 
-  const item = new Item({
-    name,
-    category,
-    subcategory,
-    dueDate,
-    title,
-    details,
-    vessel,
-    attachments: req.files.map(file => file.filename),
-  });
+  try {
+    const item = new Item({
+      name,
+      category,
+      subcategory,
+      dueDate,
+      title,
+      details,
+      vessel,
+      attachments: req.files.map(file => file.filename),
+    });
 
-  const createdItem = await item.save();
-  res.status(201).json(createdItem);
+    const createdItem = await item.save();
+    res.status(201).json(createdItem);
+  } catch (error) {
+    console.error('Error creating item:', error);
+    res.status(500).json({ message: 'Server error while creating item', error: error.message });
+  }
 });
 
 // @desc    Delete item
