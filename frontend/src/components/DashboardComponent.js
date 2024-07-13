@@ -21,6 +21,8 @@ function DashboardComponent({ setToken }) {
   const [error, setError] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
+  const [filterCategory, setFilterCategory] = useState('');
+  const [filterSubcategory, setFilterSubcategory] = useState('');
   const history = useHistory();
 
   const fetchItems = async () => {
@@ -178,8 +180,15 @@ function DashboardComponent({ setToken }) {
   };
 
   const sortedItems = () => {
-    if (!sortConfig.key) return items;
-    return [...items].sort((a, b) => {
+    let filteredItems = items;
+    if (filterCategory) {
+      filteredItems = filteredItems.filter(item => item.category === filterCategory);
+    }
+    if (filterSubcategory) {
+      filteredItems = filteredItems.filter(item => item.subcategory === filterSubcategory);
+    }
+    if (!sortConfig.key) return filteredItems;
+    return [...filteredItems].sort((a, b) => {
       const aValue = sortConfig.key === 'submitted' ? new Date(a.updatedAt) : a[sortConfig.key] || '';
       const bValue = sortConfig.key === 'submitted' ? new Date(b.updatedAt) : b[sortConfig.key] || '';
       if (sortConfig.direction === 'asc') {
@@ -202,10 +211,39 @@ function DashboardComponent({ setToken }) {
     fetchItems(); // Fetch items again when returning to the dashboard
   }, [history.location.pathname]);
 
+  const handleFilterCategoryChange = (e) => {
+    const selectedCategory = e.target.value;
+    setFilterCategory(selectedCategory);
+    setFilterSubcategory(''); // Reset subcategory filter when category changes
+    if (selectedCategory) {
+      const selectedCategoryData = data.categories.find((cat) => cat.name === selectedCategory);
+      setSubcategories(data.subCategories.filter((sub) => sub.categoryId === selectedCategoryData?.id));
+    } else {
+      setSubcategories([]);
+    }
+  };
+
+  const handleFilterSubcategoryChange = (e) => {
+    setFilterSubcategory(e.target.value);
+  };
+
   const formatDate = (dateString) => {
     const date = new Date(dateString);
     const options = { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' };
     return date.toLocaleString('en-GB', options).replace(',', '');
+  };
+
+  const getAvailableCategories = () => {
+    const categories = items.map(item => item.category);
+    return Array.from(new Set(categories));
+  };
+
+  const getAvailableSubcategories = () => {
+    if (!filterCategory) return [];
+    const subcategories = items
+      .filter(item => item.category === filterCategory)
+      .map(item => item.subcategory);
+    return Array.from(new Set(subcategories));
   };
 
   return (
@@ -302,6 +340,33 @@ function DashboardComponent({ setToken }) {
           <button type="submit">Add Item</button>
         </form>
       )}
+      <div className="filters">
+        <select
+          name="filterCategory"
+          value={filterCategory}
+          onChange={handleFilterCategoryChange}
+        >
+          <option value="">Filter by Category</option>
+          {getAvailableCategories().map((category, index) => (
+            <option key={index} value={category}>
+              {category}
+            </option>
+          ))}
+        </select>
+        <select
+          name="filterSubcategory"
+          value={filterSubcategory}
+          onChange={handleFilterSubcategoryChange}
+          disabled={!filterCategory}
+        >
+          <option value="">Filter by Subcategory</option>
+          {getAvailableSubcategories().map((subcategory, index) => (
+            <option key={index} value={subcategory}>
+              {subcategory}
+            </option>
+          ))}
+        </select>
+      </div>
       <table>
         <thead>
           <tr>
