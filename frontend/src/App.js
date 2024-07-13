@@ -25,30 +25,32 @@ const App = () => {
 
   return (
     <Router>
-      <NavbarComponent setToken={setToken} />
-      <div className="content">
-        <Switch>
-          <Route path="/login">
-            <LoginComponent setToken={setToken} />
-          </Route>
-          <Route path="/register">
-            <RegisterComponent setToken={setToken} /> {/* Corrected route */}
-          </Route>
-          <Route path="/profile">
-            <ProfileComponent />
-          </Route>
-          <Route path="/dashboard">
-            <DashboardComponent setToken={setToken} />
-          </Route>
-          <Route path="/form/:formType/:id" component={DynamicFormComponent} />
-          <Route path="/form/view/:formType/:id" component={ViewFormComponent} />
-          <Route path="/contact" component={ContactComponent} />
-          <Route exact path="/">
-            <LoginComponent setToken={setToken} />
-          </Route>
-        </Switch>
+      <div id="root">
+        <NavbarComponent setToken={setToken} />
+        <div className="content container">
+          <Switch>
+            <Route path="/login">
+              <LoginComponent setToken={setToken} />
+            </Route>
+            <Route path="/register">
+              <RegisterComponent setToken={setToken} /> {/* Corrected route */}
+            </Route>
+            <Route path="/profile">
+              <ProfileComponent />
+            </Route>
+            <Route path="/dashboard">
+              <DashboardComponent setToken={setToken} />
+            </Route>
+            <Route path="/form/:formType/:id" component={DynamicFormComponent} />
+            <Route path="/form/view/:formType/:id" component={ViewFormComponent} />
+            <Route path="/contact" component={ContactComponent} />
+            <Route exact path="/">
+              <LoginComponent setToken={setToken} />
+            </Route>
+          </Switch>
+        </div>
+        <FooterComponent className="footer" />
       </div>
-      <FooterComponent />
     </Router>
   );
 };
