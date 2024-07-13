@@ -28,7 +28,11 @@ const userSchema = new mongoose.Schema({
     type: String,
     required: true,
     unique: true
-  }
+  },
+  assignedVessels: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Vessel'
+  }]
 });
 
 // Encrypt password before saving

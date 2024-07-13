@@ -1,4 +1,3 @@
-// frontend/src/components/NavbarComponent.js
 import React, { useState } from 'react';
 import { Link, useHistory } from 'react-router-dom';
 import '../global.css';
@@ -19,6 +18,8 @@ const NavbarComponent = ({ setToken }) => {
     history.push('/login');
   };
 
+  const user = JSON.parse(localStorage.getItem('user'));
+
   return (
     <nav className="navbar">
       <div className="navbar-container">
@@ -37,6 +38,11 @@ const NavbarComponent = ({ setToken }) => {
             <li>
               <Link to="/contact">Contact</Link>
             </li>
+            {user && user.role === 'Superuser' && (
+              <li>
+                <Link to="/vessel-registration">Register Vessel</Link>
+              </li>
+            )}
             <li>
               <button onClick={handleLogout}>Logout</button>
             </li>

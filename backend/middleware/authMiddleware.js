@@ -16,12 +16,19 @@ const protect = asyncHandler(async (req, res, next) => {
       res.status(401);
       throw new Error('Not authorized, token failed');
     }
-  }
-
-  if (!token) {
+  } else {
     res.status(401);
     throw new Error('Not authorized, no token');
   }
 });
 
-module.exports = { protect };
+const superuser = (req, res, next) => {
+  if (req.user && req.user.role === 'Superuser') {
+    next();
+  } else {
+    res.status(401);
+    throw new Error('Not authorized as a superuser');
+  }
+};
+
+module.exports = { protect, superuser };

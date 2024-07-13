@@ -8,7 +8,8 @@ import ViewFormComponent from './components/ViewFormComponent';
 import NavbarComponent from './components/NavbarComponent';
 import FooterComponent from './components/FooterComponent';
 import ContactComponent from './components/ContactComponent';
-import RegisterComponent from './components/RegisterComponent'; // Corrected import
+import RegisterComponent from './components/RegisterComponent';
+import VesselRegistrationComponent from './components/VesselRegistrationComponent'; // Add this import
 
 import './global.css';
 
@@ -44,6 +45,9 @@ const App = () => {
             <Route path="/form/:formType/:id" component={DynamicFormComponent} />
             <Route path="/form/view/:formType/:id" component={ViewFormComponent} />
             <Route path="/contact" component={ContactComponent} />
+            <Route path="/vessel-registration">
+              <VesselRegistrationComponent token={token} /> {/* Add this route */}
+            </Route>
             <Route exact path="/">
               <LoginComponent setToken={setToken} />
             </Route>
