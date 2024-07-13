@@ -121,4 +121,39 @@ const getUserProfile = asyncHandler(async (req, res) => {
   }
 });
 
-module.exports = { authUser, registerUser, getUserProfile };
+// @desc    Get all users
+// @route   GET /api/users
+// @access  Private/Superuser
+const getUsers = asyncHandler(async (req, res) => {
+  const users = await User.find().populate('assignedVessels');
+  const vessels = await Vessel.find();
+
+  const updatedUsers = users.map(user => {
+    if (user.role === 'Superuser') {
+      user.assignedVessels = vessels;
+    }
+    return user;
+  });
+
+  res.json(updatedUsers);
+});
+
+// @desc    Update user vessels
+// @route   PUT /api/users/:id/vessels
+// @access  Private/Superuser
+const updateUserVessels = asyncHandler(async (req, res) => {
+  const { vessels } = req.body;
+  const user = await User.findById(req.params.id);
+
+  if (!user) {
+    res.status(404);
+    throw new Error('User not found');
+  }
+
+  user.assignedVessels = vessels;
+  await user.save();
+
+  res.json(user);
+});
+
+module.exports = { authUser, registerUser, getUserProfile, getUsers, updateUserVessels };

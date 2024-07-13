@@ -9,7 +9,8 @@ import NavbarComponent from './components/NavbarComponent';
 import FooterComponent from './components/FooterComponent';
 import ContactComponent from './components/ContactComponent';
 import RegisterComponent from './components/RegisterComponent';
-import VesselRegistrationComponent from './components/VesselRegistrationComponent'; // Add this import
+import VesselRegistrationComponent from './components/VesselRegistrationComponent';
+import UserManagementComponent from './components/UserManagementComponent'; // Add this import
 
 import './global.css';
 
@@ -47,6 +48,9 @@ const App = () => {
             <Route path="/contact" component={ContactComponent} />
             <Route path="/vessel-registration">
               <VesselRegistrationComponent token={token} /> {/* Add this route */}
+            </Route>
+            <Route path="/user-management">
+              <UserManagementComponent /> {/* Add this route */}
             </Route>
             <Route exact path="/">
               <LoginComponent setToken={setToken} />

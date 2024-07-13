@@ -39,9 +39,17 @@ const NavbarComponent = ({ setToken }) => {
               <Link to="/contact">Contact</Link>
             </li>
             {user && user.role === 'Superuser' && (
-              <li>
-                <Link to="/vessel-registration">Register Vessel</Link>
-              </li>
+              <>
+                <li>
+                  <Link to="/vessel-registration">Register Vessel</Link>
+                </li>
+                <li>
+                  <Link to="/user-management">User Management</Link>
+                </li>
+                <li>
+                  <Link to="/register">Register User</Link>
+                </li>
+              </>
             )}
             <li>
               <button onClick={handleLogout}>Logout</button>

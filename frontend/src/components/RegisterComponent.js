@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import axios from 'axios';
-import { useHistory } from 'react-router-dom';
 
 const RegisterComponent = ({ setToken }) => {
   const [firstName, setFirstName] = useState('');
@@ -10,7 +9,7 @@ const RegisterComponent = ({ setToken }) => {
   const [role, setRole] = useState('Superuser'); // Default to 'Superuser'
   const [email, setEmail] = useState('');
   const [error, setError] = useState('');
-  const history = useHistory();
+  const [success, setSuccess] = useState('');
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -27,28 +26,29 @@ const RegisterComponent = ({ setToken }) => {
     console.log('Form Data:', formData); // Debugging log
 
     try {
-      const response = await axios.post('http://localhost:5001/api/users/register', formData);
-
-      const { token, user } = response.data;
-
-      localStorage.setItem('authToken', token);
-      localStorage.setItem('user', JSON.stringify(user));
-
-      if (typeof setToken === 'function') {
-        setToken(token);
-      }
-      history.push('/dashboard');
+      await axios.post('http://localhost:5001/api/users/register', formData);
+      
+      setSuccess('User registered successfully');
+      setError('');
+      // Reset form fields
+      setFirstName('');
+      setLastName('');
+      setUsername('');
+      setPassword('');
+      setRole('Superuser');
+      setEmail('');
     } catch (error) {
       console.error('Error registering user:', error.response ? error.response.data : error.message);
       setError('Error registering user');
+      setSuccess('');
     }
   };
 
   return (
     <div>
       <h1>Register</h1>
-      <p>This is the registration page.</p> {/* Add this line to verify rendering */}
       {error && <p>{error}</p>}
+      {success && <p>{success}</p>}
       <form onSubmit={handleSubmit}>
         <input
           type="text"
