@@ -227,6 +227,11 @@ function DashboardComponent({ setToken }) {
     setFilterSubcategory(e.target.value);
   };
 
+  const handleClearFilters = () => {
+    setFilterCategory('');
+    setFilterSubcategory('');
+  };
+
   const formatDate = (dateString) => {
     const date = new Date(dateString);
     const options = { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' };
@@ -366,6 +371,7 @@ function DashboardComponent({ setToken }) {
             </option>
           ))}
         </select>
+        <button onClick={handleClearFilters}>Clear Filters</button>
       </div>
       <table>
         <thead>
