@@ -20,6 +20,7 @@ function DashboardComponent({ setToken }) {
   const [itemOptions, setItemOptions] = useState([]);
   const [error, setError] = useState('');
   const [showForm, setShowForm] = useState(false);
+  const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
   const history = useHistory();
 
   const fetchItems = async () => {
@@ -176,9 +177,36 @@ function DashboardComponent({ setToken }) {
     history.push(`/form/${formType}/${item._id}`);
   };
 
+  const sortedItems = () => {
+    if (!sortConfig.key) return items;
+    return [...items].sort((a, b) => {
+      const aValue = sortConfig.key === 'submitted' ? new Date(a.updatedAt) : a[sortConfig.key] || '';
+      const bValue = sortConfig.key === 'submitted' ? new Date(b.updatedAt) : b[sortConfig.key] || '';
+      if (sortConfig.direction === 'asc') {
+        return aValue > bValue ? 1 : -1;
+      } else {
+        return aValue < bValue ? 1 : -1;
+      }
+    });
+  };
+
+  const requestSort = (key) => {
+    let direction = 'asc';
+    if (sortConfig.key === key && sortConfig.direction === 'asc') {
+      direction = 'desc';
+    }
+    setSortConfig({ key, direction });
+  };
+
   useEffect(() => {
     fetchItems(); // Fetch items again when returning to the dashboard
   }, [history.location.pathname]);
+
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    const options = { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' };
+    return date.toLocaleString('en-GB', options).replace(',', '');
+  };
 
   return (
     <div>
@@ -277,17 +305,38 @@ function DashboardComponent({ setToken }) {
       <table>
         <thead>
           <tr>
-            <th>Item</th>
-            <th>Category</th>
-            <th>Subcategory</th>
-            <th>Due/Expiry Date</th>
+            <th>
+              <button type="button" onClick={() => requestSort('name')}>
+                Item {sortConfig.key === 'name' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
+              </button>
+            </th>
+            <th>
+              <button type="button" onClick={() => requestSort('category')}>
+                Category {sortConfig.key === 'category' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
+              </button>
+            </th>
+            <th>
+              <button type="button" onClick={() => requestSort('subcategory')}>
+                Subcategory {sortConfig.key === 'subcategory' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
+              </button>
+            </th>
+            <th>
+              <button type="button" onClick={() => requestSort('dueDate')}>
+                Due/Expiry Date {sortConfig.key === 'dueDate' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
+              </button>
+            </th>
             <th>Status</th>
             <th>Details</th>
+            <th>
+              <button type="button" onClick={() => requestSort('submitted')}>
+                Submitted {sortConfig.key === 'submitted' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
+              </button>
+            </th>
             <th>Actions</th>
           </tr>
         </thead>
         <tbody>
-          {items.map((item) => (
+          {sortedItems().map((item) => (
             <tr key={item._id}>
               <td>{item.name || item.title}</td>
               <td>{item.category}</td>
@@ -322,6 +371,7 @@ function DashboardComponent({ setToken }) {
                   'N/A'
                 )}
               </td>
+              <td>{item.updatedAt ? formatDate(item.updatedAt) : 'N/A'}</td>
               <td>
                 <button onClick={() => handleDelete(item._id)}>Delete</button>
               </td>
