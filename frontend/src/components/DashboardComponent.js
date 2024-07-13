@@ -5,7 +5,7 @@ import './DashboardComponent.css';
 import data from './formData';
 import formMappings from '../data/formMappings';
 
-function DashboardComponent({ setToken }) { // Make sure to receive setToken as a prop
+function DashboardComponent({ setToken }) {
   const [items, setItems] = useState([]);
   const [newItem, setNewItem] = useState({
     name: '',
@@ -22,22 +22,23 @@ function DashboardComponent({ setToken }) { // Make sure to receive setToken as 
   const [showForm, setShowForm] = useState(false);
   const history = useHistory();
 
-  useEffect(() => {
-    const fetchItems = async () => {
-      try {
-        const token = localStorage.getItem('authToken');
-        const response = await axios.get('http://localhost:5001/api/items', {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-        setItems(response.data);
-      } catch (error) {
-        console.error('Error fetching items:', error.response ? error.response.data : error.message);
-        setError('Error fetching items');
-      }
-    };
+  const fetchItems = async () => {
+    try {
+      const token = localStorage.getItem('authToken');
+      const response = await axios.get('http://localhost:5001/api/items', {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      console.log('Fetched items:', response.data);
+      setItems(response.data);
+    } catch (error) {
+      console.error('Error fetching items:', error.response ? error.response.data : error.message);
+      setError('Error fetching items');
+    }
+  };
 
+  useEffect(() => {
     fetchItems();
   }, []);
 
@@ -47,7 +48,6 @@ function DashboardComponent({ setToken }) { // Make sure to receive setToken as 
     setToken(null);
     history.push('/login');
   };
-  
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -108,6 +108,7 @@ function DashboardComponent({ setToken }) { // Make sure to receive setToken as 
           Authorization: `Bearer ${token}`,
         },
       });
+      console.log('Item added successfully:', response.data);
       setItems([...items, response.data]);
       setNewItem({
         name: '',
@@ -119,6 +120,7 @@ function DashboardComponent({ setToken }) { // Make sure to receive setToken as 
         details: ''
       });
       setShowForm(false);
+      fetchItems();  // Re-fetch items after form submission
     } catch (error) {
       console.error('Error adding item:', error.response ? error.response.data : error.message);
       setError('Error adding item');
@@ -133,6 +135,7 @@ function DashboardComponent({ setToken }) { // Make sure to receive setToken as 
           Authorization: `Bearer ${token}`,
         },
       });
+      console.log('Item deleted successfully:', id);
       setItems(items.filter((item) => item._id !== id));
     } catch (error) {
       console.error('Error deleting item:', error.response ? error.response.data : error.message);
@@ -173,28 +176,9 @@ function DashboardComponent({ setToken }) { // Make sure to receive setToken as 
     history.push(`/form/${formType}/${item._id}`);
   };
 
-  const handleViewForm = (item) => {
-    console.log('View Form clicked for item:', item);
-  
-    const selectedItem = data.items.find((dataItem) => dataItem.name === item.name);
-  
-    if (!selectedItem) {
-      console.error('No item found for item name:', item.name);
-      return;
-    }
-  
-    const formType = formMappings[selectedItem.id];
-  
-    if (!formType) {
-      console.error('No form type found for item ID:', selectedItem.id);
-      return;
-    }
-  
-    console.log('Mapped form type:', formType);
-  
-    history.push(`/form/view/${formType}/${item._id}`);
-  };
-  
+  useEffect(() => {
+    fetchItems(); // Fetch items again when returning to the dashboard
+  }, [history.location.pathname]);
 
   return (
     <div>
@@ -238,9 +222,9 @@ function DashboardComponent({ setToken }) { // Make sure to receive setToken as 
                 onChange={handleInputChange}
               >
                 <option value="">Select Item</option>
-                {itemOptions.map((itemOption) => (
-                  <option key={itemOption.id} value={itemOption.name}>
-                    {itemOption.name}
+                {itemOptions.map((item) => (
+                  <option key={item.id} value={item.name}>
+                    {item.name}
                   </option>
                 ))}
                 <option value="new">Add New Item</option>
@@ -318,9 +302,11 @@ function DashboardComponent({ setToken }) { // Make sure to receive setToken as 
               <td>
                 {item.category === 'Form or Checklist' ? (
                   item.completed ? (
-                    <button onClick={() => handleViewForm(item)}>
-                      View Completed Form
-                    </button>
+                    item.pdfPath && (
+                      <a href={`http://localhost:5001${item.pdfPath}`} target="_blank" rel="noopener noreferrer">
+                        See Attachment
+                      </a>
+                    )
                   ) : (
                     <button onClick={() => handleCompleteForm(item)}>
                       Complete Form
@@ -336,7 +322,6 @@ function DashboardComponent({ setToken }) { // Make sure to receive setToken as 
                   'N/A'
                 )}
               </td>
-
               <td>
                 <button onClick={() => handleDelete(item._id)}>Delete</button>
               </td>

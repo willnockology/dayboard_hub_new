@@ -34,11 +34,17 @@ app.use('/api/items', itemRoutes);
 console.log('Registering form routes...');
 app.use('/api/forms', formRoutes);
 
-app.use('/uploads', express.static(path.join(__dirname, '/uploads')));
+// Serve static files from the 'uploads' directory
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
+// Middleware for handling not found errors
 app.use(notFound);
+
+// Middleware for handling other errors
 app.use(errorHandler);
 
 const PORT = process.env.PORT || 5001;
 
-app.listen(PORT, console.log(`Server running on port ${PORT}`));
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});

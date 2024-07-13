@@ -24,6 +24,19 @@ const formDataSchema = mongoose.Schema(
       type: Date,
       required: true,
     },
+    pdfPath: {
+      type: String,
+      required: false,
+    },
+    completed: {
+      type: Boolean,
+      default: false,
+    },
+    itemId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Item',
+      required: true,
+    },
   },
   {
     timestamps: true,

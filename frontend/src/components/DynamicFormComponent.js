@@ -3,7 +3,7 @@ import axios from 'axios';
 import { useParams, useHistory } from 'react-router-dom';
 
 const DynamicFormComponent = () => {
-  const { formType } = useParams();
+  const { formType, id: itemId } = useParams();  // Get itemId from URL params
   const history = useHistory();
   const [formDefinition, setFormDefinition] = useState(null);
   const [formData, setFormData] = useState({});
@@ -53,40 +53,25 @@ const DynamicFormComponent = () => {
       const token = localStorage.getItem('authToken');
       const userJson = localStorage.getItem('user');
 
-      console.log('User JSON from localStorage:', userJson);
-
       if (!userJson) {
         setSubmissionError('User information is missing. Please login again.');
         return;
       }
 
-      let user;
-      try {
-        user = JSON.parse(userJson);
-      } catch (parseError) {
-        console.error('Error parsing user JSON:', parseError);
-        setSubmissionError('Error parsing user information. Please login again.');
-        return;
-      }
+      const user = JSON.parse(userJson);
 
-      console.log('Parsed user object:', user);
-
-      if (!user || !user.username) {
-        setSubmissionError('User information is incomplete. Please login again.');
+      if (!user || !user.firstName) {
+        setSubmissionError('User information is missing. Please login again.');
         return;
       }
 
       const submissionData = {
         formId: formDefinition._id,
         fields: formData,
-        completedBy: `${user.firstName} ${user.lastName}`, // Use firstName and lastName for completion
+        completedBy: `${user.firstName} ${user.lastName}`,
         completedAt: new Date().toISOString(),
+        itemId: itemId,  // Add itemId to submission data
       };
-
-      if (!submissionData.formId || !submissionData.fields || !submissionData.completedBy || !submissionData.completedAt) {
-        setSubmissionError('One or more required fields are missing');
-        return;
-      }
 
       console.log('Submitting form data:', submissionData);
 
@@ -97,9 +82,14 @@ const DynamicFormComponent = () => {
         },
       });
 
-      console.log('Submission response:', response);
+      console.log('Submission response:', response.data);
+
+      // Show success popup
       alert('Form submitted successfully');
+      
+      // Update items in the dashboard after successful form submission
       history.push('/dashboard');
+      window.location.reload();  // Reload the page to fetch the updated items
     } catch (error) {
       console.error('Error submitting form:', error);
       setSubmissionError('Error submitting form: ' + error.message);

@@ -17,11 +17,17 @@ const itemSchema = mongoose.Schema(
     dueDate: {
       type: Date,
     },
-    attachments: [
-      {
-        type: String,
-      },
-    ],
+    pdfPath: {
+      type: String,  // Add this field
+    },
+    completed: {
+      type: Boolean,
+      default: false,
+    },
+    attachments: {
+      type: [String],
+      default: [],
+    },
   },
   {
     timestamps: true,
