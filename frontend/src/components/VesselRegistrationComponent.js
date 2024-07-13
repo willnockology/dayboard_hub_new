@@ -2,104 +2,103 @@ import React, { useState } from 'react';
 import axios from 'axios';
 
 const VesselRegistrationComponent = ({ token }) => {
-  const [name, setName] = useState('');
-  const [imoNumber, setImoNumber] = useState('');
-  const [flagState, setFlagState] = useState('');
-  const [grossTonnage, setGrossTonnage] = useState('');
-  const [regulatoryLength, setRegulatoryLength] = useState('');
-  const [typeOfRegistration, setTypeOfRegistration] = useState('');
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+  const [formData, setFormData] = useState({
+    name: '',
+    imoNumber: '',
+    flagState: '',
+    grossTonnage: '',
+    regulatoryLength: '',
+    typeOfRegistration: ''
+  });
+  const [message, setMessage] = useState('');
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prevData) => ({
+      ...prevData,
+      [name]: value
+    }));
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
-    setSuccess('');
-
     try {
-      const config = {
+      await axios.post('http://localhost:5001/api/vessels', formData, {
         headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      };
-
-      await axios.post(
-        'http://localhost:5001/api/vessels',
-        { name, imoNumber, flagState, grossTonnage, regulatoryLength, typeOfRegistration },
-        config
-      );
-
-      setSuccess('Vessel registered successfully');
-      setName('');
-      setImoNumber('');
-      setFlagState('');
-      setGrossTonnage('');
-      setRegulatoryLength('');
-      setTypeOfRegistration('');
+          Authorization: `Bearer ${token}`
+        }
+      });
+      setMessage('Vessel registered successfully!');
     } catch (error) {
-      setError(error.response?.data?.message || 'Error registering vessel');
+      console.error('Error registering vessel:', error);
+      setMessage('Error registering vessel');
     }
-  };
-
-  const registrationOptions = (flagState) => {
-    if (flagState === 'Cayman Islands' || flagState === 'Bahamas') {
-      return (
-        <>
-          <option value="PY">PY</option>
-          <option value="CY">CY</option>
-        </>
-      );
-    } else if (flagState === 'Jamaica' || flagState === 'St Vincent' || flagState === 'Marshall Islands') {
-      return (
-        <>
-          <option value="PY">PY</option>
-          <option value="PYLC">PYLC</option>
-          <option value="CY">CY</option>
-        </>
-      );
-    }
-    return <option value="">Select Type of Registration</option>;
   };
 
   return (
-    <div className="vessel-registration-container">
+    <div>
       <h1>Register Vessel</h1>
-      {error && <p className="error">{error}</p>}
-      {success && <p className="success">{success}</p>}
+      {message && <p>{message}</p>}
       <form onSubmit={handleSubmit}>
-        <label>
-          Name:
-          <input type="text" value={name} onChange={(e) => setName(e.target.value)} required />
-        </label>
-        <label>
-          IMO Number:
-          <input type="text" value={imoNumber} onChange={(e) => setImoNumber(e.target.value)} required />
-        </label>
-        <label>
-          Flag State:
-          <select value={flagState} onChange={(e) => setFlagState(e.target.value)} required>
-            <option value="">Select Flag State</option>
-            <option value="Cayman Islands">Cayman Islands</option>
-            <option value="Jamaica">Jamaica</option>
-            <option value="St Vincent">St Vincent</option>
-            <option value="Marshall Islands">Marshall Islands</option>
-            <option value="Bahamas">Bahamas</option>
-          </select>
-        </label>
-        <label>
-          Gross Tonnage:
-          <input type="number" value={grossTonnage} onChange={(e) => setGrossTonnage(e.target.value)} required />
-        </label>
-        <label>
-          Regulatory Length (meters):
-          <input type="number" value={regulatoryLength} onChange={(e) => setRegulatoryLength(e.target.value)} required />
-        </label>
-        <label>
-          Type of Registration:
-          <select value={typeOfRegistration} onChange={(e) => setTypeOfRegistration(e.target.value)} required>
-            {registrationOptions(flagState)}
-          </select>
-        </label>
+        <input
+          type="text"
+          name="name"
+          value={formData.name}
+          onChange={handleChange}
+          placeholder="Vessel Name"
+        />
+        <input
+          type="text"
+          name="imoNumber"
+          value={formData.imoNumber}
+          onChange={handleChange}
+          placeholder="IMO Number"
+        />
+        <select
+          name="flagState"
+          value={formData.flagState}
+          onChange={handleChange}
+        >
+          <option value="">Select Flag State</option>
+          <option value="Cayman Islands">Cayman Islands</option>
+          <option value="Jamaica">Jamaica</option>
+          <option value="St Vincent">St Vincent</option>
+          <option value="Marshall Islands">Marshall Islands</option>
+          <option value="Bahamas">Bahamas</option>
+        </select>
+        <input
+          type="number"
+          name="grossTonnage"
+          value={formData.grossTonnage}
+          onChange={handleChange}
+          placeholder="Gross Tonnage"
+        />
+        <input
+          type="number"
+          name="regulatoryLength"
+          value={formData.regulatoryLength}
+          onChange={handleChange}
+          placeholder="Regulatory Length (meters)"
+        />
+        <select
+          name="typeOfRegistration"
+          value={formData.typeOfRegistration}
+          onChange={handleChange}
+        >
+          <option value="">Select Type of Registration</option>
+          {formData.flagState === 'Cayman Islands' || formData.flagState === 'Bahamas' ? (
+            <>
+              <option value="PY">PY</option>
+              <option value="CY">CY</option>
+            </>
+          ) : (
+            <>
+              <option value="PY">PY</option>
+              <option value="PYLC">PYLC</option>
+              <option value="CY">CY</option>
+            </>
+          )}
+        </select>
         <button type="submit">Register Vessel</button>
       </form>
     </div>

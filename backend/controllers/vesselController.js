@@ -3,37 +3,48 @@ const Vessel = require('../models/vesselModel');
 
 // @desc    Register a new vessel
 // @route   POST /api/vessels
-// @access  Private (Superuser only)
+// @access  Private/Superuser
 const registerVessel = asyncHandler(async (req, res) => {
-  const { name, imoNumber, flagState, grossTonnage, regulatoryLength, typeOfRegistration } = req.body;
+  try {
+    const { name, imoNumber, flagState, grossTonnage, regulatoryLength, typeOfRegistration } = req.body;
 
-  if (!name || !imoNumber || !flagState || !grossTonnage || !regulatoryLength || !typeOfRegistration) {
-    res.status(400);
-    throw new Error('Please fill in all fields');
-  }
+    // Additional logging
+    console.log('Registering new vessel with data:', req.body);
 
-  const vesselExists = await Vessel.findOne({ imoNumber });
+    // Validate required fields
+    if (!name || !imoNumber || !flagState || !grossTonnage || !regulatoryLength || !typeOfRegistration) {
+      res.status(400);
+      throw new Error('Please fill in all fields');
+    }
 
-  if (vesselExists) {
-    res.status(400);
-    throw new Error('Vessel already exists');
-  }
+    const vessel = new Vessel({
+      name,
+      imoNumber,
+      flagState,
+      grossTonnage,
+      regulatoryLength,
+      typeOfRegistration,
+    });
 
-  const vessel = await Vessel.create({
-    name,
-    imoNumber,
-    flagState,
-    grossTonnage,
-regulatoryLength,
-    typeOfRegistration
-  });
-
-  if (vessel) {
-    res.status(201).json(vessel);
-  } else {
-    res.status(400);
-    throw new Error('Invalid vessel data');
+    const createdVessel = await vessel.save();
+    res.status(201).json(createdVessel);
+  } catch (error) {
+    console.error('Error registering vessel:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
 
-module.exports = { registerVessel };
+// @desc    Get all vessels
+// @route   GET /api/vessels
+// @access  Private/Superuser
+const getVessels = asyncHandler(async (req, res) => {
+  try {
+    const vessels = await Vessel.find();
+    res.json(vessels);
+  } catch (error) {
+    console.error('Error fetching vessels:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
+module.exports = { registerVessel, getVessels };

@@ -1,38 +1,45 @@
 const mongoose = require('mongoose');
 
-const itemSchema = mongoose.Schema(
-  {
-    name: {
-      type: String,
-      required: true,
-    },
-    category: {
-      type: String,
-      required: true,
-    },
-    subcategory: {
-      type: String,
-      required: true,
-    },
-    dueDate: {
-      type: Date,
-    },
-    pdfPath: {
-      type: String,  // Add this field
-    },
-    completed: {
-      type: Boolean,
-      default: false,
-    },
-    attachments: {
-      type: [String],
-      default: [],
-    },
+const itemSchema = new mongoose.Schema({
+  name: {
+    type: String,
+    required: true
   },
-  {
-    timestamps: true,
+  category: {
+    type: String,
+    required: true
+  },
+  subcategory: {
+    type: String,
+    required: true
+  },
+  dueDate: {
+    type: Date,
+    required: true
+  },
+  title: {
+    type: String
+  },
+  details: {
+    type: String
+  },
+  completed: {
+    type: Boolean,
+    default: false
+  },
+  attachments: [
+    {
+      type: String
+    }
+  ],
+  vessel: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Vessel',
+    required: true
   }
-);
+}, {
+  timestamps: true
+});
 
 const Item = mongoose.model('Item', itemSchema);
 

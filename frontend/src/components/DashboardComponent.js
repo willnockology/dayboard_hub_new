@@ -14,7 +14,8 @@ function DashboardComponent({ setToken }) {
     dueDate: '',
     attachments: [],
     title: '',
-    details: ''
+    details: '',
+    vessel: ''
   });
   const [subcategories, setSubcategories] = useState([]);
   const [itemOptions, setItemOptions] = useState([]);
@@ -23,6 +24,9 @@ function DashboardComponent({ setToken }) {
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
   const [filterCategory, setFilterCategory] = useState('');
   const [filterSubcategory, setFilterSubcategory] = useState('');
+  const [vessels, setVessels] = useState([]);
+  const [selectedVessel, setSelectedVessel] = useState('');
+  const [role, setRole] = useState('');
   const history = useHistory();
 
   const fetchItems = async () => {
@@ -41,8 +45,42 @@ function DashboardComponent({ setToken }) {
     }
   };
 
+  const fetchVessels = async () => {
+    try {
+      const token = localStorage.getItem('authToken');
+      const response = await axios.get('http://localhost:5001/api/vessels', {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      console.log('Fetched vessels:', response.data);
+      setVessels(response.data);
+    } catch (error) {
+      console.error('Error fetching vessels:', error.response ? error.response.data : error.message);
+      setError('Error fetching vessels');
+    }
+  };
+
+  const fetchUserRole = async () => {
+    try {
+      const token = localStorage.getItem('authToken');
+      const response = await axios.get('http://localhost:5001/api/users/profile', {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      console.log('Fetched user role:', response.data.role);
+      setRole(response.data.role);
+    } catch (error) {
+      console.error('Error fetching user role:', error.response ? error.response.data : error.message);
+      setError('Error fetching user role');
+    }
+  };
+
   useEffect(() => {
     fetchItems();
+    fetchVessels();
+    fetchUserRole();
   }, []);
 
   const handleInputChange = (e) => {
@@ -113,7 +151,8 @@ function DashboardComponent({ setToken }) {
         dueDate: '',
         attachments: [],
         title: '',
-        details: ''
+        details: '',
+        vessel: ''
       });
       setShowForm(false);
       fetchItems();  // Re-fetch items after form submission
@@ -180,6 +219,9 @@ function DashboardComponent({ setToken }) {
     if (filterSubcategory) {
       filteredItems = filteredItems.filter(item => item.subcategory === filterSubcategory);
     }
+    if (role === 'Company User' && selectedVessel) {
+      filteredItems = filteredItems.filter(item => item.vessel && item.vessel._id === selectedVessel);
+    }
     if (!sortConfig.key) return filteredItems;
     return [...filteredItems].sort((a, b) => {
       const aValue = sortConfig.key === 'submitted' ? new Date(a.updatedAt) : a[sortConfig.key] || '';
@@ -223,6 +265,7 @@ function DashboardComponent({ setToken }) {
   const handleClearFilters = () => {
     setFilterCategory('');
     setFilterSubcategory('');
+    setSelectedVessel('');
   };
 
   const formatDate = (dateString) => {
@@ -242,6 +285,11 @@ function DashboardComponent({ setToken }) {
       .filter(item => item.category === filterCategory)
       .map(item => item.subcategory);
     return Array.from(new Set(subcategories));
+  };
+
+  const getAvailableVessels = () => {
+    const vesselIds = items.map(item => item.vessel && item.vessel._id).filter(id => id);
+    return vessels.filter(vessel => vesselIds.includes(vessel._id));
   };
 
   return (
@@ -301,6 +349,18 @@ function DashboardComponent({ setToken }) {
                   placeholder="New Item Name"
                 />
               )}
+              <select
+                name="vessel"
+                value={newItem.vessel}
+                onChange={handleInputChange}
+              >
+                <option value="">Select Vessel</option>
+                {vessels.map((vessel) => (
+                  <option key={vessel._id} value={vessel._id}>
+                    {vessel.name}
+                  </option>
+                ))}
+              </select>
             </>
           )}
           {newItem.category === 'Track a Date' && (
@@ -363,6 +423,20 @@ function DashboardComponent({ setToken }) {
             </option>
           ))}
         </select>
+        {role === 'Company User' && (
+          <select
+            name="filterVessel"
+            value={selectedVessel}
+            onChange={(e) => setSelectedVessel(e.target.value)}
+          >
+            <option value="">Filter by Vessel</option>
+            {getAvailableVessels().map((vessel) => (
+              <option key={vessel._id} value={vessel._id}>
+                {vessel.name}
+              </option>
+            ))}
+          </select>
+        )}
         <button onClick={handleClearFilters}>Clear Filters</button>
       </div>
       <table>
@@ -395,6 +469,13 @@ function DashboardComponent({ setToken }) {
                 Submitted {sortConfig.key === 'submitted' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
               </button>
             </th>
+            {role === 'Company User' && (
+              <th>
+                <button type="button" onClick={() => requestSort('vessel')}>
+                  Vessel {sortConfig.key === 'vessel' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
+                </button>
+              </th>
+            )}
             <th>Actions</th>
           </tr>
         </thead>
@@ -435,6 +516,7 @@ function DashboardComponent({ setToken }) {
                 )}
               </td>
               <td>{item.updatedAt ? formatDate(item.updatedAt) : 'N/A'}</td>
+              {role === 'Company User' && <td>{item.vessel ? item.vessel.name : 'N/A'}</td>}
               <td>
                 <button onClick={() => handleDelete(item._id)}>Delete</button>
               </td>
