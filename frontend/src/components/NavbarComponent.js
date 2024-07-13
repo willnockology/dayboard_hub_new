@@ -1,14 +1,22 @@
 // frontend/src/components/NavbarComponent.js
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useHistory } from 'react-router-dom';
 import '../global.css';
 import './NavbarComponent.css';
 
-const NavbarComponent = ({ onLogout }) => {
+const NavbarComponent = ({ setToken }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const history = useHistory();
 
   const toggleMenu = () => {
     setIsOpen(!isOpen);
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('authToken');
+    localStorage.removeItem('user');
+    setToken(null);
+    history.push('/login');
   };
 
   return (
@@ -30,7 +38,7 @@ const NavbarComponent = ({ onLogout }) => {
               <Link to="/contact">Contact</Link>
             </li>
             <li>
-              <button onClick={onLogout}>Logout</button>
+              <button onClick={handleLogout}>Logout</button>
             </li>
           </ul>
         </div>
@@ -40,4 +48,3 @@ const NavbarComponent = ({ onLogout }) => {
 };
 
 export default NavbarComponent;
-

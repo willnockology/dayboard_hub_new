@@ -25,7 +25,7 @@ const App = () => {
 
   return (
     <Router>
-      <NavbarComponent />
+      <NavbarComponent setToken={setToken} />
       <div className="content">
         <Switch>
           <Route path="/login">
@@ -43,6 +43,9 @@ const App = () => {
           <Route path="/form/:formType/:id" component={DynamicFormComponent} />
           <Route path="/form/view/:formType/:id" component={ViewFormComponent} />
           <Route path="/contact" component={ContactComponent} />
+          <Route exact path="/">
+            <LoginComponent setToken={setToken} />
+          </Route>
         </Switch>
       </div>
       <FooterComponent />

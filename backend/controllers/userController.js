@@ -1,6 +1,7 @@
 const asyncHandler = require('express-async-handler');
 const jwt = require('jsonwebtoken');
 const User = require('../models/userModel'); // Adjust the path as necessary
+const bcrypt = require('bcryptjs');
 
 // Generate JWT Token
 const generateToken = (id) => {
@@ -17,18 +18,26 @@ const authUser = asyncHandler(async (req, res) => {
 
   const user = await User.findOne({ username });
 
-  if (user && (await user.matchPassword(password))) {
-    res.json({
-      token: generateToken(user._id),
-      user: {
-        id: user._id,
-        username: user.username,
-        role: user.role,
-        email: user.email,
-        firstName: user.firstName,
-        lastName: user.lastName,
-      },
-    });
+  if (user) {
+    const isMatch = await bcrypt.compare(password, user.password);
+    console.log(`Password match for ${username}: ${isMatch}`);
+
+    if (isMatch) {
+      res.json({
+        token: generateToken(user._id),
+        user: {
+          id: user._id,
+          username: user.username,
+          role: user.role,
+          email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName,
+        },
+      });
+    } else {
+      res.status(401);
+      throw new Error('Invalid username or password');
+    }
   } else {
     res.status(401);
     throw new Error('Invalid username or password');
@@ -54,12 +63,17 @@ const registerUser = asyncHandler(async (req, res) => {
     throw new Error('User already exists');
   }
 
+  // Hash the password before saving
+  const salt = await bcrypt.genSalt(10);
+  const hashedPassword = await bcrypt.hash(password, salt);
+  console.log(`Hashed password for ${username}: ${hashedPassword}`);
+
   const user = await User.create({
     firstName,
     lastName,
     username,
     email,
-    password,
+    password: hashedPassword, // Save the hashed password
     role,
   });
 

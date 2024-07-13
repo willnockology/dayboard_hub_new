@@ -45,13 +45,6 @@ function DashboardComponent({ setToken }) {
     fetchItems();
   }, []);
 
-  const handleLogout = () => {
-    localStorage.removeItem('authToken');
-    localStorage.removeItem('user');
-    setToken(null);
-    history.push('/login');
-  };
-
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setNewItem((prevItem) => ({
@@ -258,7 +251,6 @@ function DashboardComponent({ setToken }) {
       <button onClick={() => setShowForm(!showForm)}>
         {showForm ? 'Hide Form' : 'Add New Item'}
       </button>
-      <button onClick={handleLogout}>Logout</button>
       {showForm && (
         <form onSubmit={handleSubmit}>
           <select
