@@ -1,57 +1,51 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 
-const userSchema = new mongoose.Schema({
+const userSchema = mongoose.Schema({
   firstName: {
     type: String,
-    required: true
+    required: true,
   },
   lastName: {
     type: String,
-    required: true
+    required: true,
   },
   username: {
     type: String,
     required: true,
-    unique: true
-  },
-  password: {
-    type: String,
-    required: true
-  },
-  role: {
-    type: String,
-    required: true,
-    enum: ['Superuser', 'Company User', 'Captain', 'Crew']
+    unique: true,
   },
   email: {
     type: String,
     required: true,
-    unique: true
+    unique: true,
   },
-  assignedVessels: [{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Vessel'
-  }]
+  password: {
+    type: String,
+    required: true,
+  },
+  role: {
+    type: String,
+    required: true,
+  },
+  assignedVessels: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Vessel',
+    },
+  ],
+}, {
+  timestamps: true,
 });
 
-// Encrypt password before saving
-userSchema.pre('save', async function(next) {
-  if (!this.isModified('password')) {
-    next();
-  }
-
-  const salt = await bcrypt.genSalt(10);
-  this.password = await bcrypt.hash(this.password, salt);
-  next();
-});
-
-// Match user entered password to hashed password in database
-userSchema.methods.matchPassword = async function(enteredPassword) {
-  const isMatch = await bcrypt.compare(enteredPassword, this.password);
-  console.log(`Password match for ${this.username}: ${isMatch}`); // Debugging log
-  return isMatch;
-};
+// Remove pre-save hook for hashing the password
+// userSchema.pre('save', async function (next) {
+//   if (!this.isModified('password')) {
+//     next();
+//   }
+//   const salt = await bcrypt.genSalt(10);
+//   this.password = await bcrypt.hash(this.password, salt);
+// });
 
 const User = mongoose.model('User', userSchema);
 

@@ -2,6 +2,8 @@ const express = require('express');
 const dotenv = require('dotenv');
 const cors = require('cors');
 const connectDB = require('./db');
+const path = require('path');
+
 const userRoutes = require('./routes/userRoutes');
 const documentRoutes = require('./routes/documentRoutes');
 const chatRoutes = require('./routes/chatRoutes');
@@ -9,10 +11,8 @@ const itemRoutes = require('./routes/itemRoutes');
 const formRoutes = require('./routes/formRoutes');
 const vesselRoutes = require('./routes/vesselRoutes');
 const { notFound, errorHandler } = require('./middleware/errorMiddleware');
-const path = require('path');
 
 dotenv.config();
-
 connectDB();
 
 const app = express();
