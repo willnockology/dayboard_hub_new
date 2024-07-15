@@ -32,6 +32,9 @@ const itemSchema = new mongoose.Schema({
       type: String
     }
   ],
+  pdfPath: {
+    type: String  // Add this line to include pdfPath in the schema
+  },
   vessel: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Vessel',

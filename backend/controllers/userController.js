@@ -1,7 +1,7 @@
 const asyncHandler = require('express-async-handler');
 const jwt = require('jsonwebtoken');
 const User = require('../models/userModel');
-const Vessel = require('../models/vesselModel'); // Import Vessel model
+const Vessel = require('../models/vesselModel');
 const bcrypt = require('bcryptjs');
 
 // Generate JWT Token
@@ -20,25 +20,28 @@ const authUser = asyncHandler(async (req, res) => {
   const user = await User.findOne({ username }).populate('assignedVessels');
 
   if (user) {
-    const isMatch = await bcrypt.compare(password, user.password);
-    console.log(`Password match for ${username}: ${isMatch}`);
-
-    if (isMatch) {
-      res.json({
-        token: generateToken(user._id),
-        user: {
-          id: user._id,
-          username: user.username,
-          role: user.role,
-          email: user.email,
-          firstName: user.firstName,
-          lastName: user.lastName,
-          assignedVessels: user.assignedVessels,
-        },
-      });
-    } else {
-      res.status(401);
-      throw new Error('Invalid username or password');
+    try {
+      const isMatch = await bcrypt.compare(password, user.password);
+      if (isMatch) {
+        res.json({
+          token: generateToken(user._id),
+          user: {
+            id: user._id,
+            username: user.username,
+            role: user.role,
+            email: user.email,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            assignedVessels: user.assignedVessels,
+          },
+        });
+      } else {
+        res.status(401);
+        throw new Error('Invalid username or password');
+      }
+    } catch (error) {
+      res.status(500);
+      throw new Error('Error during password comparison');
     }
   } else {
     res.status(401);
@@ -52,7 +55,6 @@ const authUser = asyncHandler(async (req, res) => {
 const registerUser = asyncHandler(async (req, res) => {
   const { firstName, lastName, username, email, password, role, assignedVessels } = req.body;
 
-  // Check if the required fields are provided
   if (!firstName || !lastName || !username || !email || !password || !role) {
     res.status(400);
     throw new Error('Please fill in all fields');
@@ -65,17 +67,15 @@ const registerUser = asyncHandler(async (req, res) => {
     throw new Error('User already exists');
   }
 
-  // Hash the password before saving
   const salt = await bcrypt.genSalt(10);
   const hashedPassword = await bcrypt.hash(password, salt);
-  console.log(`Hashed password for ${username}: ${hashedPassword}`);
 
   const user = await User.create({
     firstName,
     lastName,
     username,
     email,
-    password: hashedPassword, // Save the hashed password
+    password: hashedPassword,
     role,
     assignedVessels,
   });

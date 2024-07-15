@@ -20,6 +20,7 @@ function DashboardComponent({ setToken }) {
   const [subcategories, setSubcategories] = useState([]);
   const [itemOptions, setItemOptions] = useState([]);
   const [error, setError] = useState('');
+  const [validationErrors, setValidationErrors] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
   const [filterCategory, setFilterCategory] = useState('');
@@ -123,8 +124,24 @@ function DashboardComponent({ setToken }) {
     }));
   };
 
+  const validateForm = () => {
+    const errors = [];
+    if (!newItem.category) errors.push('Category is required');
+    if (newItem.category !== 'Track a Date' && !newItem.subcategory) errors.push('Subcategory is required');
+    if (newItem.category !== 'Track a Date' && !newItem.name) errors.push('Item name is required');
+    if (newItem.category === 'Track a Date' && !newItem.title) errors.push('Title is required');
+    if (!newItem.dueDate) errors.push('Due date is required');
+    if (newItem.category !== 'Track a Date' && !newItem.vessel) errors.push('Vessel is required');
+    return errors;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    const errors = validateForm();
+    if (errors.length > 0) {
+      setValidationErrors(errors);
+      return;
+    }
     try {
       const token = localStorage.getItem('authToken');
       const formData = new FormData();
@@ -137,6 +154,7 @@ function DashboardComponent({ setToken }) {
           formData.append(key, newItem[key]);
         }
       });
+
       const response = await axios.post('http://localhost:5001/api/items', formData, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -156,6 +174,7 @@ function DashboardComponent({ setToken }) {
       });
       setShowForm(false);
       fetchItems();  // Re-fetch items after form submission
+      setValidationErrors([]);  // Clear validation errors
     } catch (error) {
       console.error('Error adding item:', error.response ? error.response.data : error.message);
       setError('Error adding item');
@@ -296,6 +315,15 @@ function DashboardComponent({ setToken }) {
     <div>
       <h1>Dashboard</h1>
       {error && <p>{error}</p>}
+      {validationErrors.length > 0 && (
+        <div className="validation-errors">
+          <ul>
+            {validationErrors.map((error, index) => (
+              <li key={index}>{error}</li>
+            ))}
+          </ul>
+        </div>
+      )}
       <button onClick={() => setShowForm(!showForm)}>
         {showForm ? 'Hide Form' : 'Add New Item'}
       </button>
@@ -496,10 +524,12 @@ function DashboardComponent({ setToken }) {
               <td>
                 {item.category === 'Form or Checklist' ? (
                   item.completed ? (
-                    item.pdfPath && (
+                    item.pdfPath ? (
                       <a href={`http://localhost:5001${item.pdfPath}`} target="_blank" rel="noopener noreferrer">
                         See Attachment
                       </a>
+                    ) : (
+                      'No attachment found'
                     )
                   ) : (
                     <button onClick={() => handleCompleteForm(item)}>

@@ -7,7 +7,7 @@ const documentRoutes = require('./routes/documentRoutes');
 const chatRoutes = require('./routes/chatRoutes');
 const itemRoutes = require('./routes/itemRoutes');
 const formRoutes = require('./routes/formRoutes');
-const vesselRoutes = require('./routes/vesselRoutes'); // Add this line
+const vesselRoutes = require('./routes/vesselRoutes');
 const { notFound, errorHandler } = require('./middleware/errorMiddleware');
 const path = require('path');
 
@@ -36,7 +36,7 @@ console.log('Registering form routes...');
 app.use('/api/forms', formRoutes);
 
 console.log('Registering vessel routes...');
-app.use('/api/vessels', vesselRoutes); // Add this line
+app.use('/api/vessels', vesselRoutes);
 
 // Serve static files from the 'uploads' directory
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));

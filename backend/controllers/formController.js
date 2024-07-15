@@ -1,7 +1,7 @@
 const asyncHandler = require('express-async-handler');
 const FormData = require('../models/formDataModel');
 const FormDefinition = require('../models/formDefinitionModel');
-const Item = require('../models/itemModel');  // Import Item model
+const Item = require('../models/itemModel');
 const PDFDocument = require('pdfkit');
 const fs = require('fs');
 const path = require('path');
@@ -91,6 +91,7 @@ const submitFormData = asyncHandler(async (req, res) => {
     createdFormData.pdfPath = pdfPath;
     createdFormData.completed = true;
     const updatedFormData = await createdFormData.save();
+    console.log('PDF created at path:', pdfPath);
 
     // Update the corresponding item with the pdfPath
     const item = await Item.findById(itemId);
@@ -98,7 +99,7 @@ const submitFormData = asyncHandler(async (req, res) => {
       item.pdfPath = pdfPath;
       item.completed = true;
       const updatedItem = await item.save();
-      console.log('Item updated successfully:', updatedItem);
+      console.log('Item updated successfully with pdfPath:', updatedItem);
     } else {
       console.error('Item not found:', itemId);
     }

@@ -9,6 +9,7 @@ const DynamicFormComponent = () => {
   const [formData, setFormData] = useState({});
   const [error, setError] = useState('');
   const [submissionError, setSubmissionError] = useState('');
+  const [validationErrors, setValidationErrors] = useState([]);
 
   useEffect(() => {
     const fetchFormDefinition = async () => {
@@ -46,9 +47,26 @@ const DynamicFormComponent = () => {
     }));
   };
 
+  const validateForm = () => {
+    const errors = [];
+    formDefinition.fields.forEach((field) => {
+      if (field.required && !formData[field.field_name]) {
+        errors.push(`${field.field_title} is required`);
+      }
+    });
+    setValidationErrors(errors);
+    return errors.length === 0;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSubmissionError('');
+    setValidationErrors([]);
+
+    if (!validateForm()) {
+      return;
+    }
+
     try {
       const token = localStorage.getItem('authToken');
       const userJson = localStorage.getItem('user');
@@ -161,6 +179,16 @@ const DynamicFormComponent = () => {
           </div>
         ))}
         <button type="submit">Submit</button>
+        {validationErrors.length > 0 && (
+          <div style={{ color: 'red' }}>
+            <p>It looks like you've missed a few required fields. Here are the fields that need to be completed before you submit:</p>
+            <ul>
+              {validationErrors.map((error, index) => (
+                <li key={index}>{error}</li>
+              ))}
+            </ul>
+          </div>
+        )}
         {submissionError && <div style={{ color: 'red' }}>{submissionError}</div>}
       </form>
     </div>
