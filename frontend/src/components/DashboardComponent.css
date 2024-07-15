@@ -2,9 +2,11 @@
   padding: 20px;
 }
 
+/* Ensure the H1 is fully visible below the navbar */
 .dashboard-header {
   text-align: left;
   margin-bottom: 20px;
+  margin-top: 60px; /* Adjust this value as needed to clear the navbar */
 }
 
 .new-item-container {
@@ -65,6 +67,12 @@ tr:nth-child(even) {
 
 tr:hover {
   background-color: #ddd;
+}
+
+/* Completed row styling */
+.completed-row {
+  background-color: lightblue !important; /* Light blue background for completed rows */
+  color: grey !important; /* Grey text color for completed rows */
 }
 
 .status-dot {

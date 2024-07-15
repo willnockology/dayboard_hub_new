@@ -28,6 +28,7 @@ function DashboardComponent({ setToken }) {
   const [vessels, setVessels] = useState([]);
   const [selectedVessel, setSelectedVessel] = useState('');
   const [role, setRole] = useState('');
+  const [showCompleted, setShowCompleted] = useState(true); // State for toggle filter
   const history = useHistory();
 
   const fetchItems = async () => {
@@ -197,15 +198,20 @@ function DashboardComponent({ setToken }) {
     }
   };
 
-  const calculateStatusColor = (dueDate) => {
-    if (!dueDate) return 'gray';
-    const due = new Date(dueDate);
-    const now = new Date();
-    if (due < now) return 'red';
-    const diffTime = Math.abs(due - now);
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    if (diffDays <= 7) return 'orange';
-    return 'green';
+  const calculateStatusColor = (item) => {
+    if (item.completed && item.pdfPath) {
+      return 'blue'; // Color for completed forms with attachments
+    }
+    // Existing logic for calculating status color based on due date
+    const dueDate = new Date(item.dueDate);
+    const currentDate = new Date();
+    if (dueDate < currentDate) {
+      return 'red';
+    } else if (dueDate < new Date(currentDate.getTime() + 7 * 24 * 60 * 60 * 1000)) {
+      return 'orange';
+    } else {
+      return 'green';
+    }
   };
 
   const handleCompleteForm = (item) => {
@@ -240,6 +246,9 @@ function DashboardComponent({ setToken }) {
     }
     if ((role === 'Company User' || role === 'Superuser') && selectedVessel) {
       filteredItems = filteredItems.filter(item => item.vessel && item.vessel._id === selectedVessel);
+    }
+    if (!showCompleted) {
+      filteredItems = filteredItems.filter(item => !(item.completed && item.pdfPath));
     }
     if (!sortConfig.key) return filteredItems;
     return [...filteredItems].sort((a, b) => {
@@ -312,8 +321,8 @@ function DashboardComponent({ setToken }) {
   };
 
   return (
-    <div>
-      <h1>Dashboard</h1>
+    <div className="dashboard-container">
+      <h1 className="dashboard-header">Dashboard</h1>
       {error && <p>{error}</p>}
       {validationErrors.length > 0 && (
         <div className="validation-errors">
@@ -328,7 +337,7 @@ function DashboardComponent({ setToken }) {
         {showForm ? 'Hide Form' : 'Add New Item'}
       </button>
       {showForm && (
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} className="new-item-form">
           <select
             name="category"
             value={newItem.category}
@@ -465,6 +474,14 @@ function DashboardComponent({ setToken }) {
             ))}
           </select>
         )}
+        <label>
+          <input
+            type="checkbox"
+            checked={showCompleted}
+            onChange={() => setShowCompleted(!showCompleted)}
+          />
+          Show Completed
+        </label>
         <button onClick={handleClearFilters}>Clear Filters</button>
       </div>
       <table>
@@ -508,50 +525,59 @@ function DashboardComponent({ setToken }) {
           </tr>
         </thead>
         <tbody>
-          {sortedItems().map((item) => (
-            <tr key={item._id}>
-              {(role === 'Company User' || role === 'Superuser') && <td>{item.vessel ? item.vessel.name : 'N/A'}</td>}
-              <td>{item.name || item.title}</td>
-              <td>{item.category}</td>
-              <td>{item.subcategory || 'N/A'}</td>
-              <td>{item.dueDate ? item.dueDate.split('T')[0] : 'N/A'}</td>
-              <td>
-                <span
-                  className="status-dot"
-                  style={{ backgroundColor: calculateStatusColor(item.dueDate) }}
-                ></span>
-              </td>
-              <td>
-                {item.category === 'Form or Checklist' ? (
-                  item.completed ? (
-                    item.pdfPath ? (
-                      <a href={`http://localhost:5001${item.pdfPath}`} target="_blank" rel="noopener noreferrer">
-                        See Attachment
-                      </a>
-                    ) : (
-                      'No attachment found'
-                    )
+          {sortedItems().map((item) => {
+            const isCompleted = item.completed && item.pdfPath;
+            return (
+              <tr key={item._id} className={isCompleted ? 'completed-row' : ''}>
+                {(role === 'Company User' || role === 'Superuser') && <td>{item.vessel ? item.vessel.name : 'N/A'}</td>}
+                <td>{item.name || item.title}</td>
+                <td>{item.category}</td>
+                <td>{item.subcategory || 'N/A'}</td>
+                <td>
+                  {isCompleted ? (
+                    'Completed'
                   ) : (
-                    <button onClick={() => handleCompleteForm(item)}>
-                      Complete Form
-                    </button>
-                  )
-                ) : item.attachments.length > 0 ? (
-                  item.attachments.map((attachment, index) => (
-                    <a key={index} href={`http://localhost:5001/uploads/${attachment}`} target="_blank" rel="noopener noreferrer">
-                      View Attachment
-                    </a>
-                  ))
-                ) : (
-                  'N/A'
-                )}
-              </td>
-              <td>{item.updatedAt ? formatDate(item.updatedAt) : 'N/A'}</td>
-              <td>
-                <button onClick={() => handleDelete(item._id)}>Delete</button>
-              </td>
-            </tr>
-          ))}
+                    item.dueDate ? item.dueDate.split('T')[0] : 'N/A'
+                  )}
+                </td>
+                <td>
+                  <span
+                    className="status-dot"
+                    style={{ backgroundColor: calculateStatusColor(item) }}
+                  ></span>
+                </td>
+                <td>
+                  {item.category === 'Form or Checklist' ? (
+                    item.completed ? (
+                      item.pdfPath ? (
+                        <a href={`http://localhost:5001${item.pdfPath}`} target="_blank" rel="noopener noreferrer">
+                          See Attachment
+                        </a>
+                      ) : (
+                        'No attachment found'
+                      )
+                    ) : (
+                      <button onClick={() => handleCompleteForm(item)}>
+                        Complete Form
+                      </button>
+                    )
+                  ) : item.attachments.length > 0 ? (
+                    item.attachments.map((attachment, index) => (
+                      <a key={index} href={`http://localhost:5001/uploads/${attachment}`} target="_blank" rel="noopener noreferrer">
+                        View Attachment
+                      </a>
+                    ))
+                  ) : (
+                    'N/A'
+                  )}
+                </td>
+                <td>{item.updatedAt ? formatDate(item.updatedAt) : 'N/A'}</td>
+                <td>
+                  <button onClick={() => handleDelete(item._id)}>Delete</button>
+                </td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
     </div>
