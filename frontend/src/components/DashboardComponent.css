@@ -89,6 +89,60 @@ td p {
   margin: 2px 0;
 }
 
+/* Filter container styling */
+.filters {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.filters select,
+.filters input[type="checkbox"] {
+  padding: 5px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.filters label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.filters .show-completed {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+}
+
+.filters .show-completed label {
+  gap: 5px;
+}
+
+.filters button {
+  padding: 5px 10px;
+  background-color: #004e7d;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.filters button:hover {
+  background-color: #00334d;
+}
+
+/* Add margin below the button */
+.button-and-filters {
+  margin-bottom: 20px;
+}
+
+.button-and-filters button {
+  margin-bottom: 10px;
+}
+
 @media (max-width: 768px) {
   th, td {
     padding: 5px;

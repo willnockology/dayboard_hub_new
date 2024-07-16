@@ -305,6 +305,7 @@ function DashboardComponent({ setToken }) {
     const [day, month, year, time] = formattedDate.split(' ');
     return (
       <div className="date-time">
+        <p>Added on</p>
         <p>{`${day} ${month} ${year}`}</p>
         <p>at {time}</p>
       </div>
@@ -342,9 +343,61 @@ function DashboardComponent({ setToken }) {
           </ul>
         </div>
       )}
-      <button onClick={() => setShowForm(!showForm)}>
-        {showForm ? 'Hide Form' : 'Add New Item'}
-      </button>
+      <div className="button-and-filters">
+        <button onClick={() => setShowForm(!showForm)}>
+          {showForm ? 'Hide Form' : 'Add New Item'}
+        </button>
+      </div>
+      <div className="filters">
+        <select
+          name="filterVessel"
+          value={selectedVessel}
+          onChange={(e) => setSelectedVessel(e.target.value)}
+        >
+          <option value="">Filter by Vessel</option>
+          {getAvailableVessels().map((vessel) => (
+            <option key={vessel._id} value={vessel._id}>
+              {vessel.name}
+            </option>
+          ))}
+        </select>
+        <select
+          name="filterCategory"
+          value={filterCategory}
+          onChange={handleFilterCategoryChange}
+        >
+          <option value="">Filter by Category</option>
+          {getAvailableCategories().map((category, index) => (
+            <option key={index} value={category}>
+              {category}
+            </option>
+          ))}
+        </select>
+        <select
+          name="filterSubcategory"
+          value={filterSubcategory}
+          onChange={handleFilterSubcategoryChange}
+          disabled={!filterCategory}
+        >
+          <option value="">Filter by Subcategory</option>
+          {getAvailableSubcategories().map((subcategory, index) => (
+            <option key={index} value={subcategory}>
+              {subcategory}
+            </option>
+          ))}
+        </select>
+        <button onClick={handleClearFilters}>Clear Filters</button>
+        <div className="show-completed">
+          <label>
+            Show Completed
+            <input
+              type="checkbox"
+              checked={showCompleted}
+              onChange={() => setShowCompleted(!showCompleted)}
+            />
+          </label>
+        </div>
+      </div>
       {showForm && (
         <form onSubmit={handleSubmit} className="new-item-form">
           <select
@@ -443,56 +496,6 @@ function DashboardComponent({ setToken }) {
           <button type="submit">Add Item</button>
         </form>
       )}
-      <div className="filters">
-        <select
-          name="filterCategory"
-          value={filterCategory}
-          onChange={handleFilterCategoryChange}
-        >
-          <option value="">Filter by Category</option>
-          {getAvailableCategories().map((category, index) => (
-            <option key={index} value={category}>
-              {category}
-            </option>
-          ))}
-        </select>
-        <select
-          name="filterSubcategory"
-          value={filterSubcategory}
-          onChange={handleFilterSubcategoryChange}
-          disabled={!filterCategory}
-        >
-          <option value="">Filter by Subcategory</option>
-          {getAvailableSubcategories().map((subcategory, index) => (
-            <option key={index} value={subcategory}>
-              {subcategory}
-            </option>
-          ))}
-        </select>
-        {(role === 'Company User' || role === 'Superuser') && (
-          <select
-            name="filterVessel"
-            value={selectedVessel}
-            onChange={(e) => setSelectedVessel(e.target.value)}
-          >
-            <option value="">Filter by Vessel</option>
-            {getAvailableVessels().map((vessel) => (
-              <option key={vessel._id} value={vessel._id}>
-                {vessel.name}
-              </option>
-            ))}
-          </select>
-        )}
-        <label>
-          <input
-            type="checkbox"
-            checked={showCompleted}
-            onChange={() => setShowCompleted(!showCompleted)}
-          />
-          Show Completed
-        </label>
-        <button onClick={handleClearFilters}>Clear Filters</button>
-      </div>
       <table>
         <thead>
           <tr>
