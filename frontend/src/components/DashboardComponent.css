@@ -54,7 +54,7 @@ th, td {
   border: 1px solid #ddd;
   padding: 8px;
   text-align: center;
-  vertical-align: top; /* Ensures that content is aligned to the top of the cell */
+  vertical-align: middle; /* Centers content vertically */
 }
 
 th {

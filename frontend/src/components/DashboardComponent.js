@@ -305,7 +305,6 @@ function DashboardComponent({ setToken }) {
     const [day, month, year, time] = formattedDate.split(' ');
     return (
       <div className="date-time">
-        <p>Added on</p>
         <p>{`${day} ${month} ${year}`}</p>
         <p>at {time}</p>
       </div>
