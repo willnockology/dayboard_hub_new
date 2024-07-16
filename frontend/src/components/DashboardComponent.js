@@ -301,7 +301,14 @@ function DashboardComponent({ setToken }) {
   const formatDate = (dateString) => {
     const date = new Date(dateString);
     const options = { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' };
-    return date.toLocaleString('en-GB', options).replace(',', '');
+    const formattedDate = date.toLocaleString('en-GB', options).replace(',', '');
+    const [day, month, year, time] = formattedDate.split(' ');
+    return (
+      <div className="date-time">
+        <p>{`${day} ${month} ${year}`}</p>
+        <p>at {time}</p>
+      </div>
+    );
   };
 
   const getAvailableCategories = () => {
@@ -573,7 +580,9 @@ function DashboardComponent({ setToken }) {
                     'N/A'
                   )}
                 </td>
-                <td>{item.updatedAt ? formatDate(item.updatedAt) : 'N/A'}</td>
+                <td>
+                  {item.updatedAt ? formatDate(item.updatedAt) : 'N/A'}
+                </td>
                 <td>
                   <button onClick={() => handleDelete(item._id)}>
                     <FontAwesomeIcon icon={faTrashAlt} />

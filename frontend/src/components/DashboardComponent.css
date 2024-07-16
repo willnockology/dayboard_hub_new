@@ -54,6 +54,7 @@ th, td {
   border: 1px solid #ddd;
   padding: 8px;
   text-align: center;
+  vertical-align: top; /* Ensures that content is aligned to the top of the cell */
 }
 
 th {
@@ -80,6 +81,12 @@ tr:hover {
   width: 15px;
   border-radius: 50%;
   display: inline-block;
+}
+
+/* New class for date and time formatting */
+td p {
+  line-height: 1.2;
+  margin: 2px 0;
 }
 
 @media (max-width: 768px) {
