@@ -6,7 +6,7 @@ import './DashboardComponent.css';
 import data from './formData';
 import formMappings from '../data/formMappings';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faTrashAlt, faComments } from '@fortawesome/free-solid-svg-icons';
+import { faTrashAlt, faComments, faPaperclip } from '@fortawesome/free-solid-svg-icons';
 
 function DashboardComponent({ setToken }) {
   const [items, setItems] = useState([]);
@@ -31,7 +31,7 @@ function DashboardComponent({ setToken }) {
   const [vessels, setVessels] = useState([]);
   const [selectedVessel, setSelectedVessel] = useState('');
   const [role, setRole] = useState('');
-  const [showCompleted, setShowCompleted] = useState(true); // State for toggle filter
+  const [completionFilter, setCompletionFilter] = useState('Show Completed'); // State for dropdown filter
   const [showChat, setShowChat] = useState(null); // State to toggle chat visibility
   const history = useHistory();
 
@@ -251,11 +251,22 @@ function DashboardComponent({ setToken }) {
     if ((role === 'Company User' || role === 'Superuser') && selectedVessel) {
       filteredItems = filteredItems.filter(item => item.vessel && item.vessel._id === selectedVessel);
     }
-    if (!showCompleted) {
+
+    // Handle completion filter
+    if (completionFilter === 'Do Not Show Completed') {
       filteredItems = filteredItems.filter(item => !(item.completed && item.pdfPath));
+    } else if (completionFilter === 'Only Show Completed') {
+      filteredItems = filteredItems.filter(item => item.completed && item.pdfPath);
     }
+
     if (!sortConfig.key) return filteredItems;
     return [...filteredItems].sort((a, b) => {
+      if (sortConfig.key === 'dueDate') {
+        const aCompleted = a.completed && a.pdfPath;
+        const bCompleted = b.completed && b.pdfPath;
+        if (aCompleted && !bCompleted) return 1;
+        if (!aCompleted && bCompleted) return -1;
+      }
       const aValue = sortConfig.key === 'submitted' ? new Date(a.updatedAt) : a[sortConfig.key] || '';
       const bValue = sortConfig.key === 'submitted' ? new Date(b.updatedAt) : b[sortConfig.key] || '';
       if (sortConfig.direction === 'asc') {
@@ -298,11 +309,18 @@ function DashboardComponent({ setToken }) {
     setFilterCategory('');
     setFilterSubcategory('');
     setSelectedVessel('');
+    setCompletionFilter('Show Completed');
   };
 
-  const formatDate = (dateString) => {
+  const formatDueExpiryDate = (dateString) => {
     const date = new Date(dateString);
-    const options = { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' };
+    const options = { day: '2-digit', month: 'long', year: 'numeric' };
+    return date.toLocaleDateString('en-GB', options).replace(/ /g, ' ');
+  };
+
+  const formatSubmittedDate = (dateString) => {
+    const date = new Date(dateString);
+    const options = { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' };
     const formattedDate = date.toLocaleString('en-GB', options).replace(',', '');
     const [day, month, year, time] = formattedDate.split(' ');
     return (
@@ -391,17 +409,16 @@ function DashboardComponent({ setToken }) {
             </option>
           ))}
         </select>
+        <select
+          name="completionFilter"
+          value={completionFilter}
+          onChange={(e) => setCompletionFilter(e.target.value)}
+        >
+          <option value="Show Completed">Show Completed</option>
+          <option value="Do Not Show Completed">Do Not Show Completed</option>
+          <option value="Only Show Completed">Only Show Completed</option>
+        </select>
         <button onClick={handleClearFilters}>Clear Filters</button>
-        <div className="show-completed">
-          <label>
-            Show Completed
-            <input
-              type="checkbox"
-              checked={showCompleted}
-              onChange={() => setShowCompleted(!showCompleted)}
-            />
-          </label>
-        </div>
       </div>
       {showForm && (
         <form onSubmit={handleSubmit} className="new-item-form">
@@ -538,6 +555,9 @@ function DashboardComponent({ setToken }) {
                 Submitted {sortConfig.key === 'submitted' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
               </button>
             </th>
+            <th>
+              <FontAwesomeIcon icon={faPaperclip} />
+            </th>
             <th>Actions</th>
           </tr>
         </thead>
@@ -556,7 +576,7 @@ function DashboardComponent({ setToken }) {
                     {isCompleted ? (
                       'Completed'
                     ) : (
-                      item.dueDate ? item.dueDate.split('T')[0] : 'N/A'
+                      item.dueDate ? formatDueExpiryDate(item.dueDate) : 'N/A'
                     )}
                   </td>
                   <td>
@@ -591,7 +611,14 @@ function DashboardComponent({ setToken }) {
                     )}
                   </td>
                   <td>
-                    {item.updatedAt ? formatDate(item.updatedAt) : 'N/A'}
+                    {item.updatedAt ? formatSubmittedDate(item.updatedAt) : 'N/A'}
+                  </td>
+                  <td>
+                    {item.attachments && item.attachments.length > 0 ? (
+                      <FontAwesomeIcon icon={faPaperclip} />
+                    ) : (
+                      ''
+                    )}
                   </td>
                   <td>
                     <button onClick={() => handleDelete(item._id)}>
@@ -607,7 +634,7 @@ function DashboardComponent({ setToken }) {
                 </tr>
                 {showChatForItem && (
                   <tr key={`chat-${item._id}`} className="chat-row">
-                    <td colSpan="9">
+                    <td colSpan="10">
                       <ChatComponent documentId={item._id} itemName={item.name || item.title} /> {/* Pass the item name to ChatComponent */}
                     </td>
                   </tr>
