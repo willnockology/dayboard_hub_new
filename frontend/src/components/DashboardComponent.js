@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useHistory } from 'react-router-dom';
+import ChatComponent from './ChatComponent'; // Import the ChatComponent
 import './DashboardComponent.css';
 import data from './formData';
 import formMappings from '../data/formMappings';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faTrashAlt } from '@fortawesome/free-solid-svg-icons';
+import { faTrashAlt, faComments } from '@fortawesome/free-solid-svg-icons';
 
 function DashboardComponent({ setToken }) {
   const [items, setItems] = useState([]);
@@ -31,6 +32,7 @@ function DashboardComponent({ setToken }) {
   const [selectedVessel, setSelectedVessel] = useState('');
   const [role, setRole] = useState('');
   const [showCompleted, setShowCompleted] = useState(true); // State for toggle filter
+  const [showChat, setShowChat] = useState(null); // State to toggle chat visibility
   const history = useHistory();
 
   const fetchItems = async () => {
@@ -329,6 +331,10 @@ function DashboardComponent({ setToken }) {
     return vessels.filter(vessel => vesselIds.includes(vessel._id));
   };
 
+  const handleToggleChat = (itemId) => {
+    setShowChat(showChat === itemId ? null : itemId);
+  };
+
   return (
     <div className="dashboard-container">
       <h1 className="dashboard-header">Dashboard</h1>
@@ -538,59 +544,75 @@ function DashboardComponent({ setToken }) {
         <tbody>
           {sortedItems().map((item) => {
             const isCompleted = item.completed && item.pdfPath;
+            const showChatForItem = showChat === item._id;
             return (
-              <tr key={item._id} className={isCompleted ? 'completed-row' : ''}>
-                {(role === 'Company User' || role === 'Superuser') && <td>{item.vessel ? item.vessel.name : 'N/A'}</td>}
-                <td>{item.name || item.title}</td>
-                <td>{item.category}</td>
-                <td>{item.subcategory || 'N/A'}</td>
-                <td>
-                  {isCompleted ? (
-                    'Completed'
-                  ) : (
-                    item.dueDate ? item.dueDate.split('T')[0] : 'N/A'
-                  )}
-                </td>
-                <td>
-                  <span
-                    className="status-dot"
-                    style={{ backgroundColor: calculateStatusColor(item) }}
-                  ></span>
-                </td>
-                <td>
-                  {item.category === 'Form or Checklist' ? (
-                    item.completed ? (
-                      item.pdfPath ? (
-                        <a href={`http://localhost:5001${item.pdfPath}`} target="_blank" rel="noopener noreferrer">
-                          See Attachment
-                        </a>
-                      ) : (
-                        'No attachment found'
-                      )
+              <React.Fragment key={item._id}>
+                <tr className={isCompleted ? 'completed-row' : ''}>
+                  {(role === 'Company User' || role === 'Superuser') && <td>{item.vessel ? item.vessel.name : 'N/A'}</td>}
+                  <td>{item.name || item.title}</td>
+                  <td>{item.category}</td>
+                  <td>{item.subcategory || 'N/A'}</td>
+                  <td>
+                    {isCompleted ? (
+                      'Completed'
                     ) : (
-                      <button onClick={() => handleCompleteForm(item)}>
-                        Complete Form
-                      </button>
-                    )
-                  ) : item.attachments.length > 0 ? (
-                    item.attachments.map((attachment, index) => (
-                      <a key={index} href={`http://localhost:5001/uploads/${attachment}`} target="_blank" rel="noopener noreferrer">
-                        View Attachment
-                      </a>
-                    ))
-                  ) : (
-                    'N/A'
-                  )}
-                </td>
-                <td>
-                  {item.updatedAt ? formatDate(item.updatedAt) : 'N/A'}
-                </td>
-                <td>
-                  <button onClick={() => handleDelete(item._id)}>
-                    <FontAwesomeIcon icon={faTrashAlt} />
-                  </button>
-                </td>
-              </tr>
+                      item.dueDate ? item.dueDate.split('T')[0] : 'N/A'
+                    )}
+                  </td>
+                  <td>
+                    <span
+                      className="status-dot"
+                      style={{ backgroundColor: calculateStatusColor(item) }}
+                    ></span>
+                  </td>
+                  <td>
+                    {item.category === 'Form or Checklist' ? (
+                      item.completed ? (
+                        item.pdfPath ? (
+                          <a href={`http://localhost:5001${item.pdfPath}`} target="_blank" rel="noopener noreferrer">
+                            See Attachment
+                          </a>
+                        ) : (
+                          'No attachment found'
+                        )
+                      ) : (
+                        <button onClick={() => handleCompleteForm(item)}>
+                          Complete Form
+                        </button>
+                      )
+                    ) : item.attachments.length > 0 ? (
+                      item.attachments.map((attachment, index) => (
+                        <a key={index} href={`http://localhost:5001/uploads/${attachment}`} target="_blank" rel="noopener noreferrer">
+                          View Attachment
+                        </a>
+                      ))
+                    ) : (
+                      'N/A'
+                    )}
+                  </td>
+                  <td>
+                    {item.updatedAt ? formatDate(item.updatedAt) : 'N/A'}
+                  </td>
+                  <td>
+                    <button onClick={() => handleDelete(item._id)}>
+                      <FontAwesomeIcon icon={faTrashAlt} />
+                    </button>
+                    <button
+                      onClick={() => handleToggleChat(item._id)}
+                      style={{ color: showChatForItem ? 'black' : 'white' }} // Change color to black when chat is open
+                    >
+                      <FontAwesomeIcon icon={faComments} />
+                    </button>
+                  </td>
+                </tr>
+                {showChatForItem && (
+                  <tr key={`chat-${item._id}`} className="chat-row">
+                    <td colSpan="9">
+                      <ChatComponent documentId={item._id} itemName={item.name || item.title} /> {/* Pass the item name to ChatComponent */}
+                    </td>
+                  </tr>
+                )}
+              </React.Fragment>
             );
           })}
         </tbody>

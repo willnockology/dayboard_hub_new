@@ -179,3 +179,14 @@ td p {
   td:nth-of-type(6):before { content: "Details"; }
   td:nth-of-type(7):before { content: "Actions"; }
 }
+
+/* Chat row styling */
+.chat-row td {
+  padding: 0;
+  background-color: #f9f9f9;
+}
+
+.chat-container {
+  padding: 10px;
+  border-top: 1px solid #ddd;
+}

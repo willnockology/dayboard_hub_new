@@ -1,11 +1,9 @@
 const express = require('express');
 const { protect } = require('../middleware/authMiddleware');
-const Chat = require('../models/chatModel'); // Correct path to Chat model
+const { createChat, getChats } = require('../controllers/chatController');
 const router = express.Router();
 
-// Add your chat-related routes here
-router.get('/:documentId', protect, (req, res) => {
-  // Fetch chat messages for the document and respond
-});
+router.post('/', protect, createChat);
+router.get('/:documentId', protect, getChats);
 
 module.exports = router;
