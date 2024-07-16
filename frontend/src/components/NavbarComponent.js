@@ -26,6 +26,8 @@ const NavbarComponent = ({ setToken }) => {
         <div className="navbar-brand">Dayboard Hub</div>
         <button className="navbar-toggle" onClick={toggleMenu}>
           <span className="navbar-toggle-icon"></span>
+          <span className="navbar-toggle-icon"></span>
+          <span className="navbar-toggle-icon"></span>
         </button>
         <div className={`navbar-menu ${isOpen ? 'is-active' : ''}`}>
           <ul>

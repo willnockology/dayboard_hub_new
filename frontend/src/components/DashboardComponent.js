@@ -4,6 +4,8 @@ import { useHistory } from 'react-router-dom';
 import './DashboardComponent.css';
 import data from './formData';
 import formMappings from '../data/formMappings';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faTrashAlt } from '@fortawesome/free-solid-svg-icons';
 
 function DashboardComponent({ setToken }) {
   const [items, setItems] = useState([]);
@@ -573,7 +575,9 @@ function DashboardComponent({ setToken }) {
                 </td>
                 <td>{item.updatedAt ? formatDate(item.updatedAt) : 'N/A'}</td>
                 <td>
-                  <button onClick={() => handleDelete(item._id)}>Delete</button>
+                  <button onClick={() => handleDelete(item._id)}>
+                    <FontAwesomeIcon icon={faTrashAlt} />
+                  </button>
                 </td>
               </tr>
             );

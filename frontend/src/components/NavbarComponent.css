@@ -1,33 +1,99 @@
+/* General styles */
 .navbar {
+  background-color: #004e7d;
+  padding: 10px;
+}
+
+.navbar-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.navbar-brand {
+  color: white;
+  font-size: 24px;
+}
+
+.navbar-menu {
+  display: flex;
+  list-style-type: none;
+  margin: 0;
+  padding: 0;
+  gap: 20px;
+}
+
+.navbar-menu ul {
+  display: flex;
+  gap: 20px;
+}
+
+.navbar-menu li {
+  display: inline;
+}
+
+.navbar-menu a, .navbar-menu button {
+  color: white;
+  text-decoration: none;
+  padding: 10px 20px;
+}
+
+.navbar-menu button {
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.navbar-menu a:hover, .navbar-menu button:hover {
+  background-color: #00334d;
+}
+
+/* Hamburger menu */
+.navbar-toggle {
+  display: none;
+  flex-direction: column;
+  cursor: pointer;
+  gap: 5px;
+}
+
+.navbar-toggle-icon {
+  width: 25px;
+  height: 3px;
+  background-color: white;
+}
+
+/* Media queries for responsiveness */
+@media (max-width: 768px) {
+  .navbar-menu {
+    display: none;
+    flex-direction: column;
+    width: 100%;
     background-color: #004e7d;
-    padding: 10px;
+    position: absolute;
+    top: 60px;
+    left: 0;
   }
-  
-  .navbar ul {
-    list-style-type: none;
-    margin: 0;
-    padding: 0;
+
+  .navbar-menu.is-active {
     display: flex;
-    justify-content: space-around;
   }
-  
-  .navbar ul li {
-    display: inline;
+
+  .navbar-toggle {
+    display: flex;
   }
-  
-  .navbar ul li a, .navbar ul li button {
-    color: white;
-    text-decoration: none;
-    padding: 10px 20px;
+
+  .navbar-menu ul {
+    flex-direction: column;
+    gap: 0;
   }
-  
-  .navbar ul li button {
-    background: none;
-    border: none;
-    cursor: pointer;
+
+  .navbar-menu li {
+    text-align: center;
+    width: 100%;
   }
-  
-  .navbar ul li a:hover, .navbar ul li button:hover {
-    background-color: #00334d;
+
+  .navbar-menu a, .navbar-menu button {
+    width: 100%;
+    padding: 15px 0;
   }
-  
+}
