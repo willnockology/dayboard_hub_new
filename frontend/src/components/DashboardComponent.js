@@ -29,7 +29,7 @@ function DashboardComponent({ setToken }) {
     attachments: [],
     title: '',
     vessel: '',
-    role: ''
+    role: ''  // Ensure role is part of the state
   });
   const [subcategories, setSubcategories] = useState([]);
   const [itemOptions, setItemOptions] = useState([]);
@@ -105,7 +105,7 @@ function DashboardComponent({ setToken }) {
       ...prevItem,
       [name]: value,
     }));
-
+  
     if (name === 'category') {
       const selectedCategory = data.categories.find((cat) => cat.name === value);
       setSubcategories(data.subCategories.filter((sub) => sub.categoryId === selectedCategory?.id));
@@ -114,12 +114,13 @@ function DashboardComponent({ setToken }) {
         ...prevItem,
         subcategory: '',
         name: '',
+        customName: '',  // Reset custom name
       }));
     } else if (name === 'subcategory') {
       const selectedSubcategory = data.subCategories.find((sub) => sub.name === value);
       setItemOptions(data.items.filter((item) => item.subCategoryId === selectedSubcategory?.id));
     }
-  };
+  };  
 
   const handleFileChange = (e) => {
     const files = Array.from(e.target.files);
@@ -133,7 +134,7 @@ function DashboardComponent({ setToken }) {
     const errors = [];
     if (!newItem.category) errors.push('Category is required');
     if ((newItem.category === 'Form or Checklist' || newItem.category === 'Document') && !newItem.subcategory) errors.push('Subcategory is required');
-    if ((newItem.category === 'Form or Checklist' || newItem.category === 'Document') && !newItem.name) errors.push('Item name is required');
+    if ((newItem.category === 'Form or Checklist' || newItem.category === 'Document') && !newItem.name && !newItem.customName) errors.push('Item name is required');
     if (newItem.category === 'Track a Date' && !newItem.title) errors.push('Title is required');
     if (!newItem.dueDate) errors.push('Due date is required');
     if (!newItem.vessel && (role === 'Superuser' || role === 'Company User')) errors.push('Vessel is required');
@@ -156,11 +157,12 @@ function DashboardComponent({ setToken }) {
       formData.append('category', newItem.category);
       formData.append('dueDate', newItem.dueDate);
       formData.append('vessel', newItem.vessel);
-      formData.append('role', newItem.role); // Include the role in the formData
+      formData.append('role', newItem.role);  // Include role
 
       // Conditionally add fields based on category
       if (newItem.category === 'Form or Checklist' || newItem.category === 'Document') {
-        formData.append('name', newItem.name);
+        const itemName = newItem.name === 'custom' ? newItem.customName : newItem.name;
+        formData.append('name', itemName);
         formData.append('subcategory', newItem.subcategory);
       }
 
@@ -189,7 +191,8 @@ function DashboardComponent({ setToken }) {
         attachments: [],
         title: '',
         vessel: '',
-        role: ''
+        customName: '',  // Reset custom name
+        role: newItem.role  // Retain role
       });
       setShowForm(false);
       fetchItems();
@@ -455,13 +458,24 @@ function DashboardComponent({ setToken }) {
                       {item.name}
                     </option>
                   ))}
+                  <option value="custom">Custom</option>
                 </select>
+                {newItem.name === 'custom' && (
+                  <input  
+                    type="text"
+                    name="customName"
+                    value={newItem.customName}
+                    onChange={handleInputChange}
+                    placeholder="Enter custom item name"
+                    maxLength="75"
+                  />
+                )}
                 <input
                   type="date"
                   name="dueDate"
                   value={newItem.dueDate}
                   onChange={handleInputChange}
-                  style={{ display: newItem.name ? 'block' : 'none' }}
+                  style={{ display: newItem.name || newItem.customName ? 'block' : 'none' }}
                 />
                 {newItem.category === 'Document' && (
                   <input
@@ -473,7 +487,7 @@ function DashboardComponent({ setToken }) {
                   />
                 )}
                 {newItem.category === 'Form or Checklist' && role !== 'Superuser' && role !== 'Company User' && (
-                  <div style={{ display: newItem.name ? 'block' : 'none' }}>
+                  <div style={{ display: newItem.name || newItem.customName ? 'block' : 'none' }}>
                     <label>
                       <input
                         type="radio"

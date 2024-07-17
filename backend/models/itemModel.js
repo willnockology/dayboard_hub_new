@@ -3,9 +3,7 @@ const mongoose = require('mongoose');
 const itemSchema = new mongoose.Schema({
   name: {
     type: String,
-    required: function() {
-      return this.category === 'Form or Checklist' || this.category === 'Document';
-    }
+    required: true
   },
   category: {
     type: String,
@@ -13,9 +11,7 @@ const itemSchema = new mongoose.Schema({
   },
   subcategory: {
     type: String,
-    required: function() {
-      return this.category === 'Form or Checklist' || this.category === 'Document';
-    }
+    required: true
   },
   dueDate: {
     type: Date,
@@ -37,7 +33,7 @@ const itemSchema = new mongoose.Schema({
     }
   ],
   pdfPath: {
-    type: String  // Add this line to include pdfPath in the schema
+    type: String
   },
   vessel: {
     type: mongoose.Schema.Types.ObjectId,
