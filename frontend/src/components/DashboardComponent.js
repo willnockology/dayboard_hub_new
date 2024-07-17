@@ -1,5 +1,3 @@
-// Path: frontend/src/components/DashboardComponent.js
-
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useHistory } from 'react-router-dom';
@@ -45,7 +43,7 @@ function DashboardComponent({ setToken }) {
   const [vessels, setVessels] = useState([]);
   const [selectedVessel, setSelectedVessel] = useState('');
   const [role, setRole] = useState('');
-  const [showCompleted, setShowCompleted] = useState(true); // State for toggle filter
+  const [completedFilter, setCompletedFilter] = useState('showAll'); // State for completed filter
   const [showChat, setShowChat] = useState(null); // State to toggle chat visibility
   const history = useHistory();
 
@@ -265,13 +263,25 @@ function DashboardComponent({ setToken }) {
     if ((role === 'Company User' || role === 'Superuser') && selectedVessel) {
       filteredItems = filteredItems.filter(item => item.vessel && item.vessel._id === selectedVessel);
     }
-    if (!showCompleted) {
+    if (completedFilter === 'showCompleted') {
+      filteredItems = filteredItems.filter(item => item.completed && item.pdfPath);
+    } else if (completedFilter === 'doNotShowCompleted') {
       filteredItems = filteredItems.filter(item => !(item.completed && item.pdfPath));
     }
     if (!sortConfig.key) return filteredItems;
     return [...filteredItems].sort((a, b) => {
-      const aValue = sortConfig.key === 'submitted' ? new Date(a.updatedAt) : a[sortConfig.key] || '';
-      const bValue = sortConfig.key === 'submitted' ? new Date(b.updatedAt) : b[sortConfig.key] || '';
+      const aValue = sortConfig.key === 'submitted' ? new Date(a.updatedAt) : 
+                     sortConfig.key === 'vessel' ? (a.vessel ? a.vessel.name : '') : 
+                     sortConfig.key === 'dueDate' ? new Date(a.dueDate) : 
+                     a[sortConfig.key] || '';
+      const bValue = sortConfig.key === 'submitted' ? new Date(b.updatedAt) : 
+                     sortConfig.key === 'vessel' ? (b.vessel ? b.vessel.name : '') : 
+                     sortConfig.key === 'dueDate' ? new Date(b.dueDate) : 
+                     b[sortConfig.key] || '';
+      if (sortConfig.key === 'dueDate') {
+        if (a.completed && a.pdfPath && !(b.completed && b.pdfPath)) return 1;
+        if (!(a.completed && a.pdfPath) && b.completed && b.pdfPath) return -1;
+      }
       if (sortConfig.direction === 'asc') {
         return aValue > bValue ? 1 : -1;
       } else {
@@ -493,12 +503,15 @@ function DashboardComponent({ setToken }) {
         <button onClick={handleClearFilters}>Clear Filters</button>
         <div className="show-completed">
           <label>
-            Show Completed
-            <input
-              type="checkbox"
-              checked={showCompleted}
-              onChange={() => setShowCompleted(!showCompleted)}
-            />
+            Completed:
+            <select
+              value={completedFilter}
+              onChange={(e) => setCompletedFilter(e.target.value)}
+            >
+              <option value="showAll">Show All</option>
+              <option value="showCompleted">Show Completed</option>
+              <option value="doNotShowCompleted">Do Not Show Completed</option>
+            </select>
           </label>
         </div>
       </div>
