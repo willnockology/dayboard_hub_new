@@ -4,7 +4,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPaperclip } from '@fortawesome/free-solid-svg-icons';
 import './ChatComponent.css';
 
-function ChatComponent({ documentId, itemName }) {
+function ChatComponent({ documentId, itemName, markAsRead }) {
   const [chats, setChats] = useState([]);
   const [message, setMessage] = useState('');
   const [user, setUser] = useState(null);
@@ -20,18 +20,20 @@ function ChatComponent({ documentId, itemName }) {
           },
         });
         setChats(response.data);
+        if (markAsRead) {
+          markAsRead(documentId);
+        }
       } catch (error) {
         console.error('Error fetching chats:', error);
       }
     };
     fetchChats();
-  }, [documentId]);
+  }, [documentId, markAsRead]);
 
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
     if (storedUser) {
       const parsedUser = JSON.parse(storedUser);
-      console.log('Stored user:', parsedUser);
       setUser(parsedUser);
     } else {
       console.error('No user found in local storage');
@@ -58,8 +60,6 @@ function ChatComponent({ documentId, itemName }) {
       formData.append('attachment', attachment);
     }
 
-    console.log('Sending chat request:', formData);
-
     try {
       const token = localStorage.getItem('authToken');
       const response = await axios.post('http://localhost:5001/api/chats', formData, {
@@ -68,7 +68,6 @@ function ChatComponent({ documentId, itemName }) {
           'Content-Type': 'multipart/form-data',
         },
       });
-      console.log('Chat response:', response.data);
       setChats([...chats, response.data]);
       setMessage('');
       setAttachment(null);

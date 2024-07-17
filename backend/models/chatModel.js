@@ -18,6 +18,10 @@ const chatSchema = mongoose.Schema({
   attachment: {
     type: String,
   },
+  readBy: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+  }]
 }, {
   timestamps: true,
 });

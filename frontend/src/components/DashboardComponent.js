@@ -1,14 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useHistory } from 'react-router-dom';
-import ChatComponent from './ChatComponent'; // Import the ChatComponent
+import ChatComponent from './ChatComponent';
 import './DashboardComponent.css';
 import data from './formData';
 import formMappings from '../data/formMappings';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faTrashAlt, faComments, faEdit, faPaperclip } from '@fortawesome/free-solid-svg-icons';
 
-// Redefine the date formatting functions within the component
 const formatDate = (dateString) => {
   const options = { day: '2-digit', month: 'long', year: 'numeric' };
   return new Date(dateString).toLocaleDateString('en-GB', options);
@@ -29,8 +28,8 @@ function DashboardComponent({ setToken }) {
     dueDate: '',
     attachments: [],
     title: '',
-    details: '',
-    vessel: ''
+    vessel: '',
+    role: ''
   });
   const [subcategories, setSubcategories] = useState([]);
   const [itemOptions, setItemOptions] = useState([]);
@@ -43,8 +42,9 @@ function DashboardComponent({ setToken }) {
   const [vessels, setVessels] = useState([]);
   const [selectedVessel, setSelectedVessel] = useState('');
   const [role, setRole] = useState('');
-  const [completedFilter, setCompletedFilter] = useState('showAll'); // State for completed filter
-  const [showChat, setShowChat] = useState(null); // State to toggle chat visibility
+  const [completedFilter, setCompletedFilter] = useState('All');
+  const [showChat, setShowChat] = useState(null);
+  const [unreadComments, setUnreadComments] = useState({});
   const history = useHistory();
 
   const fetchItems = async () => {
@@ -55,10 +55,8 @@ function DashboardComponent({ setToken }) {
           Authorization: `Bearer ${token}`,
         },
       });
-      console.log('Fetched items:', response.data);
       setItems(response.data);
     } catch (error) {
-      console.error('Error fetching items:', error.response ? error.response.data : error.message);
       setError('Error fetching items');
     }
   };
@@ -71,10 +69,8 @@ function DashboardComponent({ setToken }) {
           Authorization: `Bearer ${token}`,
         },
       });
-      console.log('Fetched vessels:', response.data);
       setVessels(response.data);
     } catch (error) {
-      console.error('Error fetching vessels:', error.response ? error.response.data : error.message);
       setError('Error fetching vessels');
     }
   };
@@ -87,10 +83,12 @@ function DashboardComponent({ setToken }) {
           Authorization: `Bearer ${token}`,
         },
       });
-      console.log('Fetched user role:', response.data.role);
       setRole(response.data.role);
+      setNewItem((prevItem) => ({
+        ...prevItem,
+        role: response.data.role,
+      }));
     } catch (error) {
-      console.error('Error fetching user role:', error.response ? error.response.data : error.message);
       setError('Error fetching user role');
     }
   };
@@ -109,24 +107,14 @@ function DashboardComponent({ setToken }) {
     }));
 
     if (name === 'category') {
-      if (value === 'Track a Date') {
-        setSubcategories([]);
-        setItemOptions([]);
-        setNewItem((prevItem) => ({
-          ...prevItem,
-          subcategory: '',
-          name: '',
-        }));
-      } else {
-        const selectedCategory = data.categories.find((cat) => cat.name === value);
-        setSubcategories(data.subCategories.filter((sub) => sub.categoryId === selectedCategory?.id));
-        setItemOptions([]);
-        setNewItem((prevItem) => ({
-          ...prevItem,
-          subcategory: '',
-          name: '',
-        }));
-      }
+      const selectedCategory = data.categories.find((cat) => cat.name === value);
+      setSubcategories(data.subCategories.filter((sub) => sub.categoryId === selectedCategory?.id));
+      setItemOptions([]);
+      setNewItem((prevItem) => ({
+        ...prevItem,
+        subcategory: '',
+        name: '',
+      }));
     } else if (name === 'subcategory') {
       const selectedSubcategory = data.subCategories.find((sub) => sub.name === value);
       setItemOptions(data.items.filter((item) => item.subCategoryId === selectedSubcategory?.id));
@@ -144,11 +132,11 @@ function DashboardComponent({ setToken }) {
   const validateForm = () => {
     const errors = [];
     if (!newItem.category) errors.push('Category is required');
-    if (newItem.category !== 'Track a Date' && !newItem.subcategory) errors.push('Subcategory is required');
-    if (newItem.category !== 'Track a Date' && !newItem.name) errors.push('Item name is required');
+    if ((newItem.category === 'Form or Checklist' || newItem.category === 'Document') && !newItem.subcategory) errors.push('Subcategory is required');
+    if ((newItem.category === 'Form or Checklist' || newItem.category === 'Document') && !newItem.name) errors.push('Item name is required');
     if (newItem.category === 'Track a Date' && !newItem.title) errors.push('Title is required');
     if (!newItem.dueDate) errors.push('Due date is required');
-    if (newItem.category !== 'Track a Date' && !newItem.vessel) errors.push('Vessel is required');
+    if (!newItem.vessel && (role === 'Superuser' || role === 'Company User')) errors.push('Vessel is required');
     return errors;
   };
 
@@ -159,25 +147,39 @@ function DashboardComponent({ setToken }) {
       setValidationErrors(errors);
       return;
     }
+
     try {
       const token = localStorage.getItem('authToken');
       const formData = new FormData();
-      Object.keys(newItem).forEach((key) => {
-        if (key === 'attachments') {
-          newItem.attachments.forEach((file) => {
-            formData.append('attachments', file);
-          });
-        } else {
-          formData.append(key, newItem[key]);
-        }
-      });
+
+      // Add fields to formData
+      formData.append('category', newItem.category);
+      formData.append('dueDate', newItem.dueDate);
+      formData.append('vessel', newItem.vessel);
+      formData.append('role', newItem.role); // Include the role in the formData
+
+      // Conditionally add fields based on category
+      if (newItem.category === 'Form or Checklist' || newItem.category === 'Document') {
+        formData.append('name', newItem.name);
+        formData.append('subcategory', newItem.subcategory);
+      }
+
+      if (newItem.category === 'Track a Date') {
+        formData.append('title', newItem.title);
+      }
+
+      if (newItem.category === 'Document' && newItem.attachments.length > 0) {
+        newItem.attachments.forEach((file) => {
+          formData.append('attachments', file);
+        });
+      }
 
       const response = await axios.post('http://localhost:5001/api/items', formData, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
-      console.log('Item added successfully:', response.data);
+
       setItems([...items, response.data]);
       setNewItem({
         name: '',
@@ -186,15 +188,15 @@ function DashboardComponent({ setToken }) {
         dueDate: '',
         attachments: [],
         title: '',
-        details: '',
-        vessel: ''
+        vessel: '',
+        role: ''
       });
       setShowForm(false);
-      fetchItems();  // Re-fetch items after form submission
-      setValidationErrors([]);  // Clear validation errors
+      fetchItems();
+      setValidationErrors([]);
     } catch (error) {
-      console.error('Error adding item:', error.response ? error.response.data : error.message);
       setError('Error adding item');
+      console.error('Error adding item:', error.response ? error.response.data : error.message);
     }
   };
 
@@ -206,19 +208,16 @@ function DashboardComponent({ setToken }) {
           Authorization: `Bearer ${token}`,
         },
       });
-      console.log('Item deleted successfully:', id);
       setItems(items.filter((item) => item._id !== id));
     } catch (error) {
-      console.error('Error deleting item:', error.response ? error.response.data : error.message);
       setError('Error deleting item');
     }
   };
 
   const calculateStatusColor = (item) => {
     if (item.completed && item.pdfPath) {
-      return 'blue'; // Color for completed forms with attachments
+      return 'blue';
     }
-    // Existing logic for calculating status color based on due date
     const dueDate = new Date(item.dueDate);
     const currentDate = new Date();
     if (dueDate < currentDate) {
@@ -231,24 +230,10 @@ function DashboardComponent({ setToken }) {
   };
 
   const handleCompleteForm = (item) => {
-    console.log('Complete Form clicked for item:', item);
-
     const selectedItem = data.items.find((dataItem) => dataItem.name === item.name);
-
-    if (!selectedItem) {
-      console.error('No item found for item name:', item.name);
-      return;
-    }
-
+    if (!selectedItem) return;
     const formType = formMappings[selectedItem.id];
-
-    if (!formType) {
-      console.error('No form type found for item ID:', selectedItem.id);
-      return;
-    }
-
-    console.log('Mapped form type:', formType);
-
+    if (!formType) return;
     history.push(`/form/${formType}/${item._id}`);
   };
 
@@ -263,10 +248,10 @@ function DashboardComponent({ setToken }) {
     if ((role === 'Company User' || role === 'Superuser') && selectedVessel) {
       filteredItems = filteredItems.filter(item => item.vessel && item.vessel._id === selectedVessel);
     }
-    if (completedFilter === 'showCompleted') {
-      filteredItems = filteredItems.filter(item => item.completed && item.pdfPath);
-    } else if (completedFilter === 'doNotShowCompleted') {
-      filteredItems = filteredItems.filter(item => !(item.completed && item.pdfPath));
+    if (completedFilter === 'Completed') {
+      filteredItems = filteredItems.filter(item => item.completed);
+    } else if (completedFilter === 'Outstanding') {
+      filteredItems = filteredItems.filter(item => !item.completed);
     }
     if (!sortConfig.key) return filteredItems;
     return [...filteredItems].sort((a, b) => {
@@ -298,14 +283,70 @@ function DashboardComponent({ setToken }) {
     setSortConfig({ key, direction });
   };
 
+  const markCommentsAsRead = async (documentId) => {
+    try {
+      const token = localStorage.getItem('authToken');
+      const userId = JSON.parse(localStorage.getItem('user'))._id;
+      await axios.post('http://localhost:5001/api/chats/markAsRead', { documentId, userId }, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setUnreadComments((prevUnreadComments) => ({
+        ...prevUnreadComments,
+        [documentId]: false,
+      }));
+    } catch (error) {
+      console.error('Error marking comments as read:', error.response ? error.response.data : error.message);
+    }
+  };
+
+  const handleToggleChat = (itemId) => {
+    setShowChat(showChat === itemId ? null : itemId);
+    if (showChat !== itemId) {
+      markCommentsAsRead(itemId);
+    }
+  };
+
+  const checkUnreadComments = (chats, userId) => {
+    return chats.some(chat => !chat.readBy.includes(userId));
+  };
+
   useEffect(() => {
-    fetchItems(); // Fetch items again when returning to the dashboard
+    const checkAllUnreadComments = async () => {
+      try {
+        const token = localStorage.getItem('authToken');
+        const userId = JSON.parse(localStorage.getItem('user'))._id;
+        const response = await axios.get('http://localhost:5001/api/chats', {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        const unreadCommentsMap = response.data.reduce((acc, chat) => {
+          if (!acc[chat.documentId]) {
+            acc[chat.documentId] = checkUnreadComments([chat], userId);
+          } else {
+            acc[chat.documentId] = acc[chat.documentId] || checkUnreadComments([chat], userId);
+          }
+          return acc;
+        }, {});
+        setUnreadComments(unreadCommentsMap);
+      } catch (error) {
+        console.error('Error checking unread comments:', error.response ? error.response.data : error.message);
+      }
+    };
+
+    checkAllUnreadComments();
+  }, [items]);
+
+  useEffect(() => {
+    fetchItems();
   }, [history.location.pathname]);
 
   const handleFilterCategoryChange = (e) => {
     const selectedCategory = e.target.value;
     setFilterCategory(selectedCategory);
-    setFilterSubcategory(''); // Reset subcategory filter when category changes
+    setFilterSubcategory('');
     if (selectedCategory) {
       const selectedCategoryData = data.categories.find((cat) => cat.name === selectedCategory);
       setSubcategories(data.subCategories.filter((sub) => sub.categoryId === selectedCategoryData?.id));
@@ -342,10 +383,6 @@ function DashboardComponent({ setToken }) {
     return vessels.filter(vessel => vesselIds.includes(vessel._id));
   };
 
-  const handleToggleChat = (itemId) => {
-    setShowChat(showChat === itemId ? null : itemId);
-  };
-
   return (
     <div className="dashboard-container">
       <h1 className="dashboard-header">Dashboard</h1>
@@ -365,6 +402,20 @@ function DashboardComponent({ setToken }) {
         </button>
         {showForm && (
           <form onSubmit={handleSubmit} className="new-item-form">
+            {(role === 'Superuser' || role === 'Company User') && (
+              <select
+                name="vessel"
+                value={newItem.vessel}
+                onChange={handleInputChange}
+              >
+                <option value="">Select Vessel</option>
+                {vessels.map((vessel) => (
+                  <option key={vessel._id} value={vessel._id}>
+                    {vessel.name}
+                  </option>
+                ))}
+              </select>
+            )}
             <select
               name="category"
               value={newItem.category}
@@ -377,12 +428,13 @@ function DashboardComponent({ setToken }) {
                 </option>
               ))}
             </select>
-            {newItem.category !== 'Track a Date' && (
+            {(newItem.category === 'Form or Checklist' || newItem.category === 'Document') && (
               <>
                 <select
                   name="subcategory"
                   value={newItem.subcategory}
                   onChange={handleInputChange}
+                  style={{ display: newItem.category ? 'block' : 'none' }}
                 >
                   <option value="">Select Subcategory</option>
                   {subcategories.map((subcategory) => (
@@ -395,6 +447,7 @@ function DashboardComponent({ setToken }) {
                   name="name"
                   value={newItem.name}
                   onChange={handleInputChange}
+                  style={{ display: newItem.subcategory ? 'block' : 'none' }}
                 >
                   <option value="">Select Item</option>
                   {itemOptions.map((item) => (
@@ -402,29 +455,55 @@ function DashboardComponent({ setToken }) {
                       {item.name}
                     </option>
                   ))}
-                  <option value="new">Add New Item</option>
                 </select>
-                {newItem.name === 'new' && (
+                <input
+                  type="date"
+                  name="dueDate"
+                  value={newItem.dueDate}
+                  onChange={handleInputChange}
+                  style={{ display: newItem.name ? 'block' : 'none' }}
+                />
+                {newItem.category === 'Document' && (
                   <input
-                    type="text"
-                    name="name"
-                    value={newItem.name}
-                    onChange={handleInputChange}
-                    placeholder="New Item Name"
+                    type="file"
+                    name="attachments"
+                    onChange={handleFileChange}
+                    multiple
+                    style={{ display: newItem.dueDate ? 'block' : 'none' }}
                   />
                 )}
-                <select
-                  name="vessel"
-                  value={newItem.vessel}
-                  onChange={handleInputChange}
-                >
-                  <option value="">Select Vessel</option>
-                  {vessels.map((vessel) => (
-                    <option key={vessel._id} value={vessel._id}>
-                      {vessel.name}
-                    </option>
-                  ))}
-                </select>
+                {newItem.category === 'Form or Checklist' && role !== 'Superuser' && role !== 'Company User' && (
+                  <div style={{ display: newItem.name ? 'block' : 'none' }}>
+                    <label>
+                      <input
+                        type="radio"
+                        name="completeNow"
+                        value="now"
+                        checked={newItem.completeNow === 'now'}
+                        onChange={handleInputChange}
+                      />
+                      Complete Form or Checklist Now
+                    </label>
+                    <label>
+                      <input
+                        type="radio"
+                        name="completeNow"
+                        value="later"
+                        checked={newItem.completeNow === 'later'}
+                        onChange={handleInputChange}
+                      />
+                      Choose a Date
+                    </label>
+                    {newItem.completeNow === 'later' && (
+                      <input
+                        type="date"
+                        name="dueDate"
+                        value={newItem.dueDate}
+                        onChange={handleInputChange}
+                      />
+                    )}
+                  </div>
+                )}
               </>
             )}
             {newItem.category === 'Track a Date' && (
@@ -436,85 +515,73 @@ function DashboardComponent({ setToken }) {
                   onChange={handleInputChange}
                   placeholder="Title"
                 />
-                <textarea
-                  name="details"
-                  value={newItem.details}
+                <input
+                  type="date"
+                  name="dueDate"
+                  value={newItem.dueDate}
                   onChange={handleInputChange}
-                  placeholder="Details"
-                ></textarea>
+                />
               </>
-            )}
-            <input
-              type="date"
-              name="dueDate"
-              value={newItem.dueDate}
-              onChange={handleInputChange}
-            />
-            {newItem.category !== 'Track a Date' && (
-              <input
-                type="file"
-                name="attachments"
-                onChange={handleFileChange}
-                multiple
-              />
             )}
             <button type="submit">Add Item</button>
           </form>
         )}
       </div>
-      <div className="filters">
+
+  <div className="filters">
+    <select
+      name="filterVessel"
+      value={selectedVessel}
+      onChange={(e) => setSelectedVessel(e.target.value)}
+    >
+      <option value="">Filter by Vessel</option>
+      {getAvailableVessels().map((vessel) => (
+        <option key={vessel._id} value={vessel._id}>
+          {vessel.name}
+        </option>
+      ))}
+    </select>
+    <select
+      name="filterCategory"
+      value={filterCategory}
+      onChange={handleFilterCategoryChange}
+    >
+      <option value="">Filter by Category</option>
+      {getAvailableCategories().map((category, index) => (
+        <option key={index} value={category}>
+          {category}
+        </option>
+      ))}
+    </select>
+    <select
+      name="filterSubcategory"
+      value={filterSubcategory}
+      onChange={handleFilterSubcategoryChange}
+      disabled={!filterCategory}
+    >
+      <option value="">Filter by Subcategory</option>
+      {getAvailableSubcategories().map((subcategory, index) => (
+        <option key={index} value={subcategory}>
+          {subcategory}
+        </option>
+      ))}
+    </select>
+    <button onClick={handleClearFilters}>Clear Filters</button>
+    <div className="show-completed">
+      <label>
+        Show:
         <select
-          name="filterVessel"
-          value={selectedVessel}
-          onChange={(e) => setSelectedVessel(e.target.value)}
+          value={completedFilter}
+          onChange={(e) => setCompletedFilter(e.target.value)}
         >
-          <option value="">Filter by Vessel</option>
-          {getAvailableVessels().map((vessel) => (
-            <option key={vessel._id} value={vessel._id}>
-              {vessel.name}
-            </option>
-          ))}
+          <option value="All">All</option>
+          <option value="Outstanding">Outstanding</option>
+          <option value="Completed">Completed</option>
         </select>
-        <select
-          name="filterCategory"
-          value={filterCategory}
-          onChange={handleFilterCategoryChange}
-        >
-          <option value="">Filter by Category</option>
-          {getAvailableCategories().map((category, index) => (
-            <option key={index} value={category}>
-              {category}
-            </option>
-          ))}
-        </select>
-        <select
-          name="filterSubcategory"
-          value={filterSubcategory}
-          onChange={handleFilterSubcategoryChange}
-          disabled={!filterCategory}
-        >
-          <option value="">Filter by Subcategory</option>
-          {getAvailableSubcategories().map((subcategory, index) => (
-            <option key={index} value={subcategory}>
-              {subcategory}
-            </option>
-          ))}
-        </select>
-        <button onClick={handleClearFilters}>Clear Filters</button>
-        <div className="show-completed">
-          <label>
-            Completed:
-            <select
-              value={completedFilter}
-              onChange={(e) => setCompletedFilter(e.target.value)}
-            >
-              <option value="showAll">Show All</option>
-              <option value="showCompleted">Show Completed</option>
-              <option value="doNotShowCompleted">Do Not Show Completed</option>
-            </select>
-          </label>
-        </div>
-      </div>
+      </label>
+    </div>
+  </div>
+
       <table>
         <thead>
           <tr>
@@ -605,7 +672,7 @@ function DashboardComponent({ setToken }) {
                     )}
                   </td>
                   <td>
-                    {item.updatedAt ? formatDateTime(item.updatedAt) : 'N/A'} {/* Use formatDateTime for Submitted column */}
+                    {item.updatedAt ? formatDateTime(item.updatedAt) : 'N/A'}
                   </td>
                   <td>
                     <button onClick={() => handleDelete(item._id)}>
@@ -613,7 +680,7 @@ function DashboardComponent({ setToken }) {
                     </button>
                     <button
                       onClick={() => handleToggleChat(item._id)}
-                      style={{ color: showChatForItem ? 'black' : 'white' }} // Change color to black when chat is open
+                      style={{ color: showChatForItem ? 'black' : unreadComments[item._id] ? 'red' : 'white' }}
                     >
                       <FontAwesomeIcon icon={faComments} />
                     </button>
@@ -627,7 +694,7 @@ function DashboardComponent({ setToken }) {
                 {showChatForItem && (
                   <tr key={`chat-${item._id}`} className="chat-row">
                     <td colSpan="9">
-                      <ChatComponent documentId={item._id} itemName={item.name || item.title} /> {/* Pass the item name to ChatComponent */}
+                      <ChatComponent documentId={item._id} itemName={item.name || item.title} markAsRead={markCommentsAsRead} />
                     </td>
                   </tr>
                 )}

@@ -3,7 +3,9 @@ const mongoose = require('mongoose');
 const itemSchema = new mongoose.Schema({
   name: {
     type: String,
-    required: true
+    required: function() {
+      return this.category === 'Form or Checklist' || this.category === 'Document';
+    }
   },
   category: {
     type: String,
@@ -11,7 +13,9 @@ const itemSchema = new mongoose.Schema({
   },
   subcategory: {
     type: String,
-    required: true
+    required: function() {
+      return this.category === 'Form or Checklist' || this.category === 'Document';
+    }
   },
   dueDate: {
     type: Date,
@@ -38,6 +42,10 @@ const itemSchema = new mongoose.Schema({
   vessel: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Vessel',
+    required: true
+  },
+  role: {
+    type: String,
     required: true
   }
 }, {

@@ -58,6 +58,32 @@ const getFormData = asyncHandler(async (req, res) => {
   res.json(formData);
 });
 
+// @desc    Create a new item
+// @route   POST /api/items
+// @access  Private
+const createItem = asyncHandler(async (req, res) => {
+  const { category, subcategory, name, title, dueDate, attachments, vessel } = req.body;
+  const role = req.user.role; // Assuming role is added to req.user during authentication
+
+  const newItem = new Item({
+    category,
+    subcategory: (category === 'Form or Checklist' || category === 'Document') ? subcategory : undefined,
+    name: (category === 'Form or Checklist' || category === 'Document') ? name : undefined,
+    title: category === 'Track a Date' ? title : undefined,
+    dueDate,
+    attachments,
+    vessel: (role === 'Superuser' || role === 'Company User') ? vessel : undefined,
+    role // Needed to validate the vessel requirement
+  });
+
+  try {
+    const createdItem = await newItem.save();
+    res.status(201).json(createdItem);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+});
+
 // @desc    Submit form data
 // @route   POST /api/forms/data
 // @access  Private
@@ -114,5 +140,6 @@ const submitFormData = asyncHandler(async (req, res) => {
 module.exports = {
   getFormDefinition,
   getFormData,
+  createItem,
   submitFormData,
 };
