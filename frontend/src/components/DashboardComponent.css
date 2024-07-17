@@ -135,12 +135,12 @@ td p {
 }
 
 /* Add margin below the button */
-.button-and-filters {
+.button-and-form {
   margin-bottom: 20px;
 }
 
-.button-and-filters button {
-  margin-bottom: 10px;
+.button-and-form .add-item-button {
+  margin-bottom: 20px; /* Add some space between the button and the form when open */
 }
 
 @media (max-width: 768px) {

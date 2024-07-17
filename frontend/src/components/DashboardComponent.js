@@ -1,3 +1,5 @@
+// Path: frontend/src/components/DashboardComponent.js
+
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useHistory } from 'react-router-dom';
@@ -6,7 +8,19 @@ import './DashboardComponent.css';
 import data from './formData';
 import formMappings from '../data/formMappings';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faTrashAlt, faComments } from '@fortawesome/free-solid-svg-icons';
+import { faTrashAlt, faComments, faEdit, faPaperclip } from '@fortawesome/free-solid-svg-icons';
+
+// Redefine the date formatting functions within the component
+const formatDate = (dateString) => {
+  const options = { day: '2-digit', month: 'long', year: 'numeric' };
+  return new Date(dateString).toLocaleDateString('en-GB', options);
+};
+
+const formatDateTime = (dateString) => {
+  const date = new Date(dateString);
+  const options = { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' };
+  return date.toLocaleString('en-GB', options).replace(',', ' at');
+};
 
 function DashboardComponent({ setToken }) {
   const [items, setItems] = useState([]);
@@ -300,19 +314,6 @@ function DashboardComponent({ setToken }) {
     setSelectedVessel('');
   };
 
-  const formatDate = (dateString) => {
-    const date = new Date(dateString);
-    const options = { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' };
-    const formattedDate = date.toLocaleString('en-GB', options).replace(',', '');
-    const [day, month, year, time] = formattedDate.split(' ');
-    return (
-      <div className="date-time">
-        <p>{`${day} ${month} ${year}`}</p>
-        <p>at {time}</p>
-      </div>
-    );
-  };
-
   const getAvailableCategories = () => {
     const categories = items.map(item => item.category);
     return Array.from(new Set(categories));
@@ -348,10 +349,108 @@ function DashboardComponent({ setToken }) {
           </ul>
         </div>
       )}
-      <div className="button-and-filters">
-        <button onClick={() => setShowForm(!showForm)}>
+      <div className="button-and-form">
+        <button onClick={() => setShowForm(!showForm)} className="add-item-button">
           {showForm ? 'Hide Form' : 'Add New Item'}
         </button>
+        {showForm && (
+          <form onSubmit={handleSubmit} className="new-item-form">
+            <select
+              name="category"
+              value={newItem.category}
+              onChange={handleInputChange}
+            >
+              <option value="">Select Category</option>
+              {data.categories.map((category) => (
+                <option key={category.id} value={category.name}>
+                  {category.name}
+                </option>
+              ))}
+            </select>
+            {newItem.category !== 'Track a Date' && (
+              <>
+                <select
+                  name="subcategory"
+                  value={newItem.subcategory}
+                  onChange={handleInputChange}
+                >
+                  <option value="">Select Subcategory</option>
+                  {subcategories.map((subcategory) => (
+                    <option key={subcategory.id} value={subcategory.name}>
+                      {subcategory.name}
+                    </option>
+                  ))}
+                </select>
+                <select
+                  name="name"
+                  value={newItem.name}
+                  onChange={handleInputChange}
+                >
+                  <option value="">Select Item</option>
+                  {itemOptions.map((item) => (
+                    <option key={item.id} value={item.name}>
+                      {item.name}
+                    </option>
+                  ))}
+                  <option value="new">Add New Item</option>
+                </select>
+                {newItem.name === 'new' && (
+                  <input
+                    type="text"
+                    name="name"
+                    value={newItem.name}
+                    onChange={handleInputChange}
+                    placeholder="New Item Name"
+                  />
+                )}
+                <select
+                  name="vessel"
+                  value={newItem.vessel}
+                  onChange={handleInputChange}
+                >
+                  <option value="">Select Vessel</option>
+                  {vessels.map((vessel) => (
+                    <option key={vessel._id} value={vessel._id}>
+                      {vessel.name}
+                    </option>
+                  ))}
+                </select>
+              </>
+            )}
+            {newItem.category === 'Track a Date' && (
+              <>
+                <input
+                  type="text"
+                  name="title"
+                  value={newItem.title}
+                  onChange={handleInputChange}
+                  placeholder="Title"
+                />
+                <textarea
+                  name="details"
+                  value={newItem.details}
+                  onChange={handleInputChange}
+                  placeholder="Details"
+                ></textarea>
+              </>
+            )}
+            <input
+              type="date"
+              name="dueDate"
+              value={newItem.dueDate}
+              onChange={handleInputChange}
+            />
+            {newItem.category !== 'Track a Date' && (
+              <input
+                type="file"
+                name="attachments"
+                onChange={handleFileChange}
+                multiple
+              />
+            )}
+            <button type="submit">Add Item</button>
+          </form>
+        )}
       </div>
       <div className="filters">
         <select
@@ -403,104 +502,6 @@ function DashboardComponent({ setToken }) {
           </label>
         </div>
       </div>
-      {showForm && (
-        <form onSubmit={handleSubmit} className="new-item-form">
-          <select
-            name="category"
-            value={newItem.category}
-            onChange={handleInputChange}
-          >
-            <option value="">Select Category</option>
-            {data.categories.map((category) => (
-              <option key={category.id} value={category.name}>
-                {category.name}
-              </option>
-            ))}
-          </select>
-          {newItem.category !== 'Track a Date' && (
-            <>
-              <select
-                name="subcategory"
-                value={newItem.subcategory}
-                onChange={handleInputChange}
-              >
-                <option value="">Select Subcategory</option>
-                {subcategories.map((subcategory) => (
-                  <option key={subcategory.id} value={subcategory.name}>
-                    {subcategory.name}
-                  </option>
-                ))}
-              </select>
-              <select
-                name="name"
-                value={newItem.name}
-                onChange={handleInputChange}
-              >
-                <option value="">Select Item</option>
-                {itemOptions.map((item) => (
-                  <option key={item.id} value={item.name}>
-                    {item.name}
-                  </option>
-                ))}
-                <option value="new">Add New Item</option>
-              </select>
-              {newItem.name === 'new' && (
-                <input
-                  type="text"
-                  name="name"
-                  value={newItem.name}
-                  onChange={handleInputChange}
-                  placeholder="New Item Name"
-                />
-              )}
-              <select
-                name="vessel"
-                value={newItem.vessel}
-                onChange={handleInputChange}
-              >
-                <option value="">Select Vessel</option>
-                {vessels.map((vessel) => (
-                  <option key={vessel._id} value={vessel._id}>
-                    {vessel.name}
-                  </option>
-                ))}
-              </select>
-            </>
-          )}
-          {newItem.category === 'Track a Date' && (
-            <>
-              <input
-                type="text"
-                name="title"
-                value={newItem.title}
-                onChange={handleInputChange}
-                placeholder="Title"
-              />
-              <textarea
-                name="details"
-                value={newItem.details}
-                onChange={handleInputChange}
-                placeholder="Details"
-              ></textarea>
-            </>
-          )}
-          <input
-            type="date"
-            name="dueDate"
-            value={newItem.dueDate}
-            onChange={handleInputChange}
-          />
-          {newItem.category !== 'Track a Date' && (
-            <input
-              type="file"
-              name="attachments"
-              onChange={handleFileChange}
-              multiple
-            />
-          )}
-          <button type="submit">Add Item</button>
-        </form>
-      )}
       <table>
         <thead>
           <tr>
@@ -532,7 +533,9 @@ function DashboardComponent({ setToken }) {
               </button>
             </th>
             <th>Status</th>
-            <th>Details</th>
+            <th>
+              <FontAwesomeIcon icon={faPaperclip} />
+            </th>
             <th>
               <button type="button" onClick={() => requestSort('submitted')}>
                 Submitted {sortConfig.key === 'submitted' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
@@ -556,7 +559,7 @@ function DashboardComponent({ setToken }) {
                     {isCompleted ? (
                       'Completed'
                     ) : (
-                      item.dueDate ? item.dueDate.split('T')[0] : 'N/A'
+                      item.dueDate ? formatDate(item.dueDate) : ''
                     )}
                   </td>
                   <td>
@@ -570,28 +573,26 @@ function DashboardComponent({ setToken }) {
                       item.completed ? (
                         item.pdfPath ? (
                           <a href={`http://localhost:5001${item.pdfPath}`} target="_blank" rel="noopener noreferrer">
-                            See Attachment
+                            <FontAwesomeIcon icon={faPaperclip} />
                           </a>
                         ) : (
-                          'No attachment found'
+                          ''
                         )
                       ) : (
-                        <button onClick={() => handleCompleteForm(item)}>
-                          Complete Form
-                        </button>
+                        ''
                       )
                     ) : item.attachments.length > 0 ? (
                       item.attachments.map((attachment, index) => (
                         <a key={index} href={`http://localhost:5001/uploads/${attachment}`} target="_blank" rel="noopener noreferrer">
-                          View Attachment
+                          <FontAwesomeIcon icon={faPaperclip} />
                         </a>
                       ))
                     ) : (
-                      'N/A'
+                      ''
                     )}
                   </td>
                   <td>
-                    {item.updatedAt ? formatDate(item.updatedAt) : 'N/A'}
+                    {item.updatedAt ? formatDateTime(item.updatedAt) : 'N/A'} {/* Use formatDateTime for Submitted column */}
                   </td>
                   <td>
                     <button onClick={() => handleDelete(item._id)}>
@@ -603,6 +604,11 @@ function DashboardComponent({ setToken }) {
                     >
                       <FontAwesomeIcon icon={faComments} />
                     </button>
+                    {!item.completed && item.category === 'Form or Checklist' && (
+                      <button onClick={() => handleCompleteForm(item)}>
+                        <FontAwesomeIcon icon={faEdit} style={{ color: 'orange' }} />
+                      </button>
+                    )}
                   </td>
                 </tr>
                 {showChatForItem && (
