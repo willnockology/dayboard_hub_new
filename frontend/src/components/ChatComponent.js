@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import axios from 'axios';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPaperclip } from '@fortawesome/free-solid-svg-icons';
+import { faPaperclip, faCircle } from '@fortawesome/free-solid-svg-icons';
 import './ChatComponent.css';
 
 function ChatComponent({ documentId, itemName, markAsRead }) {
@@ -10,25 +10,37 @@ function ChatComponent({ documentId, itemName, markAsRead }) {
   const [user, setUser] = useState(null);
   const [attachment, setAttachment] = useState(null);
 
-  useEffect(() => {
-    const fetchChats = async () => {
-      try {
-        const token = localStorage.getItem('authToken');
-        const response = await axios.get(`http://localhost:5001/api/chats/${documentId}`, {
+  const fetchChats = useCallback(async () => {
+    try {
+      const token = localStorage.getItem('authToken');
+      const response = await axios.get(`http://localhost:5001/api/chats/${documentId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setChats(response.data);
+    } catch (error) {
+      console.error('Error fetching chats:', error);
+    }
+  }, [documentId]);
+
+  const markChatsAsRead = useCallback(async () => {
+    if (!user) return;
+    try {
+      const token = localStorage.getItem('authToken');
+      await axios.post(
+        'http://localhost:5001/api/chats/markAsRead',
+        { documentId },
+        {
           headers: {
             Authorization: `Bearer ${token}`,
-          },
-        });
-        setChats(response.data);
-        if (markAsRead) {
-          markAsRead(documentId);
+          }
         }
-      } catch (error) {
-        console.error('Error fetching chats:', error);
-      }
-    };
-    fetchChats();
-  }, [documentId, markAsRead]);
+      );
+    } catch (error) {
+      console.error('Error marking chats as read:', error);
+    }
+  }, [documentId, user]);
 
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
@@ -39,6 +51,13 @@ function ChatComponent({ documentId, itemName, markAsRead }) {
       console.error('No user found in local storage');
     }
   }, []);
+
+  useEffect(() => {
+    if (user) {
+      fetchChats();
+      markChatsAsRead();
+    }
+  }, [user, fetchChats, markChatsAsRead]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -54,7 +73,6 @@ function ChatComponent({ documentId, itemName, markAsRead }) {
 
     const formData = new FormData();
     formData.append('documentId', documentId);
-    formData.append('userId', user._id || user.id);
     formData.append('message', message);
     if (attachment) {
       formData.append('attachment', attachment);
@@ -71,6 +89,8 @@ function ChatComponent({ documentId, itemName, markAsRead }) {
       setChats([...chats, response.data]);
       setMessage('');
       setAttachment(null);
+      // Mark the new chat as read by the user
+      await markChatsAsRead();
     } catch (error) {
       console.error('Error sending message:', error.response ? error.response.data : error.message);
     }
@@ -91,11 +111,12 @@ function ChatComponent({ documentId, itemName, markAsRead }) {
             <th>Comment</th>
             <th>Date</th>
             <th><FontAwesomeIcon icon={faPaperclip} /></th>
+            <th>Unread</th>
           </tr>
         </thead>
         <tbody>
           {chats.map(chat => (
-            <tr key={chat._id}>
+            <tr key={chat._id} className={!chat.readBy.includes(user._id) && chat.userId._id !== user._id ? 'unread-comment' : ''}>
               <td>{chat.userId.firstName} {chat.userId.lastName}</td>
               <td>{chat.message}</td>
               <td>{formatDate(chat.createdAt)}</td>
@@ -107,6 +128,9 @@ function ChatComponent({ documentId, itemName, markAsRead }) {
                 ) : (
                   ''
                 )}
+              </td>
+              <td>
+                {!chat.readBy.includes(user._id) && chat.userId._id !== user._id && <FontAwesomeIcon icon={faCircle} className="unread-icon" />}
               </td>
             </tr>
           ))}

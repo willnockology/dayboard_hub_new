@@ -20,12 +20,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Request logging middleware
-app.use((req, res, next) => {
-  console.log(`Received request: ${req.method} ${req.originalUrl}`);
-  next();
-});
-
+// Route Registrations
 console.log('Registering user routes...');
 app.use('/api/users', userRoutes);
 

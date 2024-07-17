@@ -97,7 +97,26 @@ function DashboardComponent({ setToken }) {
     fetchItems();
     fetchVessels();
     fetchUserRole();
+    checkAllUnreadComments();
   }, []);
+
+  const checkAllUnreadComments = async () => {
+    try {
+      const token = localStorage.getItem('authToken');
+      const response = await axios.get('http://localhost:5001/api/chats/allUnreadComments', {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      const unreadCommentsMap = response.data.reduce((acc, chat) => {
+        acc[chat.documentId] = true;
+        return acc;
+      }, {});
+      setUnreadComments(unreadCommentsMap);
+    } catch (error) {
+      console.error('Error checking unread comments:', error.response ? error.response.data : error.message);
+    }
+  };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -105,7 +124,7 @@ function DashboardComponent({ setToken }) {
       ...prevItem,
       [name]: value,
     }));
-  
+
     if (name === 'category') {
       const selectedCategory = data.categories.find((cat) => cat.name === value);
       setSubcategories(data.subCategories.filter((sub) => sub.categoryId === selectedCategory?.id));
@@ -120,7 +139,7 @@ function DashboardComponent({ setToken }) {
       const selectedSubcategory = data.subCategories.find((sub) => sub.name === value);
       setItemOptions(data.items.filter((item) => item.subCategoryId === selectedSubcategory?.id));
     }
-  };  
+  };
 
   const handleFileChange = (e) => {
     const files = Array.from(e.target.files);
@@ -289,8 +308,7 @@ function DashboardComponent({ setToken }) {
   const markCommentsAsRead = async (documentId) => {
     try {
       const token = localStorage.getItem('authToken');
-      const userId = JSON.parse(localStorage.getItem('user'))._id;
-      await axios.post('http://localhost:5001/api/chats/markAsRead', { documentId, userId }, {
+      await axios.post('http://localhost:5001/api/chats/markAsRead', { documentId }, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -311,25 +329,18 @@ function DashboardComponent({ setToken }) {
     }
   };
 
-  const checkUnreadComments = (chats, userId) => {
-    return chats.some(chat => !chat.readBy.includes(userId));
-  };
-
   useEffect(() => {
     const checkAllUnreadComments = async () => {
       try {
         const token = localStorage.getItem('authToken');
-        const userId = JSON.parse(localStorage.getItem('user'))._id;
-        const response = await axios.get('http://localhost:5001/api/chats', {
+        const response = await axios.get('http://localhost:5001/api/chats/allUnreadComments', {
           headers: {
             Authorization: `Bearer ${token}`,
           },
         });
         const unreadCommentsMap = response.data.reduce((acc, chat) => {
           if (!acc[chat.documentId]) {
-            acc[chat.documentId] = checkUnreadComments([chat], userId);
-          } else {
-            acc[chat.documentId] = acc[chat.documentId] || checkUnreadComments([chat], userId);
+            acc[chat.documentId] = true;
           }
           return acc;
         }, {});
@@ -338,7 +349,7 @@ function DashboardComponent({ setToken }) {
         console.error('Error checking unread comments:', error.response ? error.response.data : error.message);
       }
     };
-
+  
     checkAllUnreadComments();
   }, [items]);
 
@@ -461,7 +472,7 @@ function DashboardComponent({ setToken }) {
                   <option value="custom">Custom</option>
                 </select>
                 {newItem.name === 'custom' && (
-                  <input  
+                  <input
                     type="text"
                     name="customName"
                     value={newItem.customName}
@@ -542,59 +553,59 @@ function DashboardComponent({ setToken }) {
         )}
       </div>
 
-  <div className="filters">
-    <select
-      name="filterVessel"
-      value={selectedVessel}
-      onChange={(e) => setSelectedVessel(e.target.value)}
-    >
-      <option value="">Filter by Vessel</option>
-      {getAvailableVessels().map((vessel) => (
-        <option key={vessel._id} value={vessel._id}>
-          {vessel.name}
-        </option>
-      ))}
-    </select>
-    <select
-      name="filterCategory"
-      value={filterCategory}
-      onChange={handleFilterCategoryChange}
-    >
-      <option value="">Filter by Category</option>
-      {getAvailableCategories().map((category, index) => (
-        <option key={index} value={category}>
-          {category}
-        </option>
-      ))}
-    </select>
-    <select
-      name="filterSubcategory"
-      value={filterSubcategory}
-      onChange={handleFilterSubcategoryChange}
-      disabled={!filterCategory}
-    >
-      <option value="">Filter by Subcategory</option>
-      {getAvailableSubcategories().map((subcategory, index) => (
-        <option key={index} value={subcategory}>
-          {subcategory}
-        </option>
-      ))}
-    </select>
-    <button onClick={handleClearFilters}>Clear Filters</button>
-    <div className="show-completed">
-      <label>
-        Show:
+      <div className="filters">
         <select
-          value={completedFilter}
-          onChange={(e) => setCompletedFilter(e.target.value)}
+          name="filterVessel"
+          value={selectedVessel}
+          onChange={(e) => setSelectedVessel(e.target.value)}
         >
-          <option value="All">All</option>
-          <option value="Outstanding">Outstanding</option>
-          <option value="Completed">Completed</option>
+          <option value="">Filter by Vessel</option>
+          {getAvailableVessels().map((vessel) => (
+            <option key={vessel._id} value={vessel._id}>
+              {vessel.name}
+            </option>
+          ))}
         </select>
-      </label>
-    </div>
-  </div>
+        <select
+          name="filterCategory"
+          value={filterCategory}
+          onChange={handleFilterCategoryChange}
+        >
+          <option value="">Filter by Category</option>
+          {getAvailableCategories().map((category, index) => (
+            <option key={index} value={category}>
+              {category}
+            </option>
+          ))}
+        </select>
+        <select
+          name="filterSubcategory"
+          value={filterSubcategory}
+          onChange={handleFilterSubcategoryChange}
+          disabled={!filterCategory}
+        >
+          <option value="">Filter by Subcategory</option>
+          {getAvailableSubcategories().map((subcategory, index) => (
+            <option key={index} value={subcategory}>
+              {subcategory}
+            </option>
+          ))}
+        </select>
+        <button onClick={handleClearFilters}>Clear Filters</button>
+        <div className="show-completed">
+          <label>
+            Show:
+            <select
+              value={completedFilter}
+              onChange={(e) => setCompletedFilter(e.target.value)}
+            >
+              <option value="All">All</option>
+              <option value="Outstanding">Outstanding</option>
+              <option value="Completed">Completed</option>
+            </select>
+          </label>
+        </div>
+      </div>
 
       <table>
         <thead>

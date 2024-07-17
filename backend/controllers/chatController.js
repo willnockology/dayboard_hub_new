@@ -12,18 +12,19 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage });
 
-exports.createChat = [
+const createChat = [
   upload.single('attachment'), // Middleware to handle file upload
   async (req, res) => {
-    const { documentId, userId, message } = req.body;
+    const { documentId, message } = req.body;
+    const userId = req.user._id; // Get userId from the authenticated user
     const attachment = req.file ? req.file.filename : null;
 
-    if (!documentId || !userId || !message) {
-      return res.status(400).json({ message: 'All fields are required' });
+    if (!documentId || !message) {
+      return res.status(400).json({ message: 'Document ID and message are required' });
     }
 
     try {
-      let chat = await Chat.create({ documentId, userId, message, attachment });
+      let chat = await Chat.create({ documentId, userId, message, attachment, readBy: [userId] });
       chat = await chat.populate('userId', 'firstName lastName').execPopulate();
       res.status(201).json(chat);
     } catch (err) {
@@ -32,7 +33,7 @@ exports.createChat = [
   }
 ];
 
-exports.getChats = async (req, res) => {
+const getChats = async (req, res) => {
   const { documentId } = req.params;
 
   try {
@@ -43,16 +44,58 @@ exports.getChats = async (req, res) => {
   }
 };
 
-exports.markAsRead = async (req, res) => {
-  const { documentId, userId } = req.body;
+const markAsRead = async (req, res) => {
+  const { documentId } = req.body;
+  const userId = req.user._id; // Get userId from the authenticated user
 
   try {
-    await Chat.updateMany(
+    // First, mark chats as read
+    const result = await Chat.updateMany(
       { documentId, readBy: { $ne: userId } },
       { $push: { readBy: userId } }
     );
-    res.status(200).json({ message: 'Chats marked as read' });
+
+    // Second, add readBy array to documents that don't have it
+    const addReadByArrayResult = await Chat.updateMany(
+      { documentId, readBy: { $exists: false } },
+      { $set: { readBy: [userId] } }
+    );
+
+    res.status(200).json({ 
+      message: 'Chats marked as read', 
+      result,
+      addReadByArrayResult
+    });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
+};
+
+const getAllChats = async (req, res) => {
+  try {
+    const chats = await Chat.find().populate('userId', 'firstName lastName');
+    res.json(chats);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+const getAllUnreadComments = async (req, res) => {
+  const userId = req.user._id;
+
+  try {
+    const unreadChats = await Chat.find({ readBy: { $ne: userId } }).populate('userId', 'firstName lastName');
+    res.json(unreadChats);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// Export the functions
+module.exports = {
+  createChat,
+  getChats,
+  markAsRead,
+  getAllChats,
+  getAllUnreadComments,
 };

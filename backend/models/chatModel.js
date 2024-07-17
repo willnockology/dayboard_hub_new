@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 
-const chatSchema = mongoose.Schema({
+const chatSchema = new mongoose.Schema({
   documentId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Document',
@@ -21,11 +21,11 @@ const chatSchema = mongoose.Schema({
   readBy: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
-  }]
+    default: [],
+  }],
 }, {
   timestamps: true,
 });
 
 const Chat = mongoose.model('Chat', chatSchema);
-
 module.exports = Chat;
