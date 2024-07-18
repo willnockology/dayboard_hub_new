@@ -39,12 +39,14 @@ function DashboardComponent({ setToken }) {
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
   const [filterCategory, setFilterCategory] = useState('');
   const [filterSubcategory, setFilterSubcategory] = useState('');
+  const [filterItem, setFilterItem] = useState('');
   const [vessels, setVessels] = useState([]);
   const [selectedVessel, setSelectedVessel] = useState('');
   const [role, setRole] = useState('');
   const [completedFilter, setCompletedFilter] = useState('All');
   const [showChat, setShowChat] = useState(null);
   const [unreadComments, setUnreadComments] = useState({});
+  const [searchQuery, setSearchQuery] = useState('');
   const history = useHistory();
 
   const fetchItems = async () => {
@@ -259,32 +261,60 @@ function DashboardComponent({ setToken }) {
     history.push(`/form/${formType}/${item._id}`);
   };
 
-  const sortedItems = () => {
+  const filteredAndSortedItems = () => {
     let filteredItems = items;
+
+    // Filter by search query
+    if (searchQuery) {
+      const lowercasedQuery = searchQuery.toLowerCase();
+      filteredItems = filteredItems.filter(item => {
+        const nameMatch = (item.name || '').toLowerCase().includes(lowercasedQuery);
+        const titleMatch = (item.title || '').toLowerCase().includes(lowercasedQuery);
+        const categoryMatch = (item.category || '').toLowerCase().includes(lowercasedQuery);
+        const subcategoryMatch = (item.subcategory || '').toLowerCase().includes(lowercasedQuery);
+        const vesselMatch = (item.vessel && item.vessel.name.toLowerCase().includes(lowercasedQuery)) || false;
+        return nameMatch || titleMatch || categoryMatch || subcategoryMatch || vesselMatch;
+      });
+    }
+
+    // Filter by category
     if (filterCategory) {
       filteredItems = filteredItems.filter(item => item.category === filterCategory);
     }
+
+    // Filter by subcategory
     if (filterSubcategory) {
       filteredItems = filteredItems.filter(item => item.subcategory === filterSubcategory);
     }
+
+    // Filter by item
+    if (filterItem) {
+      filteredItems = filteredItems.filter(item => item.name === filterItem);
+    }
+
+    // Filter by vessel
     if ((role === 'Company User' || role === 'Superuser') && selectedVessel) {
       filteredItems = filteredItems.filter(item => item.vessel && item.vessel._id === selectedVessel);
     }
+
+    // Filter by completion status
     if (completedFilter === 'Completed') {
       filteredItems = filteredItems.filter(item => item.completed);
     } else if (completedFilter === 'Outstanding') {
       filteredItems = filteredItems.filter(item => !item.completed);
     }
+
+    // Sort items
     if (!sortConfig.key) return filteredItems;
     return [...filteredItems].sort((a, b) => {
-      const aValue = sortConfig.key === 'submitted' ? new Date(a.updatedAt) : 
-                     sortConfig.key === 'vessel' ? (a.vessel ? a.vessel.name : '') : 
-                     sortConfig.key === 'dueDate' ? new Date(a.dueDate) : 
-                     a[sortConfig.key] || '';
-      const bValue = sortConfig.key === 'submitted' ? new Date(b.updatedAt) : 
-                     sortConfig.key === 'vessel' ? (b.vessel ? b.vessel.name : '') : 
-                     sortConfig.key === 'dueDate' ? new Date(b.dueDate) : 
-                     b[sortConfig.key] || '';
+      const aValue = sortConfig.key === 'submitted' ? new Date(a.updatedAt) :
+        sortConfig.key === 'vessel' ? (a.vessel ? a.vessel.name : '') :
+          sortConfig.key === 'dueDate' ? new Date(a.dueDate) :
+            a[sortConfig.key] || '';
+      const bValue = sortConfig.key === 'submitted' ? new Date(b.updatedAt) :
+        sortConfig.key === 'vessel' ? (b.vessel ? b.vessel.name : '') :
+          sortConfig.key === 'dueDate' ? new Date(b.dueDate) :
+            b[sortConfig.key] || '';
       if (sortConfig.key === 'dueDate') {
         if (a.completed && a.pdfPath && !(b.completed && b.pdfPath)) return 1;
         if (!(a.completed && a.pdfPath) && b.completed && b.pdfPath) return -1;
@@ -308,7 +338,8 @@ function DashboardComponent({ setToken }) {
   const markCommentsAsRead = async (documentId) => {
     try {
       const token = localStorage.getItem('authToken');
-      await axios.post('http://localhost:5001/api/chats/markAsRead', { documentId }, {
+      const userId = JSON.parse(localStorage.getItem('user'))._id;
+      await axios.post('http://localhost:5001/api/chats/markAsRead', { documentId, userId }, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -349,7 +380,7 @@ function DashboardComponent({ setToken }) {
         console.error('Error checking unread comments:', error.response ? error.response.data : error.message);
       }
     };
-  
+
     checkAllUnreadComments();
   }, [items]);
 
@@ -361,6 +392,7 @@ function DashboardComponent({ setToken }) {
     const selectedCategory = e.target.value;
     setFilterCategory(selectedCategory);
     setFilterSubcategory('');
+    setFilterItem('');
     if (selectedCategory) {
       const selectedCategoryData = data.categories.find((cat) => cat.name === selectedCategory);
       setSubcategories(data.subCategories.filter((sub) => sub.categoryId === selectedCategoryData?.id));
@@ -371,25 +403,43 @@ function DashboardComponent({ setToken }) {
 
   const handleFilterSubcategoryChange = (e) => {
     setFilterSubcategory(e.target.value);
+    setFilterItem('');
+    if (e.target.value) {
+      const selectedSubcategoryData = data.subCategories.find((sub) => sub.name === e.target.value);
+      setItemOptions(data.items.filter((item) => item.subCategoryId === selectedSubcategoryData?.id));
+    } else {
+      setItemOptions([]);
+    }
+  };
+
+  const handleFilterItemChange = (e) => {
+    setFilterItem(e.target.value);
   };
 
   const handleClearFilters = () => {
     setFilterCategory('');
     setFilterSubcategory('');
+    setFilterItem('');
     setSelectedVessel('');
   };
 
   const getAvailableCategories = () => {
-    const categories = items.map(item => item.category);
+    const categories = data.categories.map(cat => cat.name);
     return Array.from(new Set(categories));
   };
 
   const getAvailableSubcategories = () => {
     if (!filterCategory) return [];
-    const subcategories = items
-      .filter(item => item.category === filterCategory)
-      .map(item => item.subcategory);
+    const selectedCategoryData = data.categories.find((cat) => cat.name === filterCategory);
+    const subcategories = data.subCategories.filter((sub) => sub.categoryId === selectedCategoryData?.id).map((sub) => sub.name);
     return Array.from(new Set(subcategories));
+  };
+
+  const getAvailableItems = () => {
+    if (!filterSubcategory) return [];
+    const selectedSubcategoryData = data.subCategories.find((sub) => sub.name === filterSubcategory);
+    const items = data.items.filter((item) => item.subCategoryId === selectedSubcategoryData?.id).map((item) => item.name);
+    return Array.from(new Set(items));
   };
 
   const getAvailableVessels = () => {
@@ -554,6 +604,12 @@ function DashboardComponent({ setToken }) {
       </div>
 
       <div className="filters">
+        <input
+          type="text"
+          placeholder="Search"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+        />
         <select
           name="filterVessel"
           value={selectedVessel}
@@ -588,6 +644,19 @@ function DashboardComponent({ setToken }) {
           {getAvailableSubcategories().map((subcategory, index) => (
             <option key={index} value={subcategory}>
               {subcategory}
+            </option>
+          ))}
+        </select>
+        <select
+          name="filterItem"
+          value={filterItem}
+          onChange={handleFilterItemChange}
+          disabled={!filterSubcategory}
+        >
+          <option value="">Filter by Item</option>
+          {getAvailableItems().map((item, index) => (
+            <option key={index} value={item}>
+              {item}
             </option>
           ))}
         </select>
@@ -650,7 +719,7 @@ function DashboardComponent({ setToken }) {
           </tr>
         </thead>
         <tbody>
-          {sortedItems().map((item) => {
+          {filteredAndSortedItems().map((item) => {
             const isCompleted = item.completed && item.pdfPath;
             const showChatForItem = showChat === item._id;
             return (

@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import axios from 'axios';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPaperclip, faCircle } from '@fortawesome/free-solid-svg-icons';
+import { faPaperclip } from '@fortawesome/free-solid-svg-icons';
 import './ChatComponent.css';
 
 function ChatComponent({ documentId, itemName, markAsRead }) {
@@ -30,7 +30,7 @@ function ChatComponent({ documentId, itemName, markAsRead }) {
       const token = localStorage.getItem('authToken');
       await axios.post(
         'http://localhost:5001/api/chats/markAsRead',
-        { documentId },
+        { documentId, userId: user._id },
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -73,6 +73,7 @@ function ChatComponent({ documentId, itemName, markAsRead }) {
 
     const formData = new FormData();
     formData.append('documentId', documentId);
+    formData.append('userId', user._id || user.id);
     formData.append('message', message);
     if (attachment) {
       formData.append('attachment', attachment);
@@ -111,12 +112,11 @@ function ChatComponent({ documentId, itemName, markAsRead }) {
             <th>Comment</th>
             <th>Date</th>
             <th><FontAwesomeIcon icon={faPaperclip} /></th>
-            <th>Unread</th>
           </tr>
         </thead>
         <tbody>
           {chats.map(chat => (
-            <tr key={chat._id} className={!chat.readBy.includes(user._id) && chat.userId._id !== user._id ? 'unread-comment' : ''}>
+            <tr key={chat._id}>
               <td>{chat.userId.firstName} {chat.userId.lastName}</td>
               <td>{chat.message}</td>
               <td>{formatDate(chat.createdAt)}</td>
@@ -128,9 +128,6 @@ function ChatComponent({ documentId, itemName, markAsRead }) {
                 ) : (
                   ''
                 )}
-              </td>
-              <td>
-                {!chat.readBy.includes(user._id) && chat.userId._id !== user._id && <FontAwesomeIcon icon={faCircle} className="unread-icon" />}
               </td>
             </tr>
           ))}
