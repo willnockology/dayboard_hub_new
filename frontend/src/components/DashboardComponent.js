@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { Link, useHistory } from 'react-router-dom';
 import axios from 'axios';
-import { useHistory } from 'react-router-dom';
 import ChatComponent from './ChatComponent';
 import './DashboardComponent.css';
 import data from './formData';
@@ -459,6 +459,7 @@ function DashboardComponent({ setToken }) {
   return (
     <div className="dashboard-container">
       <h1 className="dashboard-header">Dashboard</h1>
+      <Link to="/crew" className="crew-module-link">Crew Module</Link>
       {error && <p>{error}</p>}
       {validationErrors.length > 0 && (
         <div className="validation-errors">

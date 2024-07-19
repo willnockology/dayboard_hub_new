@@ -3,6 +3,10 @@
 MondoDB UN: willnock
 MongoDB Password: ux7rr3SYGwTXrobV
 
+JWT Token for wnock (as of 17 july 2024): eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY2OTFlYTQ3OGJiM2EwNzRiZjM0MjNjYSIsImlhdCI6MTcyMTI1MzU3NywiZXhwIjoxNzIzODQ1NTc3fQ.pLlwno3AIlzp0y5J9o-HpW7xdT0XLExzeWHMhN5mYO0
+
+Current github branch: revert-to-7a27f64195ba5db584831f84a244333370edea15
+
 ## Overview
 Dayboard Hub is a comprehensive web application designed for yacht management, repair, and maintenance. The application allows users to manage various forms, documents, and equipment details related to yacht operations. Users can add items, fill out forms, view completed forms, and attach relevant documents to each item.
 

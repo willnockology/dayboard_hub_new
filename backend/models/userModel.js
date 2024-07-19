@@ -54,6 +54,22 @@ const userSchema = mongoose.Schema({
     type: Boolean,
     default: false,
   },
+  photo: {
+    type: String,
+    required: false,
+  },
+  nationality: {
+    type: String,
+    required: false,
+  },
+  embarked: {
+    type: Date,
+    required: false,
+  },
+  passportNumber: {
+    type: String,
+    required: false,
+  },
 }, {
   timestamps: true,
 });

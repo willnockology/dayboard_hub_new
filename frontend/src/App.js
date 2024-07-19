@@ -11,6 +11,7 @@ import ContactComponent from './components/ContactComponent';
 import RegisterComponent from './components/RegisterComponent';
 import VesselRegistrationComponent from './components/VesselRegistrationComponent';
 import UserManagementComponent from './components/UserManagementComponent'; // Add this import
+import CrewModuleComponent from './components/CrewModuleComponent'; // Add this import
 
 import './global.css';
 
@@ -51,6 +52,9 @@ const App = () => {
             </Route>
             <Route path="/user-management">
               <UserManagementComponent /> {/* Add this route */}
+            </Route>
+            <Route path="/crew">
+              <CrewModuleComponent /> {/* Add this route */}
             </Route>
             <Route exact path="/">
               <LoginComponent setToken={setToken} />

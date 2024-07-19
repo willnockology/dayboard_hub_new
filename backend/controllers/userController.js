@@ -36,6 +36,10 @@ const authUser = asyncHandler(async (req, res) => {
           startDate: user.startDate,
           position: user.position,
           commercial: user.commercial,
+          photo: user.photo,
+          nationality: user.nationality,
+          embarked: user.embarked,
+          passportNumber: user.passportNumber,
         },
       });
     } else {
@@ -51,7 +55,7 @@ const authUser = asyncHandler(async (req, res) => {
 // @route   POST /api/users/register
 // @access  Public
 const registerUser = asyncHandler(async (req, res) => {
-  const { firstName, lastName, username, email, password, role, assignedVessels, phoneNumber, birthday, startDate, position, commercial } = req.body;
+  const { firstName, lastName, username, email, password, role, assignedVessels, phoneNumber, birthday, startDate, position, commercial, photo, nationality, embarked, passportNumber } = req.body;
 
   if (!firstName || !lastName || !username || !email || !password || !role) {
     res.status(400).json({ message: 'Please fill in all fields' });
@@ -79,6 +83,10 @@ const registerUser = asyncHandler(async (req, res) => {
       startDate,
       position,
       commercial,
+      photo,
+      nationality,
+      embarked,
+      passportNumber,
     });
 
     await user.save();
@@ -99,6 +107,10 @@ const registerUser = asyncHandler(async (req, res) => {
           startDate: user.startDate,
           position: user.position,
           commercial: user.commercial,
+          photo: user.photo,
+          nationality: user.nationality,
+          embarked: user.embarked,
+          passportNumber: user.passportNumber,
         },
       });
     } else {
@@ -131,6 +143,10 @@ const getUserProfile = asyncHandler(async (req, res) => {
         startDate: user.startDate,
         position: user.position,
         commercial: user.commercial,
+        photo: user.photo,
+        nationality: user.nationality,
+        embarked: user.embarked,
+        passportNumber: user.passportNumber,
       });
     } else {
       res.status(404).json({ message: 'User not found' });
@@ -157,6 +173,10 @@ const updateUserProfile = asyncHandler(async (req, res) => {
     user.startDate = req.body.startDate || user.startDate;
     user.position = req.body.position || user.position;
     user.commercial = req.body.commercial !== undefined ? req.body.commercial : user.commercial;
+    user.photo = req.body.photo || user.photo;
+    user.nationality = req.body.nationality || user.nationality;
+    user.embarked = req.body.embarked || user.embarked;
+    user.passportNumber = req.body.passportNumber || user.passportNumber;
     if (req.body.password) {
       user.password = req.body.password;
     }
@@ -175,6 +195,10 @@ const updateUserProfile = asyncHandler(async (req, res) => {
       startDate: updatedUser.startDate,
       position: updatedUser.position,
       commercial: updatedUser.commercial,
+      photo: updatedUser.photo,
+      nationality: updatedUser.nationality,
+      embarked: updatedUser.embarked,
+      passportNumber: updatedUser.passportNumber,
       token: generateToken(updatedUser._id),
     });
   } else {
@@ -201,6 +225,32 @@ const getUsers = asyncHandler(async (req, res) => {
   } catch (error) {
     console.error('Error fetching users:', error);
     res.status(500).json({ message: 'Server error during fetching users' });
+  }
+});
+
+// @desc    Get crew members
+// @route   GET /api/users/crew
+// @access  Private
+const getCrewMembers = asyncHandler(async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id).populate('assignedVessels');
+    let crewMembers;
+
+    if (user.role === 'Superuser' || user.role === 'Company User') {
+      crewMembers = await User.find({
+        role: { $in: ['Captain', 'Crew'] }
+      }).populate('assignedVessels');
+    } else {
+      crewMembers = await User.find({
+        role: { $in: ['Captain', 'Crew'] },
+        assignedVessels: { $in: user.assignedVessels }
+      }).populate('assignedVessels');
+    }
+
+    res.json(crewMembers);
+  } catch (error) {
+    console.error('Error fetching crew members:', error);
+    res.status(500).json({ message: 'Server error during fetching crew members' });
   }
 });
 
@@ -237,5 +287,6 @@ module.exports = {
   getUserProfile,
   updateUserProfile,
   getUsers,
+  getCrewMembers,
   updateUserVessels,
 };
