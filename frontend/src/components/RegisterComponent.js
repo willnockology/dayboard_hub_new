@@ -9,6 +9,7 @@ const RegisterComponent = ({ setToken }) => {
   const [password, setPassword] = useState('');
   const [role, setRole] = useState('Superuser'); // Default to 'Superuser'
   const [email, setEmail] = useState('');
+  const [commercial, setCommercial] = useState(false);
   const [error, setError] = useState('');
   const history = useHistory();
 
@@ -22,6 +23,7 @@ const RegisterComponent = ({ setToken }) => {
       password,
       role,
       email,
+      commercial,
     };
 
     console.log('Form Data:', formData);
@@ -90,6 +92,14 @@ const RegisterComponent = ({ setToken }) => {
           onChange={(e) => setEmail(e.target.value)}
           required
         />
+        <label>
+          <input
+            type="checkbox"
+            checked={commercial}
+            onChange={(e) => setCommercial(e.target.checked)}
+          />
+          Commercial
+        </label>
         <button type="submit">Register User</button>
       </form>
     </div>

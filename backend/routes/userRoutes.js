@@ -1,27 +1,20 @@
 const express = require('express');
-const router = express.Router();
+const { protect } = require('../middleware/authMiddleware');
 const {
-  registerUser,
   authUser,
+  registerUser,
   getUserProfile,
+  updateUserProfile,
   getUsers,
   updateUserVessels
 } = require('../controllers/userController');
-const { protect, superuser, userOrSuperuser } = require('../middleware/authMiddleware');
 
-// Register a new user
-router.post('/register', registerUser);
+const router = express.Router();
 
-// Authenticate user and get token
 router.post('/login', authUser);
-
-// Get user profile
-router.get('/profile', protect, getUserProfile);
-
-// Get all users
-router.get('/', protect, superuser, getUsers);
-
-// Update user vessels
-router.put('/:id/vessels', protect, superuser, updateUserVessels);
+router.post('/register', registerUser);
+router.route('/profile').get(protect, getUserProfile).put(protect, updateUserProfile);
+router.route('/').get(protect, getUsers);
+router.route('/:id/vessels').put(protect, updateUserVessels);
 
 module.exports = router;

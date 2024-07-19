@@ -66,12 +66,25 @@ function DashboardComponent({ setToken }) {
   const fetchVessels = async () => {
     try {
       const token = localStorage.getItem('authToken');
+      const user = JSON.parse(localStorage.getItem('user'));
       const response = await axios.get('http://localhost:5001/api/vessels', {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
-      setVessels(response.data);
+
+      console.log('User:', user);
+      console.log('All Vessels:', response.data);
+
+      let userVessels;
+      if (user.role === 'Superuser') {
+        userVessels = response.data;
+      } else {
+        userVessels = response.data.filter(vessel => user.assignedVessels.includes(vessel._id));
+      }
+
+      console.log('User Vessels:', userVessels);
+      setVessels(userVessels);
     } catch (error) {
       setError('Error fetching vessels');
     }
@@ -90,6 +103,7 @@ function DashboardComponent({ setToken }) {
         ...prevItem,
         role: response.data.role,
       }));
+      console.log('User Role:', response.data.role);
     } catch (error) {
       setError('Error fetching user role');
     }
@@ -293,7 +307,7 @@ function DashboardComponent({ setToken }) {
     }
 
     // Filter by vessel
-    if ((role === 'Company User' || role === 'Superuser') && selectedVessel) {
+    if (selectedVessel) {
       filteredItems = filteredItems.filter(item => item.vessel && item.vessel._id === selectedVessel);
     }
 
@@ -440,11 +454,6 @@ function DashboardComponent({ setToken }) {
     const selectedSubcategoryData = data.subCategories.find((sub) => sub.name === filterSubcategory);
     const items = data.items.filter((item) => item.subCategoryId === selectedSubcategoryData?.id).map((item) => item.name);
     return Array.from(new Set(items));
-  };
-
-  const getAvailableVessels = () => {
-    const vesselIds = items.map(item => item.vessel && item.vessel._id).filter(id => id);
-    return vessels.filter(vessel => vesselIds.includes(vessel._id));
   };
 
   return (
@@ -604,77 +613,77 @@ function DashboardComponent({ setToken }) {
       </div>
 
       <div className="filters">
-        <input
-          type="text"
-          placeholder="Search"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-        />
-        <select
-          name="filterVessel"
-          value={selectedVessel}
-          onChange={(e) => setSelectedVessel(e.target.value)}
-        >
-          <option value="">Filter by Vessel</option>
-          {getAvailableVessels().map((vessel) => (
-            <option key={vessel._id} value={vessel._id}>
-              {vessel.name}
-            </option>
-          ))}
-        </select>
-        <select
-          name="filterCategory"
-          value={filterCategory}
-          onChange={handleFilterCategoryChange}
-        >
-          <option value="">Filter by Category</option>
-          {getAvailableCategories().map((category, index) => (
-            <option key={index} value={category}>
-              {category}
-            </option>
-          ))}
-        </select>
-        <select
-          name="filterSubcategory"
-          value={filterSubcategory}
-          onChange={handleFilterSubcategoryChange}
-          disabled={!filterCategory}
-        >
-          <option value="">Filter by Subcategory</option>
-          {getAvailableSubcategories().map((subcategory, index) => (
-            <option key={index} value={subcategory}>
-              {subcategory}
-            </option>
-          ))}
-        </select>
-        <select
-          name="filterItem"
-          value={filterItem}
-          onChange={handleFilterItemChange}
-          disabled={!filterSubcategory}
-        >
-          <option value="">Filter by Item</option>
-          {getAvailableItems().map((item, index) => (
-            <option key={index} value={item}>
-              {item}
-            </option>
-          ))}
-        </select>
-        <button onClick={handleClearFilters}>Clear Filters</button>
-        <div className="show-completed">
-          <label>
-            Show:
-            <select
-              value={completedFilter}
-              onChange={(e) => setCompletedFilter(e.target.value)}
-            >
-              <option value="All">All</option>
-              <option value="Outstanding">Outstanding</option>
-              <option value="Completed">Completed</option>
-            </select>
-          </label>
-        </div>
-      </div>
+  <input
+    type="text"
+    placeholder="Search"
+    value={searchQuery}
+    onChange={(e) => setSearchQuery(e.target.value)}
+  />
+  <select
+    name="filterVessel"
+    value={selectedVessel}
+    onChange={(e) => setSelectedVessel(e.target.value)}
+  >
+    <option value="">Filter by Vessel</option>
+    {vessels.map((vessel) => (
+      <option key={vessel._id} value={vessel._id}>
+        {vessel.name}
+      </option>
+    ))}
+  </select>
+  <select
+    name="filterCategory"
+    value={filterCategory}
+    onChange={handleFilterCategoryChange}
+  >
+    <option value="">Filter by Category</option>
+    {getAvailableCategories().map((category, index) => (
+      <option key={index} value={category}>
+        {category}
+      </option>
+    ))}
+  </select>
+  <select
+    name="filterSubcategory"
+    value={filterSubcategory}
+    onChange={handleFilterSubcategoryChange}
+    disabled={!filterCategory}
+  >
+    <option value="">Filter by Subcategory</option>
+    {getAvailableSubcategories().map((subcategory, index) => (
+      <option key={index} value={subcategory}>
+        {subcategory}
+      </option>
+    ))}
+  </select>
+  <select
+    name="filterItem"
+    value={filterItem}
+    onChange={handleFilterItemChange}
+    disabled={!filterSubcategory}
+  >
+    <option value="">Filter by Item</option>
+    {getAvailableItems().map((item, index) => (
+      <option key={index} value={item}>
+        {item}
+      </option>
+    ))}
+  </select>
+  <button onClick={handleClearFilters}>Clear Filters</button>
+  <div className="show-completed">
+    <label>
+      Show:
+      <select
+        value={completedFilter}
+        onChange={(e) => setCompletedFilter(e.target.value)}
+      >
+        <option value="All">All</option>
+        <option value="Outstanding">Outstanding</option>
+        <option value="Completed">Completed</option>
+      </select>
+    </label>
+  </div>
+</div>
 
       <table>
         <thead>

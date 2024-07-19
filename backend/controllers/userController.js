@@ -18,36 +18,27 @@ const authUser = asyncHandler(async (req, res) => {
   const { username, password } = req.body;
 
   try {
-    console.log('Login attempt for username:', username);
     const user = await User.findOne({ username }).populate('assignedVessels');
 
-    if (user) {
-      console.log('User found:', user);
-      console.log('Password provided:', password);
-      console.log('Hashed password in DB:', user.password);
-
-      const isMatch = await bcrypt.compare(password, user.password);
-      console.log('Password match status:', isMatch);
-
-      if (isMatch) {
-        res.json({
-          token: generateToken(user._id),
-          user: {
-            id: user._id,
-            username: user.username,
-            role: user.role,
-            email: user.email,
-            firstName: user.firstName,
-            lastName: user.lastName,
-            assignedVessels: user.assignedVessels,
-          },
-        });
-      } else {
-        console.log('Password mismatch');
-        res.status(401).json({ message: 'Invalid username or password' });
-      }
+    if (user && await user.matchPassword(password)) {
+      res.json({
+        token: generateToken(user._id),
+        user: {
+          id: user._id,
+          username: user.username,
+          role: user.role,
+          email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          assignedVessels: user.assignedVessels,
+          phoneNumber: user.phoneNumber,
+          birthday: user.birthday,
+          startDate: user.startDate,
+          position: user.position,
+          commercial: user.commercial,
+        },
+      });
     } else {
-      console.log('User not found');
       res.status(401).json({ message: 'Invalid username or password' });
     }
   } catch (error) {
@@ -60,7 +51,7 @@ const authUser = asyncHandler(async (req, res) => {
 // @route   POST /api/users/register
 // @access  Public
 const registerUser = asyncHandler(async (req, res) => {
-  const { firstName, lastName, username, email, password, role, assignedVessels } = req.body;
+  const { firstName, lastName, username, email, password, role, assignedVessels, phoneNumber, birthday, startDate, position, commercial } = req.body;
 
   if (!firstName || !lastName || !username || !email || !password || !role) {
     res.status(400).json({ message: 'Please fill in all fields' });
@@ -75,23 +66,22 @@ const registerUser = asyncHandler(async (req, res) => {
       return;
     }
 
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
-
-    console.log('Generated hashed password during registration:', hashedPassword);
-
     const user = new User({
       firstName,
       lastName,
       username,
       email,
-      password: hashedPassword,
+      password,
       role,
       assignedVessels,
+      phoneNumber,
+      birthday,
+      startDate,
+      position,
+      commercial,
     });
 
     await user.save();
-    console.log('User saved with hashed password:', user.password);
 
     if (user) {
       res.status(201).json({
@@ -104,6 +94,11 @@ const registerUser = asyncHandler(async (req, res) => {
           role: user.role,
           email: user.email,
           assignedVessels: user.assignedVessels,
+          phoneNumber: user.phoneNumber,
+          birthday: user.birthday,
+          startDate: user.startDate,
+          position: user.position,
+          commercial: user.commercial,
         },
       });
     } else {
@@ -131,6 +126,11 @@ const getUserProfile = asyncHandler(async (req, res) => {
         role: user.role,
         email: user.email,
         assignedVessels: user.assignedVessels,
+        phoneNumber: user.phoneNumber,
+        birthday: user.birthday,
+        startDate: user.startDate,
+        position: user.position,
+        commercial: user.commercial,
       });
     } else {
       res.status(404).json({ message: 'User not found' });
@@ -138,6 +138,47 @@ const getUserProfile = asyncHandler(async (req, res) => {
   } catch (error) {
     console.error('Error fetching user profile:', error);
     res.status(500).json({ message: 'Server error during fetching user profile' });
+  }
+});
+
+// @desc    Update user profile
+// @route   PUT /api/users/profile
+// @access  Private
+const updateUserProfile = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.user._id);
+
+  if (user) {
+    user.firstName = req.body.firstName || user.firstName;
+    user.lastName = req.body.lastName || user.lastName;
+    user.username = req.body.username || user.username;
+    user.email = req.body.email || user.email;
+    user.phoneNumber = req.body.phoneNumber || user.phoneNumber;
+    user.birthday = req.body.birthday || user.birthday;
+    user.startDate = req.body.startDate || user.startDate;
+    user.position = req.body.position || user.position;
+    user.commercial = req.body.commercial !== undefined ? req.body.commercial : user.commercial;
+    if (req.body.password) {
+      user.password = req.body.password;
+    }
+
+    const updatedUser = await user.save();
+    res.json({
+      id: updatedUser._id,
+      firstName: updatedUser.firstName,
+      lastName: updatedUser.lastName,
+      username: updatedUser.username,
+      role: updatedUser.role,
+      email: updatedUser.email,
+      assignedVessels: updatedUser.assignedVessels,
+      phoneNumber: updatedUser.phoneNumber,
+      birthday: updatedUser.birthday,
+      startDate: updatedUser.startDate,
+      position: updatedUser.position,
+      commercial: updatedUser.commercial,
+      token: generateToken(updatedUser._id),
+    });
+  } else {
+    res.status(404).json({ message: 'User not found' });
   }
 });
 
@@ -168,7 +209,7 @@ const getUsers = asyncHandler(async (req, res) => {
 // @access  Private/Superuser
 const updateUserVessels = asyncHandler(async (req, res) => {
   try {
-    const { vessels } = req.body;
+    const { vessels, commercial } = req.body;
     const user = await User.findById(req.params.id);
 
     if (!user) {
@@ -177,6 +218,10 @@ const updateUserVessels = asyncHandler(async (req, res) => {
     }
 
     user.assignedVessels = vessels;
+    if (commercial !== undefined) {
+      user.commercial = commercial;
+    }
+
     await user.save();
 
     res.json(user);
@@ -190,6 +235,7 @@ module.exports = {
   authUser,
   registerUser,
   getUserProfile,
+  updateUserProfile,
   getUsers,
   updateUserVessels,
 };

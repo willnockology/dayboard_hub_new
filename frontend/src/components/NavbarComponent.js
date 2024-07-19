@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { Link, useHistory } from 'react-router-dom';
 import '../global.css';
 import './NavbarComponent.css';
+import commercialLogo from '../assets/dayboardmaritime_logo.png';
+import nonCommercialLogo from '../assets/dbys_logo.png';
 
 const NavbarComponent = ({ setToken }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -19,11 +21,16 @@ const NavbarComponent = ({ setToken }) => {
   };
 
   const user = JSON.parse(localStorage.getItem('user'));
+  const logoSrc = user && user.commercial ? commercialLogo : nonCommercialLogo;
 
   return (
     <nav className="navbar">
       <div className="navbar-container">
-        <div className="navbar-brand">Dayboard Hub</div>
+        <div className="navbar-logo">
+          <Link to="/dashboard">
+            <img src={logoSrc} alt="Logo" className="navbar-logo-image" />
+          </Link>
+        </div>
         <button className="navbar-toggle" onClick={toggleMenu}>
           <span className="navbar-toggle-icon"></span>
           <span className="navbar-toggle-icon"></span>
@@ -31,9 +38,6 @@ const NavbarComponent = ({ setToken }) => {
         </button>
         <div className={`navbar-menu ${isOpen ? 'is-active' : ''}`}>
           <ul>
-            <li>
-              <Link to="/dashboard">Dashboard</Link>
-            </li>
             <li>
               <Link to="/profile">Profile</Link>
             </li>

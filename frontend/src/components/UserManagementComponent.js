@@ -6,6 +6,7 @@ const UserManagementComponent = () => {
   const [vessels, setVessels] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
   const [selectedVessels, setSelectedVessels] = useState([]);
+  const [isCommercial, setIsCommercial] = useState(false);
 
   useEffect(() => {
     fetchUsers();
@@ -35,6 +36,7 @@ const UserManagementComponent = () => {
   const handleUserSelect = (user) => {
     setSelectedUser(user);
     setSelectedVessels(user.assignedVessels.map(vessel => vessel._id));
+    setIsCommercial(user.commercial);
   };
 
   const handleVesselChange = (e) => {
@@ -50,16 +52,21 @@ const UserManagementComponent = () => {
     });
   };
 
+  const handleCommercialChange = (e) => {
+    setIsCommercial(e.target.checked);
+  };
+
   const handleSave = async () => {
     const token = localStorage.getItem('authToken');
     await axios.put(`http://localhost:5001/api/users/${selectedUser._id}/vessels`, {
       vessels: selectedVessels,
+      commercial: isCommercial,
     }, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
     });
-    alert('Vessels assigned successfully');
+    alert('User updated successfully');
     fetchUsers();
   };
 
@@ -74,6 +81,7 @@ const UserManagementComponent = () => {
             <th>Email</th>
             <th>First Name</th>
             <th>Last Name</th>
+            <th>Commercial</th>
             <th>Assigned Vessels</th>
             <th>Actions</th>
           </tr>
@@ -86,6 +94,7 @@ const UserManagementComponent = () => {
               <td>{user.email}</td>
               <td>{user.firstName}</td>
               <td>{user.lastName}</td>
+              <td>{user.commercial ? 'Yes' : 'No'}</td>
               <td>
                 {user.role === 'Superuser' ? (
                   vessels.map(vessel => vessel.name).join(', ')
@@ -98,7 +107,7 @@ const UserManagementComponent = () => {
                   onClick={() => handleUserSelect(user)}
                   disabled={user.role === 'Superuser'}
                 >
-                  {user.role === 'Superuser' ? 'Assigned to all vessels' : 'Assign Vessels'}
+                  {user.role === 'Superuser' ? 'Assigned to all vessels' : 'Edit User'}
                 </button>
               </td>
             </tr>
@@ -107,7 +116,16 @@ const UserManagementComponent = () => {
       </table>
       {selectedUser && selectedUser.role !== 'Superuser' && (
         <div>
-          <h2>Assign Vessels to {selectedUser.username}</h2>
+          <h2>Edit {selectedUser.username}</h2>
+          <label>
+            <input
+              type="checkbox"
+              checked={isCommercial}
+              onChange={handleCommercialChange}
+            />
+            Commercial
+          </label>
+          <h3>Assign Vessels</h3>
           <ul>
             {vessels.map((vessel) => (
               <li key={vessel._id}>

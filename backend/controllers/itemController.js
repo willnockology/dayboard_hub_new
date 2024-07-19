@@ -5,7 +5,15 @@ const Item = require('../models/itemModel');
 // @route   GET /api/items
 // @access  Private
 const getItems = asyncHandler(async (req, res) => {
-  const items = await Item.find().populate('vessel');
+  const user = req.user;
+
+  let items;
+  if (user.role === 'Superuser') {
+    items = await Item.find().populate('vessel');
+  } else {
+    items = await Item.find({ vessel: { $in: user.assignedVessels } }).populate('vessel');
+  }
+
   res.json(items);
 });
 

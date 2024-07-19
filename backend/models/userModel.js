@@ -34,18 +34,34 @@ const userSchema = mongoose.Schema({
       ref: 'Vessel',
     },
   ],
+  phoneNumber: {
+    type: String,
+    required: false,
+  },
+  birthday: {
+    type: Date,
+    required: false,
+  },
+  startDate: {
+    type: Date,
+    required: false,
+  },
+  position: {
+    type: String,
+    required: false,
+  },
+  commercial: {
+    type: Boolean,
+    default: false,
+  },
 }, {
   timestamps: true,
 });
 
-// Remove pre-save hook for hashing the password
-// userSchema.pre('save', async function (next) {
-//   if (!this.isModified('password')) {
-//     next();
-//   }
-//   const salt = await bcrypt.genSalt(10);
-//   this.password = await bcrypt.hash(this.password, salt);
-// });
+// Method to match user entered password to hashed password in database
+userSchema.methods.matchPassword = async function (enteredPassword) {
+  return await bcrypt.compare(enteredPassword, this.password);
+};
 
 const User = mongoose.model('User', userSchema);
 
