@@ -11,6 +11,8 @@ const CrewModuleComponent = () => {
   const [newCrew, setNewCrew] = useState({
     firstName: '',
     lastName: '',
+    username: '',
+    password: '',
     position: '',
     nationality: '',
     email: '',
@@ -64,23 +66,24 @@ const CrewModuleComponent = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const formData = new FormData();
-    for (const key in newCrew) {
-      formData.append(key, newCrew[key]);
-    }
+    const formData = {
+      ...newCrew,
+      assignedVessels: [newCrew.vessel], // Ensure vessel is included as an array
+    };
 
     try {
       const token = localStorage.getItem('authToken');
       const response = await axios.post('http://localhost:5001/api/users/register', formData, {
         headers: {
           Authorization: `Bearer ${token}`,
-          'Content-Type': 'multipart/form-data',
         },
       });
       setCrew([...crew, response.data.user]);
       setNewCrew({
         firstName: '',
         lastName: '',
+        username: '',
+        password: '',
         position: '',
         nationality: '',
         email: '',
@@ -144,6 +147,28 @@ const CrewModuleComponent = () => {
               value={newCrew.lastName}
               onChange={handleInputChange}
               placeholder="Last Name"
+              required
+            />
+          </label>
+          <label>
+            Username
+            <input
+              type="text"
+              name="username"
+              value={newCrew.username}
+              onChange={handleInputChange}
+              placeholder="Username"
+              required
+            />
+          </label>
+          <label>
+            Password
+            <input
+              type="password"
+              name="password"
+              value={newCrew.password}
+              onChange={handleInputChange}
+              placeholder="Password"
               required
             />
           </label>
@@ -221,6 +246,27 @@ const CrewModuleComponent = () => {
               ))}
             </select>
           </label>
+          <label>
+            Role
+            <select
+              name="role"
+              value={newCrew.role}
+              onChange={handleInputChange}
+              required
+            >
+              <option value="Crew">Crew</option>
+              <option value="Captain">Captain</option>
+            </select>
+          </label>
+          <label>
+            Active
+            <input
+              type="checkbox"
+              name="active"
+              checked={newCrew.active}
+              onChange={(e) => handleInputChange({ target: { name: 'active', value: e.target.checked } })}
+            />
+          </label>
           <button type="submit">Add Crew Member</button>
         </form>
       )}
@@ -230,7 +276,6 @@ const CrewModuleComponent = () => {
           <table>
             <thead>
               <tr>
-                <th>Photo</th>
                 <th>First Name</th>
                 <th>Last Name</th>
                 <th>Position</th>
@@ -244,7 +289,6 @@ const CrewModuleComponent = () => {
             <tbody>
               {activeCrew.map((c) => (
                 <tr key={c._id}>
-                  <td><img src={c.photo} alt="Crew" /></td>
                   <td>{c.firstName}</td>
                   <td>{c.lastName}</td>
                   <td>{c.position}</td>
@@ -265,7 +309,6 @@ const CrewModuleComponent = () => {
           <table>
             <thead>
               <tr>
-                <th>Photo</th>
                 <th>First Name</th>
                 <th>Last Name</th>
                 <th>Position</th>
@@ -279,7 +322,6 @@ const CrewModuleComponent = () => {
             <tbody>
               {inactiveCrew.map((c) => (
                 <tr key={c._id}>
-                  <td><img src={c.photo} alt="Crew" /></td>
                   <td>{c.firstName}</td>
                   <td>{c.lastName}</td>
                   <td>{c.position}</td>

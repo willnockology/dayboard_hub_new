@@ -1,5 +1,5 @@
 const express = require('express');
-const { protect } = require('../middleware/authMiddleware');
+const { protect, checkRole } = require('../middleware/authMiddleware');
 const {
   authUser,
   registerUser,
@@ -13,7 +13,7 @@ const {
 const router = express.Router();
 
 router.post('/login', authUser);
-router.post('/register', registerUser);
+router.post('/register', protect, checkRole, registerUser);
 router.route('/profile').get(protect, getUserProfile).put(protect, updateUserProfile);
 router.route('/').get(protect, getUsers);
 router.route('/crew').get(protect, getCrewMembers);

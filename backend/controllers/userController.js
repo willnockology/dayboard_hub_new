@@ -1,8 +1,8 @@
 const asyncHandler = require('express-async-handler');
 const jwt = require('jsonwebtoken');
+const bcrypt = require('bcryptjs');
 const User = require('../models/userModel');
 const Vessel = require('../models/vesselModel');
-const bcrypt = require('bcryptjs');
 
 // Generate JWT Token
 const generateToken = (id) => {
@@ -51,13 +51,13 @@ const authUser = asyncHandler(async (req, res) => {
   }
 });
 
-// @desc    Register a new user
+// @desc    Register a new user or crew member
 // @route   POST /api/users/register
-// @access  Public
+// @access  Private (Superuser, Company user, Captain)
 const registerUser = asyncHandler(async (req, res) => {
-  const { firstName, lastName, username, email, password, role, assignedVessels, phoneNumber, birthday, startDate, position, commercial, photo, nationality, embarked, passportNumber } = req.body;
+  const { firstName, lastName, username, email, password, role, assignedVessels, phoneNumber, birthday, startDate, position, commercial, photo, nationality, embarked, passportNumber, active } = req.body;
 
-  if (!firstName || !lastName || !username || !email || !password || !role) {
+  if (!firstName || !lastName || !username || !email || !password || !role || !assignedVessels || !assignedVessels.length) {
     res.status(400).json({ message: 'Please fill in all fields' });
     return;
   }
@@ -70,12 +70,14 @@ const registerUser = asyncHandler(async (req, res) => {
       return;
     }
 
-    const user = new User({
+    // Create new user
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const newUser = new User({
       firstName,
       lastName,
       username,
       email,
-      password,
+      password: hashedPassword,
       role,
       assignedVessels,
       phoneNumber,
@@ -87,30 +89,32 @@ const registerUser = asyncHandler(async (req, res) => {
       nationality,
       embarked,
       passportNumber,
+      active,
     });
 
-    await user.save();
+    const createdUser = await newUser.save();
 
-    if (user) {
+    if (createdUser) {
       res.status(201).json({
-        token: generateToken(user._id),
+        token: generateToken(createdUser._id),
         user: {
-          id: user._id,
-          firstName: user.firstName,
-          lastName: user.lastName,
-          username: user.username,
-          role: user.role,
-          email: user.email,
-          assignedVessels: user.assignedVessels,
-          phoneNumber: user.phoneNumber,
-          birthday: user.birthday,
-          startDate: user.startDate,
-          position: user.position,
-          commercial: user.commercial,
-          photo: user.photo,
-          nationality: user.nationality,
-          embarked: user.embarked,
-          passportNumber: user.passportNumber,
+          id: createdUser._id,
+          firstName: createdUser.firstName,
+          lastName: createdUser.lastName,
+          username: createdUser.username,
+          role: createdUser.role,
+          email: createdUser.email,
+          assignedVessels: createdUser.assignedVessels,
+          phoneNumber: createdUser.phoneNumber,
+          birthday: createdUser.birthday,
+          startDate: createdUser.startDate,
+          position: createdUser.position,
+          commercial: createdUser.commercial,
+          photo: createdUser.photo,
+          nationality: createdUser.nationality,
+          embarked: createdUser.embarked,
+          passportNumber: createdUser.passportNumber,
+          active: createdUser.active,
         },
       });
     } else {

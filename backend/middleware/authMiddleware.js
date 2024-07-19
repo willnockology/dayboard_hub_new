@@ -49,4 +49,14 @@ const userOrSuperuser = (req, res, next) => {
   }
 };
 
-module.exports = { protect, superuser, userOrSuperuser };
+// New checkRole middleware function
+const checkRole = (req, res, next) => {
+  if (req.user && (req.user.role === 'Superuser' || req.user.role === 'Company User' || req.user.role === 'Captain')) {
+    next();
+  } else {
+    res.status(403);
+    throw new Error('Forbidden');
+  }
+};
+
+module.exports = { protect, superuser, userOrSuperuser, checkRole };
