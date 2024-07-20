@@ -40,6 +40,7 @@ const authUser = asyncHandler(async (req, res) => {
           nationality: user.nationality,
           embarked: user.embarked,
           passportNumber: user.passportNumber,
+          active: user.active, // Ensure active status is included
         },
       });
     } else {
@@ -57,7 +58,7 @@ const authUser = asyncHandler(async (req, res) => {
 const registerUser = asyncHandler(async (req, res) => {
   const { firstName, lastName, username, email, password, role, assignedVessels, phoneNumber, birthday, startDate, position, commercial, photo, nationality, embarked, passportNumber, active } = req.body;
 
-  if (!firstName || !lastName || !username || !email || !password || !role || !assignedVessels || !assignedVessels.length) {
+  if (!firstName || !lastName || !username || !email || !password || !role) {
     res.status(400).json({ message: 'Please fill in all fields' });
     return;
   }
@@ -89,7 +90,7 @@ const registerUser = asyncHandler(async (req, res) => {
       nationality,
       embarked,
       passportNumber,
-      active,
+      active, // Ensure active status is included
     });
 
     const createdUser = await newUser.save();
@@ -114,7 +115,7 @@ const registerUser = asyncHandler(async (req, res) => {
           nationality: createdUser.nationality,
           embarked: createdUser.embarked,
           passportNumber: createdUser.passportNumber,
-          active: createdUser.active,
+          active: createdUser.active, // Ensure active status is included
         },
       });
     } else {
@@ -151,6 +152,7 @@ const getUserProfile = asyncHandler(async (req, res) => {
         nationality: user.nationality,
         embarked: user.embarked,
         passportNumber: user.passportNumber,
+        active: user.active, // Ensure active status is included
       });
     } else {
       res.status(404).json({ message: 'User not found' });
@@ -162,51 +164,60 @@ const getUserProfile = asyncHandler(async (req, res) => {
 });
 
 // @desc    Update user profile
-// @route   PUT /api/users/profile
+// @route   PUT /api/users/:id/profile
 // @access  Private
 const updateUserProfile = asyncHandler(async (req, res) => {
-  const user = await User.findById(req.user._id);
+  const userId = req.params.id;
+  console.log('Update user profile request:', req.body); // Add logging
+  try {
+    const user = await User.findById(userId);
 
-  if (user) {
-    user.firstName = req.body.firstName || user.firstName;
-    user.lastName = req.body.lastName || user.lastName;
-    user.username = req.body.username || user.username;
-    user.email = req.body.email || user.email;
-    user.phoneNumber = req.body.phoneNumber || user.phoneNumber;
-    user.birthday = req.body.birthday || user.birthday;
-    user.startDate = req.body.startDate || user.startDate;
-    user.position = req.body.position || user.position;
-    user.commercial = req.body.commercial !== undefined ? req.body.commercial : user.commercial;
-    user.photo = req.body.photo || user.photo;
-    user.nationality = req.body.nationality || user.nationality;
-    user.embarked = req.body.embarked || user.embarked;
-    user.passportNumber = req.body.passportNumber || user.passportNumber;
-    if (req.body.password) {
-      user.password = req.body.password;
+    if (user) {
+      user.firstName = req.body.firstName || user.firstName;
+      user.lastName = req.body.lastName || user.lastName;
+      user.username = req.body.username || user.username;
+      user.email = req.body.email || user.email;
+      user.phoneNumber = req.body.phoneNumber || user.phoneNumber;
+      user.birthday = req.body.birthday || user.birthday;
+      user.startDate = req.body.startDate || user.startDate;
+      user.position = req.body.position || user.position;
+      user.commercial = req.body.commercial !== undefined ? req.body.commercial : user.commercial;
+      user.photo = req.body.photo || user.photo;
+      user.nationality = req.body.nationality || user.nationality;
+      user.embarked = req.body.embarked || user.embarked;
+      user.passportNumber = req.body.passportNumber || user.passportNumber;
+      user.active = req.body.active !== undefined ? req.body.active : user.active; // Ensure active status is updated
+      if (req.body.password) {
+        user.password = req.body.password;
+      }
+
+      const updatedUser = await user.save();
+      res.json({
+        id: updatedUser._id,
+        firstName: updatedUser.firstName,
+        lastName: updatedUser.lastName,
+        username: updatedUser.username,
+        role: updatedUser.role,
+        email: updatedUser.email,
+        assignedVessels: updatedUser.assignedVessels,
+        phoneNumber: updatedUser.phoneNumber,
+        birthday: updatedUser.birthday,
+        startDate: updatedUser.startDate,
+        position: updatedUser.position,
+        commercial: updatedUser.commercial,
+        photo: updatedUser.photo,
+        nationality: updatedUser.nationality,
+        embarked: updatedUser.embarked,
+        passportNumber: updatedUser.passportNumber,
+        active: updatedUser.active, // Ensure active status is included
+        token: generateToken(updatedUser._id),
+      });
+    } else {
+      res.status(404).json({ message: 'User not found' });
     }
-
-    const updatedUser = await user.save();
-    res.json({
-      id: updatedUser._id,
-      firstName: updatedUser.firstName,
-      lastName: updatedUser.lastName,
-      username: updatedUser.username,
-      role: updatedUser.role,
-      email: updatedUser.email,
-      assignedVessels: updatedUser.assignedVessels,
-      phoneNumber: updatedUser.phoneNumber,
-      birthday: updatedUser.birthday,
-      startDate: updatedUser.startDate,
-      position: updatedUser.position,
-      commercial: updatedUser.commercial,
-      photo: updatedUser.photo,
-      nationality: updatedUser.nationality,
-      embarked: updatedUser.embarked,
-      passportNumber: updatedUser.passportNumber,
-      token: generateToken(updatedUser._id),
-    });
-  } else {
-    res.status(404).json({ message: 'User not found' });
+  } catch (error) {
+    console.error('Error updating user profile:', error);
+    res.status(500).json({ message: 'Server error during updating user profile' });
   }
 });
 

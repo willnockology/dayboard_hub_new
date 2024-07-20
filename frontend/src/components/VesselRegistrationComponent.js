@@ -8,7 +8,10 @@ const VesselRegistrationComponent = ({ token }) => {
     flagState: '',
     grossTonnage: '',
     regulatoryLength: '',
-    typeOfRegistration: ''
+    typeOfRegistration: '',
+    typeOfVessel: '',
+    callSign: '',
+    portOfRegistry: ''
   });
   const [message, setMessage] = useState('');
 
@@ -29,6 +32,17 @@ const VesselRegistrationComponent = ({ token }) => {
         }
       });
       setMessage('Vessel registered successfully!');
+      setFormData({
+        name: '',
+        imoNumber: '',
+        flagState: '',
+        grossTonnage: '',
+        regulatoryLength: '',
+        typeOfRegistration: '',
+        typeOfVessel: '',
+        callSign: '',
+        portOfRegistry: ''
+      });
     } catch (error) {
       console.error('Error registering vessel:', error);
       setMessage('Error registering vessel');
@@ -46,6 +60,7 @@ const VesselRegistrationComponent = ({ token }) => {
           value={formData.name}
           onChange={handleChange}
           placeholder="Vessel Name"
+          required
         />
         <input
           type="text"
@@ -53,11 +68,13 @@ const VesselRegistrationComponent = ({ token }) => {
           value={formData.imoNumber}
           onChange={handleChange}
           placeholder="IMO Number"
+          required
         />
         <select
           name="flagState"
           value={formData.flagState}
           onChange={handleChange}
+          required
         >
           <option value="">Select Flag State</option>
           <option value="Cayman Islands">Cayman Islands</option>
@@ -72,6 +89,7 @@ const VesselRegistrationComponent = ({ token }) => {
           value={formData.grossTonnage}
           onChange={handleChange}
           placeholder="Gross Tonnage"
+          required
         />
         <input
           type="number"
@@ -79,11 +97,13 @@ const VesselRegistrationComponent = ({ token }) => {
           value={formData.regulatoryLength}
           onChange={handleChange}
           placeholder="Regulatory Length (meters)"
+          required
         />
         <select
           name="typeOfRegistration"
           value={formData.typeOfRegistration}
           onChange={handleChange}
+          required
         >
           <option value="">Select Type of Registration</option>
           {formData.flagState === 'Cayman Islands' || formData.flagState === 'Bahamas' ? (
@@ -99,6 +119,37 @@ const VesselRegistrationComponent = ({ token }) => {
             </>
           )}
         </select>
+        <select
+          name="typeOfVessel"
+          value={formData.typeOfVessel}
+          onChange={handleChange}
+          required
+        >
+          <option value="">Select Type of Vessel</option>
+          <option value="Container Ship">Container Ship</option>
+          <option value="Yacht">Yacht</option>
+          <option value="Bulk Carrier">Bulk Carrier</option>
+          <option value="Chemical Carrier">Chemical Carrier</option>
+          <option value="Product Carrier">Product Carrier</option>
+          <option value="Crude Oil Carrier">Crude Oil Carrier</option>
+          <option value="LNG">LNG</option>
+        </select>
+        <input
+          type="text"
+          name="callSign"
+          value={formData.callSign}
+          onChange={handleChange}
+          placeholder="Call Sign"
+          required
+        />
+        <input
+          type="text"
+          name="portOfRegistry"
+          value={formData.portOfRegistry}
+          onChange={handleChange}
+          placeholder="Port of Registry"
+          required
+        />
         <button type="submit">Register Vessel</button>
       </form>
     </div>

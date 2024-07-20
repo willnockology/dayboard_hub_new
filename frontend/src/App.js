@@ -10,8 +10,9 @@ import FooterComponent from './components/FooterComponent';
 import ContactComponent from './components/ContactComponent';
 import RegisterComponent from './components/RegisterComponent';
 import VesselRegistrationComponent from './components/VesselRegistrationComponent';
-import UserManagementComponent from './components/UserManagementComponent'; // Add this import
-import CrewModuleComponent from './components/CrewModuleComponent'; // Add this import
+import UserManagementComponent from './components/UserManagementComponent';
+import CrewModuleComponent from './components/CrewModuleComponent';
+import UpdateVesselComponent from './components/UpdateVesselComponent';
 
 import './global.css';
 
@@ -36,7 +37,7 @@ const App = () => {
               <LoginComponent setToken={setToken} />
             </Route>
             <Route path="/register">
-              <RegisterComponent setToken={setToken} /> {/* Corrected route */}
+              <RegisterComponent setToken={setToken} />
             </Route>
             <Route path="/profile">
               <ProfileComponent />
@@ -48,13 +49,16 @@ const App = () => {
             <Route path="/form/view/:formType/:id" component={ViewFormComponent} />
             <Route path="/contact" component={ContactComponent} />
             <Route path="/vessel-registration">
-              <VesselRegistrationComponent token={token} /> {/* Add this route */}
+              <VesselRegistrationComponent token={token} />
             </Route>
             <Route path="/user-management">
-              <UserManagementComponent /> {/* Add this route */}
+              <UserManagementComponent />
             </Route>
             <Route path="/crew">
-              <CrewModuleComponent /> {/* Add this route */}
+              <CrewModuleComponent />
+            </Route>
+            <Route path="/update-vessel/:vesselId?">
+              <UpdateVesselComponent token={token} />
             </Route>
             <Route exact path="/">
               <LoginComponent setToken={setToken} />

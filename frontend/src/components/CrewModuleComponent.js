@@ -22,6 +22,8 @@ const CrewModuleComponent = () => {
     role: 'Crew',
     active: true,
   });
+  const [filterVessel, setFilterVessel] = useState(null);
+  const [userRole, setUserRole] = useState('');
 
   const fetchCrew = async () => {
     try {
@@ -32,6 +34,8 @@ const CrewModuleComponent = () => {
         },
       });
       setCrew(response.data);
+      const user = JSON.parse(localStorage.getItem('user'));
+      setUserRole(user.role);
     } catch (error) {
       console.error('Error fetching crew:', error);
     }
@@ -69,16 +73,17 @@ const CrewModuleComponent = () => {
     const formData = {
       ...newCrew,
       assignedVessels: [newCrew.vessel], // Ensure vessel is included as an array
+      active: newCrew.active, // Ensure active status is included
     };
 
     try {
       const token = localStorage.getItem('authToken');
-      const response = await axios.post('http://localhost:5001/api/users/register', formData, {
+      await axios.post('http://localhost:5001/api/users/register', formData, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
-      setCrew([...crew, response.data.user]);
+      setCrew([...crew, formData]);
       setNewCrew({
         firstName: '',
         lastName: '',
@@ -115,8 +120,18 @@ const CrewModuleComponent = () => {
     }
   };
 
-  const activeCrew = crew.filter((c) => c.active);
-  const inactiveCrew = crew.filter((c) => !c.active);
+  const handleFilterChange = (selectedOption) => {
+    setFilterVessel(selectedOption);
+  };
+
+  const filteredCrew = filterVessel
+    ? crew.filter((c) =>
+        c.assignedVessels.some((v) => v._id === filterVessel.value)
+      )
+    : crew;
+
+  const activeCrew = filteredCrew.filter((c) => c.active);
+  const inactiveCrew = filteredCrew.filter((c) => !c.active);
 
   const countryOptions = countryList().getData();
 
@@ -270,6 +285,18 @@ const CrewModuleComponent = () => {
           <button type="submit">Add Crew Member</button>
         </form>
       )}
+      {['Superuser', 'Company User'].includes(userRole) && (
+        <div>
+          <label>
+            Filter by Vessel
+            <Select
+              options={vessels.map(vessel => ({ value: vessel._id, label: vessel.name }))}
+              onChange={handleFilterChange}
+              placeholder="Select Vessel"
+            />
+          </label>
+        </div>
+      )}
       <div className="crew-tables">
         <div className="active-crew">
           <h2>Active Crew</h2>
@@ -283,6 +310,7 @@ const CrewModuleComponent = () => {
                 <th>Email</th>
                 <th>Phone Number</th>
                 <th>Passport Number</th>
+                {['Superuser', 'Company User'].includes(userRole) && <th>Vessel</th>}
                 <th>Actions</th>
               </tr>
             </thead>
@@ -296,6 +324,9 @@ const CrewModuleComponent = () => {
                   <td>{c.email}</td>
                   <td>{c.phoneNumber}</td>
                   <td>{c.passportNumber}</td>
+                  {['Superuser', 'Company User'].includes(userRole) && (
+                    <td>{c.assignedVessels.map(v => v.name).join(', ')}</td>
+                  )}
                   <td>
                     <button onClick={() => handleToggleActive(c._id)}>Deactivate</button>
                   </td>
@@ -316,6 +347,7 @@ const CrewModuleComponent = () => {
                 <th>Email</th>
                 <th>Phone Number</th>
                 <th>Passport Number</th>
+                {['Superuser', 'Company User'].includes(userRole) && <th>Vessel</th>}
                 <th>Actions</th>
               </tr>
             </thead>
@@ -329,6 +361,9 @@ const CrewModuleComponent = () => {
                   <td>{c.email}</td>
                   <td>{c.phoneNumber}</td>
                   <td>{c.passportNumber}</td>
+                  {['Superuser', 'Company User'].includes(userRole) && (
+                    <td>{c.assignedVessels.map(v => v.name).join(', ')}</td>
+                  )}
                   <td>
                     <button onClick={() => handleToggleActive(c._id)}>Activate</button>
                   </td>

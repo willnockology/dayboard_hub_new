@@ -44,6 +44,11 @@ const NavbarComponent = ({ setToken }) => {
             <li>
               <Link to="/contact">Contact</Link>
             </li>
+            {user && ['Superuser', 'Company User', 'Captain'].includes(user.role) && (
+              <li>
+                <Link to="/update-vessel">Update Vessel</Link>
+              </li>
+            )}
             {user && user.role === 'Superuser' && (
               <>
                 <li>
