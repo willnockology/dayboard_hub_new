@@ -1,6 +1,7 @@
 const asyncHandler = require('express-async-handler');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
+const mongoose = require('mongoose');
 const User = require('../models/userModel');
 const Vessel = require('../models/vesselModel');
 
@@ -40,7 +41,7 @@ const authUser = asyncHandler(async (req, res) => {
           nationality: user.nationality,
           embarked: user.embarked,
           passportNumber: user.passportNumber,
-          active: user.active, // Ensure active status is included
+          active: user.active,
         },
       });
     } else {
@@ -58,8 +59,10 @@ const authUser = asyncHandler(async (req, res) => {
 const registerUser = asyncHandler(async (req, res) => {
   const { firstName, lastName, username, email, password, role, assignedVessels, phoneNumber, birthday, startDate, position, commercial, photo, nationality, embarked, passportNumber, active } = req.body;
 
-  if (!firstName || !lastName || !username || !email || !password || !role) {
-    res.status(400).json({ message: 'Please fill in all fields' });
+  console.log('Register user payload:', req.body);
+
+  if (!firstName || !lastName || !username || !email || !password || !role || (assignedVessels.length === 0 && role !== 'Superuser')) {
+    res.status(400).json({ message: 'Please fill in all fields and assign at least one vessel if not Superuser' });
     return;
   }
 
@@ -71,7 +74,15 @@ const registerUser = asyncHandler(async (req, res) => {
       return;
     }
 
-    // Create new user
+    let assignedVesselsObjectId = [];
+
+    if (role === 'Superuser') {
+      const vessels = await Vessel.find();
+      assignedVesselsObjectId = vessels.map(vessel => vessel._id);
+    } else {
+      assignedVesselsObjectId = assignedVessels.map(vesselId => mongoose.Types.ObjectId(vesselId));
+    }
+
     const hashedPassword = await bcrypt.hash(password, 10);
     const newUser = new User({
       firstName,
@@ -80,7 +91,7 @@ const registerUser = asyncHandler(async (req, res) => {
       email,
       password: hashedPassword,
       role,
-      assignedVessels,
+      assignedVessels: assignedVesselsObjectId,
       phoneNumber,
       birthday,
       startDate,
@@ -90,10 +101,12 @@ const registerUser = asyncHandler(async (req, res) => {
       nationality,
       embarked,
       passportNumber,
-      active, // Ensure active status is included
+      active,
     });
 
     const createdUser = await newUser.save();
+
+    console.log('Created user:', createdUser);
 
     if (createdUser) {
       res.status(201).json({
@@ -115,7 +128,7 @@ const registerUser = asyncHandler(async (req, res) => {
           nationality: createdUser.nationality,
           embarked: createdUser.embarked,
           passportNumber: createdUser.passportNumber,
-          active: createdUser.active, // Ensure active status is included
+          active: createdUser.active,
         },
       });
     } else {
@@ -152,7 +165,7 @@ const getUserProfile = asyncHandler(async (req, res) => {
         nationality: user.nationality,
         embarked: user.embarked,
         passportNumber: user.passportNumber,
-        active: user.active, // Ensure active status is included
+        active: user.active,
       });
     } else {
       res.status(404).json({ message: 'User not found' });
@@ -168,7 +181,7 @@ const getUserProfile = asyncHandler(async (req, res) => {
 // @access  Private
 const updateUserProfile = asyncHandler(async (req, res) => {
   const userId = req.params.id;
-  console.log('Update user profile request:', req.body); // Add logging
+  console.log('Update user profile request:', req.body);
   try {
     const user = await User.findById(userId);
 
@@ -186,7 +199,7 @@ const updateUserProfile = asyncHandler(async (req, res) => {
       user.nationality = req.body.nationality || user.nationality;
       user.embarked = req.body.embarked || user.embarked;
       user.passportNumber = req.body.passportNumber || user.passportNumber;
-      user.active = req.body.active !== undefined ? req.body.active : user.active; // Ensure active status is updated
+      user.active = req.body.active !== undefined ? req.body.active : user.active;
       if (req.body.password) {
         user.password = req.body.password;
       }
@@ -209,7 +222,7 @@ const updateUserProfile = asyncHandler(async (req, res) => {
         nationality: updatedUser.nationality,
         embarked: updatedUser.embarked,
         passportNumber: updatedUser.passportNumber,
-        active: updatedUser.active, // Ensure active status is included
+        active: updatedUser.active,
         token: generateToken(updatedUser._id),
       });
     } else {
@@ -282,7 +295,7 @@ const updateUserVessels = asyncHandler(async (req, res) => {
       return;
     }
 
-    user.assignedVessels = vessels;
+    user.assignedVessels = vessels.map(vesselId => mongoose.Types.ObjectId(vesselId));
     if (commercial !== undefined) {
       user.commercial = commercial;
     }

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import './UpdateVesselComponent.css';
 
@@ -19,40 +19,7 @@ const UpdateVesselComponent = ({ token }) => {
   const [user, setUser] = useState(null);
   const [message, setMessage] = useState('');
 
-  useEffect(() => {
-    const fetchUserDetails = async () => {
-      const user = JSON.parse(localStorage.getItem('user'));
-      setUser(user);
-      console.log('User:', user);
-
-      if (user && user.role === 'Captain' && user.assignedVessels.length > 0) {
-        const vesselId = user.assignedVessels[0]; // Assuming the user is assigned to one vessel
-        setSelectedVesselId(vesselId);
-        fetchVesselDetails(vesselId);
-      }
-    };
-
-    fetchUserDetails();
-  }, []);
-
-  useEffect(() => {
-    const fetchVessels = async () => {
-      try {
-        console.log('Fetching vessels...');
-        const response = await axios.get('http://localhost:5001/api/vessels', {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        setVessels(response.data);
-        console.log('Vessels:', response.data);
-      } catch (error) {
-        console.error('Error fetching vessels:', error);
-      }
-    };
-
-    fetchVessels();
-  }, [token]);
-
-  const fetchVesselDetails = async (vesselId) => {
+  const fetchVesselDetails = useCallback(async (vesselId) => {
     try {
       console.log(`Fetching vessel details for vesselId: ${vesselId}`);
       const response = await axios.get(`http://localhost:5001/api/vessels/${vesselId}`, {
@@ -73,7 +40,40 @@ const UpdateVesselComponent = ({ token }) => {
     } catch (error) {
       console.error('Error fetching vessel details:', error);
     }
-  };
+  }, [token]);
+
+  useEffect(() => {
+    const fetchUserDetails = async () => {
+      const user = JSON.parse(localStorage.getItem('user'));
+      setUser(user);
+      console.log('User:', user);
+
+      if (user && user.role === 'Captain' && user.assignedVessels.length > 0) {
+        const vesselId = user.assignedVessels[0]; // Assuming the user is assigned to one vessel
+        setSelectedVesselId(vesselId);
+        fetchVesselDetails(vesselId);
+      }
+    };
+
+    fetchUserDetails();
+  }, [fetchVesselDetails]);
+
+  useEffect(() => {
+    const fetchVessels = async () => {
+      try {
+        console.log('Fetching vessels...');
+        const response = await axios.get('http://localhost:5001/api/vessels', {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setVessels(response.data);
+        console.log('Vessels:', response.data);
+      } catch (error) {
+        console.error('Error fetching vessels:', error);
+      }
+    };
+
+    fetchVessels();
+  }, [token]);
 
   const handleVesselChange = (e) => {
     const vesselId = e.target.value;

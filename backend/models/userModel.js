@@ -8,11 +8,11 @@ const userSchema = mongoose.Schema({
   },
   lastName: {
     type: String,
-    required: true,
+    required: false,
   },
   username: {
     type: String,
-    required: true,
+    required: false,
     unique: true,
   },
   email: {
@@ -22,11 +22,11 @@ const userSchema = mongoose.Schema({
   },
   password: {
     type: String,
-    required: true,
+    required: false,
   },
   role: {
     type: String,
-    required: true,
+    required: false,
   },
   assignedVessels: [
     {
