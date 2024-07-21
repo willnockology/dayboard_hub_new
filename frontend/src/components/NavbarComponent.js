@@ -60,6 +60,9 @@ const NavbarComponent = ({ setToken }) => {
                 <li>
                   <Link to="/register">Register User</Link>
                 </li>
+                <li>
+                  <Link to="/form-editor">Form Editor</Link>
+                </li>
               </>
             )}
             <li>

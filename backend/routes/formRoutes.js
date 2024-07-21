@@ -1,10 +1,31 @@
 const express = require('express');
-const router = express.Router();
-const { getFormDefinition, getFormData, submitFormData } = require('../controllers/formController');
+const {
+  getFormDefinition,
+  getFormDefinitions,
+  createFormDefinition,
+  updateFormDefinition,
+  getFormData,
+  createItem,
+  submitFormData,
+  getCategoriesByVessel,
+  getSubcategoriesByCategory,
+  getItemsByVessel,
+  getVesselParams
+} = require('../controllers/formController');
 const { protect } = require('../middleware/authMiddleware');
 
-router.route('/definitions/:formType').get(protect, getFormDefinition);
+const router = express.Router();
+
+router.route('/definitions/:id').get(protect, getFormDefinition);
+router.route('/definitions').get(protect, getFormDefinitions);
+router.route('/definitions').post(protect, createFormDefinition);
+router.route('/definitions/:id').put(protect, updateFormDefinition);
 router.route('/data/:id').get(protect, getFormData);
-router.route('/data').post(protect, submitFormData);  // Ensure the endpoint is /data for POST
+router.route('/items').post(protect, createItem);
+router.route('/data').post(protect, submitFormData);
+router.route('/categories/:vesselId').get(protect, getCategoriesByVessel);
+router.route('/subcategories/:category').get(protect, getSubcategoriesByCategory);
+router.route('/items/:vesselId/:subcategory').get(protect, getItemsByVessel);
+router.route('/vessels/params').get(protect, getVesselParams);
 
 module.exports = router;

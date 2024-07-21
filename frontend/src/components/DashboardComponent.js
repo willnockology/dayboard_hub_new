@@ -3,8 +3,6 @@ import { Link, useHistory } from 'react-router-dom';
 import axios from 'axios';
 import ChatComponent from './ChatComponent';
 import './DashboardComponent.css';
-import data from './formData';
-import formMappings from '../data/formMappings';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faTrashAlt, faComments, faEdit, faPaperclip } from '@fortawesome/free-solid-svg-icons';
 
@@ -142,18 +140,9 @@ function DashboardComponent({ setToken }) {
     }));
 
     if (name === 'category') {
-      const selectedCategory = data.categories.find((cat) => cat.name === value);
-      setSubcategories(data.subCategories.filter((sub) => sub.categoryId === selectedCategory?.id));
-      setItemOptions([]);
-      setNewItem((prevItem) => ({
-        ...prevItem,
-        subcategory: '',
-        name: '',
-        customName: '',  // Reset custom name
-      }));
+      fetchSubcategoriesByVesselAndCategory(selectedVessel, value);
     } else if (name === 'subcategory') {
-      const selectedSubcategory = data.subCategories.find((sub) => sub.name === value);
-      setItemOptions(data.items.filter((item) => item.subCategoryId === selectedSubcategory?.id));
+      fetchItemsByVesselAndSubcategory(selectedVessel, value);
     }
   };
 
@@ -268,11 +257,7 @@ function DashboardComponent({ setToken }) {
   };
 
   const handleCompleteForm = (item) => {
-    const selectedItem = data.items.find((dataItem) => dataItem.name === item.name);
-    if (!selectedItem) return;
-    const formType = formMappings[selectedItem.id];
-    if (!formType) return;
-    history.push(`/form/${formType}/${item._id}`);
+    history.push(`/form/${item._id}`);
   };
 
   const filteredAndSortedItems = () => {
@@ -408,19 +393,18 @@ function DashboardComponent({ setToken }) {
     setFilterSubcategory('');
     setFilterItem('');
     if (selectedCategory) {
-      const selectedCategoryData = data.categories.find((cat) => cat.name === selectedCategory);
-      setSubcategories(data.subCategories.filter((sub) => sub.categoryId === selectedCategoryData?.id));
+      fetchSubcategoriesByVesselAndCategory(selectedVessel, selectedCategory);
     } else {
       setSubcategories([]);
     }
   };
 
   const handleFilterSubcategoryChange = (e) => {
-    setFilterSubcategory(e.target.value);
+    const selectedSubcategory = e.target.value;
+    setFilterSubcategory(selectedSubcategory);
     setFilterItem('');
-    if (e.target.value) {
-      const selectedSubcategoryData = data.subCategories.find((sub) => sub.name === e.target.value);
-      setItemOptions(data.items.filter((item) => item.subCategoryId === selectedSubcategoryData?.id));
+    if (selectedSubcategory) {
+      fetchItemsByVesselAndSubcategory(selectedVessel, selectedSubcategory);
     } else {
       setItemOptions([]);
     }
@@ -437,22 +421,50 @@ function DashboardComponent({ setToken }) {
     setSelectedVessel('');
   };
 
+  const fetchSubcategoriesByVesselAndCategory = async (vesselId, category) => {
+    if (!vesselId || !category) return;
+    try {
+      const token = localStorage.getItem('authToken');
+      const response = await axios.get(`http://localhost:5001/api/forms/subcategories/${vesselId}/${category}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setSubcategories(response.data);
+    } catch (error) {
+      console.error('Error fetching subcategories:', error);
+    }
+  };
+
+  const fetchItemsByVesselAndSubcategory = async (vesselId, subcategory) => {
+    if (!vesselId || !subcategory) return;
+    try {
+      const token = localStorage.getItem('authToken');
+      const response = await axios.get(`http://localhost:5001/api/forms/items/${vesselId}/${subcategory}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setItemOptions(response.data);
+    } catch (error) {
+      console.error('Error fetching items:', error);
+    }
+  };
+
   const getAvailableCategories = () => {
-    const categories = data.categories.map(cat => cat.name);
+    const categories = items.map(item => item.category);
     return Array.from(new Set(categories));
   };
 
   const getAvailableSubcategories = () => {
     if (!filterCategory) return [];
-    const selectedCategoryData = data.categories.find((cat) => cat.name === filterCategory);
-    const subcategories = data.subCategories.filter((sub) => sub.categoryId === selectedCategoryData?.id).map((sub) => sub.name);
+    const subcategories = items.filter(item => item.category === filterCategory).map(item => item.subcategory);
     return Array.from(new Set(subcategories));
   };
 
   const getAvailableItems = () => {
     if (!filterSubcategory) return [];
-    const selectedSubcategoryData = data.subCategories.find((sub) => sub.name === filterSubcategory);
-    const items = data.items.filter((item) => item.subCategoryId === selectedSubcategoryData?.id).map((item) => item.name);
+    const items = items.filter(item => item.subcategory === filterSubcategory).map(item => item.name);
     return Array.from(new Set(items));
   };
 
@@ -496,9 +508,9 @@ function DashboardComponent({ setToken }) {
               onChange={handleInputChange}
             >
               <option value="">Select Category</option>
-              {data.categories.map((category) => (
-                <option key={category.id} value={category.name}>
-                  {category.name}
+              {getAvailableCategories().map((category, index) => (
+                <option key={index} value={category}>
+                  {category}
                 </option>
               ))}
             </select>
@@ -511,9 +523,9 @@ function DashboardComponent({ setToken }) {
                   style={{ display: newItem.category ? 'block' : 'none' }}
                 >
                   <option value="">Select Subcategory</option>
-                  {subcategories.map((subcategory) => (
-                    <option key={subcategory.id} value={subcategory.name}>
-                      {subcategory.name}
+                  {subcategories.map((subcategory, index) => (
+                    <option key={index} value={subcategory}>
+                      {subcategory}
                     </option>
                   ))}
                 </select>
@@ -524,9 +536,9 @@ function DashboardComponent({ setToken }) {
                   style={{ display: newItem.subcategory ? 'block' : 'none' }}
                 >
                   <option value="">Select Item</option>
-                  {itemOptions.map((item) => (
-                    <option key={item.id} value={item.name}>
-                      {item.name}
+                  {itemOptions.map((item, index) => (
+                    <option key={index} value={item}>
+                      {item}
                     </option>
                   ))}
                   <option value="custom">Custom</option>
@@ -614,77 +626,77 @@ function DashboardComponent({ setToken }) {
       </div>
 
       <div className="filters">
-  <input
-    type="text"
-    placeholder="Search"
-    value={searchQuery}
-    onChange={(e) => setSearchQuery(e.target.value)}
-  />
-  <select
-    name="filterVessel"
-    value={selectedVessel}
-    onChange={(e) => setSelectedVessel(e.target.value)}
-  >
-    <option value="">Filter by Vessel</option>
-    {vessels.map((vessel) => (
-      <option key={vessel._id} value={vessel._id}>
-        {vessel.name}
-      </option>
-    ))}
-  </select>
-  <select
-    name="filterCategory"
-    value={filterCategory}
-    onChange={handleFilterCategoryChange}
-  >
-    <option value="">Filter by Category</option>
-    {getAvailableCategories().map((category, index) => (
-      <option key={index} value={category}>
-        {category}
-      </option>
-    ))}
-  </select>
-  <select
-    name="filterSubcategory"
-    value={filterSubcategory}
-    onChange={handleFilterSubcategoryChange}
-    disabled={!filterCategory}
-  >
-    <option value="">Filter by Subcategory</option>
-    {getAvailableSubcategories().map((subcategory, index) => (
-      <option key={index} value={subcategory}>
-        {subcategory}
-      </option>
-    ))}
-  </select>
-  <select
-    name="filterItem"
-    value={filterItem}
-    onChange={handleFilterItemChange}
-    disabled={!filterSubcategory}
-  >
-    <option value="">Filter by Item</option>
-    {getAvailableItems().map((item, index) => (
-      <option key={index} value={item}>
-        {item}
-      </option>
-    ))}
-  </select>
-  <button onClick={handleClearFilters}>Clear Filters</button>
-  <div className="show-completed">
-    <label>
-      Show:
-      <select
-        value={completedFilter}
-        onChange={(e) => setCompletedFilter(e.target.value)}
-      >
-        <option value="All">All</option>
-        <option value="Outstanding">Outstanding</option>
-        <option value="Completed">Completed</option>
-      </select>
-    </label>
-  </div>
-</div>
+        <input
+          type="text"
+          placeholder="Search"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+        />
+        <select
+          name="filterVessel"
+          value={selectedVessel}
+          onChange={(e) => setSelectedVessel(e.target.value)}
+        >
+          <option value="">Filter by Vessel</option>
+          {vessels.map((vessel) => (
+            <option key={vessel._id} value={vessel._id}>
+              {vessel.name}
+            </option>
+          ))}
+        </select>
+        <select
+          name="filterCategory"
+          value={filterCategory}
+          onChange={handleFilterCategoryChange}
+        >
+          <option value="">Filter by Category</option>
+          {getAvailableCategories().map((category, index) => (
+            <option key={index} value={category}>
+              {category}
+            </option>
+          ))}
+        </select>
+        <select
+          name="filterSubcategory"
+          value={filterSubcategory}
+          onChange={handleFilterSubcategoryChange}
+          disabled={!filterCategory}
+        >
+          <option value="">Filter by Subcategory</option>
+          {getAvailableSubcategories().map((subcategory, index) => (
+            <option key={index} value={subcategory}>
+              {subcategory}
+            </option>
+          ))}
+        </select>
+        <select
+          name="filterItem"
+          value={filterItem}
+          onChange={handleFilterItemChange}
+          disabled={!filterSubcategory}
+        >
+          <option value="">Filter by Item</option>
+          {getAvailableItems().map((item, index) => (
+            <option key={index} value={item}>
+              {item}
+            </option>
+          ))}
+        </select>
+        <button onClick={handleClearFilters}>Clear Filters</button>
+        <div className="show-completed">
+          <label>
+            Show:
+            <select
+              value={completedFilter}
+              onChange={(e) => setCompletedFilter(e.target.value)}
+            >
+              <option value="All">All</option>
+              <option value="Outstanding">Outstanding</option>
+              <option value="Completed">Completed</option>
+            </select>
+          </label>
+        </div>
+      </div>
 
       <table>
         <thead>

@@ -1,7 +1,9 @@
 const asyncHandler = require('express-async-handler');
+const mongoose = require('mongoose');
 const FormData = require('../models/formDataModel');
 const FormDefinition = require('../models/formDefinitionModel');
 const Item = require('../models/itemModel');
+const Vessel = require('../models/vesselModel');
 const PDFDocument = require('pdfkit');
 const fs = require('fs');
 const path = require('path');
@@ -9,16 +11,16 @@ const path = require('path');
 // Function to create PDF from form data
 const createPDF = (formData, user) => {
   const doc = new PDFDocument();
-  const fileName = `${formData.formId}-${Date.now()}.pdf`;
+  const fileName = `${formData._id}-${Date.now()}.pdf`;
   const filePath = path.join(__dirname, `../uploads/${fileName}`);
 
   doc.pipe(fs.createWriteStream(filePath));
 
-  doc.fontSize(20).text(`Form: ${formData.formId}`, { align: 'center' });
+  doc.fontSize(20).text(`Form: ${formData._id}`, { align: 'center' });
   doc.moveDown();
 
-  formData.fields.forEach((value, key) => {
-    doc.fontSize(12).text(`${key}: ${value}`);
+  formData.fields.forEach((field) => {
+    doc.fontSize(12).text(`${field.field_title}: ${field.value}`);
     doc.moveDown();
   });
 
@@ -31,28 +33,129 @@ const createPDF = (formData, user) => {
 };
 
 // @desc    Get form definition
-// @route   GET /api/forms/definitions/:formType
+// @route   GET /api/forms/definitions/:id
 // @access  Private
 const getFormDefinition = asyncHandler(async (req, res) => {
-  const formDefinition = await FormDefinition.findOne({ form_name: req.params.formType });
+  const { id } = req.params;
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    res.status(400).json({ message: 'Invalid form ID' });
+    return;
+  }
+
+  const formDefinition = await FormDefinition.findById(id);
 
   if (!formDefinition) {
-    res.status(404);
-    throw new Error('Form definition not found');
+    res.status(404).json({ message: 'Form definition not found' });
+    return;
   }
 
   res.json(formDefinition);
+});
+
+// @desc    Get all form definitions
+// @route   GET /api/forms/definitions
+// @access  Private
+const getFormDefinitions = asyncHandler(async (req, res) => {
+  const formDefinitions = await FormDefinition.find({});
+  res.json(formDefinitions);
+});
+
+// @desc    Create new form definition
+// @route   POST /api/forms/definitions
+// @access  Private
+const createFormDefinition = asyncHandler(async (req, res) => {
+  const { form_name, fields, subcategory, gross_tonnage_min, gross_tonnage_max, flagStates, typeOfRegistrations, typeOfVessels } = req.body;
+
+  if (!form_name || !fields || !Array.isArray(fields) || !subcategory) {
+    return res.status(400).json({ message: 'Form name, fields, and subcategory are required' });
+  }
+
+  const form = new FormDefinition({
+    form_name,
+    fields: fields.map(field => ({
+      field_name: field.field_name || `field_${Date.now()}`, // Ensure field_name is set
+      field_title: field.field_title || '',
+      field_type: field.field_type || 'text',
+      options: field.field_type === 'dropdown' ? field.options || [] : undefined,
+    })),
+    subcategory,
+    gross_tonnage_min: gross_tonnage_min === 'no min' ? null : gross_tonnage_min,
+    gross_tonnage_max: gross_tonnage_max === 'no max' ? null : gross_tonnage_max,
+    flagStates,
+    typeOfRegistrations,
+    typeOfVessels,
+  });
+
+  try {
+    const createdForm = await form.save();
+    res.status(201).json(createdForm);
+  } catch (error) {
+    console.error('Error creating form:', error);
+    res.status(500).json({ message: 'Error creating form', error });
+  }
+});
+
+// @desc    Update form definition
+// @route   PUT /api/forms/definitions/:id
+// @access  Private
+const updateFormDefinition = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    res.status(400).json({ message: 'Invalid form ID' });
+    return;
+  }
+
+  const { form_name, fields, subcategory, gross_tonnage_min, gross_tonnage_max, flagStates, typeOfRegistrations, typeOfVessels } = req.body;
+
+  if (!form_name || !fields || !Array.isArray(fields) || !subcategory) {
+    return res.status(400).json({ message: 'Form name, fields, and subcategory are required' });
+  }
+
+  const form = await FormDefinition.findById(id);
+
+  if (!form) {
+    res.status(404).json({ message: 'Form definition not found' });
+    return;
+  }
+
+  form.form_name = form_name;
+  form.fields = fields.map(field => ({
+    field_name: field.field_name || `field_${Date.now()}`, // Ensure field_name is set
+    field_title: field.field_title || '',
+    field_type: field.field_type || 'text',
+    options: field.field_type === 'dropdown' ? field.options || [] : undefined,
+  }));
+  form.subcategory = subcategory;
+  form.gross_tonnage_min = gross_tonnage_min === 'no min' ? null : gross_tonnage_min;
+  form.gross_tonnage_max = gross_tonnage_max === 'no max' ? null : gross_tonnage_max;
+  form.flagStates = flagStates;
+  form.typeOfRegistrations = typeOfRegistrations;
+  form.typeOfVessels = typeOfVessels;
+
+  try {
+    const updatedForm = await form.save();
+    res.json(updatedForm);
+  } catch (error) {
+    console.error('Error updating form:', error);
+    res.status(500).json({ message: 'Error updating form', error });
+  }
 });
 
 // @desc    Get form data
 // @route   GET /api/forms/data/:id
 // @access  Private
 const getFormData = asyncHandler(async (req, res) => {
-  const formData = await FormData.findById(req.params.id);
+  const { id } = req.params;
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    res.status(400).json({ message: 'Invalid form data ID' });
+    return;
+  }
+
+  const formData = await FormData.findById(id);
 
   if (!formData) {
-    res.status(404);
-    throw new Error('Form data not found');
+    res.status(404).json({ message: 'Form data not found' });
+    return;
   }
 
   res.json(formData);
@@ -137,9 +240,106 @@ const submitFormData = asyncHandler(async (req, res) => {
   }
 });
 
+// @desc    Get categories based on vessel ID and gross tonnage
+// @route   GET /api/forms/categories/:vesselId
+// @access  Private
+const getCategoriesByVessel = asyncHandler(async (req, res) => {
+  const { vesselId } = req.params;
+  const vessel = await Vessel.findById(vesselId);
+
+  if (!vessel) {
+    res.status(404).json({ message: 'Vessel not found' });
+    return;
+  }
+
+  const grossTonnage = vessel.grossTonnage;
+  const categories = await FormDefinition.find({
+    $or: [
+      { gross_tonnage_min: { $lte: grossTonnage }, gross_tonnage_max: { $gte: grossTonnage } },
+      { gross_tonnage_min: { $lte: grossTonnage }, gross_tonnage_max: null },
+    ],
+  }).distinct('category');
+
+  res.json(categories);
+});
+
+// @desc    Get subcategories based on category
+// @route   GET /api/forms/subcategories/:category
+// @access  Private
+const getSubcategoriesByCategory = asyncHandler(async (req, res) => {
+  const { category } = req.params;
+
+  if (!category) {
+    res.status(400).json({ message: 'Category is required' });
+    return;
+  }
+
+  const subcategories = await FormDefinition.find({ category }).distinct('subcategory');
+  
+  if (!subcategories) {
+    res.status(404).json({ message: 'No subcategories found' });
+  }
+
+  res.json(subcategories);
+});
+
+// @desc    Get items based on subcategory and vessel ID
+// @route   GET /api/forms/items/:vesselId/:subcategory
+// @access  Private
+const getItemsByVessel = asyncHandler(async (req, res) => {
+  const { vesselId, subcategory } = req.params;
+  const vessel = await Vessel.findById(vesselId);
+
+  if (!vessel) {
+    res.status(404).json({ message: 'Vessel not found' });
+    return;
+  }
+
+  const grossTonnage = vessel.grossTonnage;
+  const items = await FormDefinition.find({
+    subcategory,
+    $or: [
+      { gross_tonnage_min: { $lte: grossTonnage }, gross_tonnage_max: { $gte: grossTonnage } },
+      { gross_tonnage_min: { $lte: grossTonnage }, gross_tonnage_max: null },
+    ],
+  }).distinct('form_name');
+
+  res.json(items);
+});
+
+// @desc    Get vessel params
+// @route   GET /api/vessels/params
+// @access  Private
+const getVesselParams = asyncHandler(async (req, res) => {
+  try {
+    console.log('Fetching distinct flagStates');
+    const flagStates = await Vessel.distinct('flagState');
+    console.log('Fetching distinct typeOfRegistrations');
+    const typeOfRegistrations = await Vessel.distinct('typeOfRegistration');
+    console.log('Fetching distinct typeOfVessels');
+    const typeOfVessels = await Vessel.distinct('typeOfVessel');
+
+    res.json({
+      flagStates,
+      typeOfRegistrations,
+      typeOfVessels,
+    });
+  } catch (error) {
+    console.error('Error fetching vessel parameters:', error);
+    res.status(500).json({ message: 'Error fetching vessel parameters', error });
+  }
+});
+
 module.exports = {
   getFormDefinition,
+  getFormDefinitions,
+  createFormDefinition,
+  updateFormDefinition,
   getFormData,
   createItem,
   submitFormData,
+  getCategoriesByVessel,
+  getSubcategoriesByCategory,
+  getItemsByVessel,
+  getVesselParams,
 };

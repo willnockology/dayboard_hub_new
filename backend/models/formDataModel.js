@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 
 const formDataSchema = mongoose.Schema(
   {
-    formId: {
+    formDefinitionId: {
       type: mongoose.Schema.Types.ObjectId,
       required: true,
       ref: 'FormDefinition',

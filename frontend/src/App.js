@@ -13,6 +13,7 @@ import VesselRegistrationComponent from './components/VesselRegistrationComponen
 import UserManagementComponent from './components/UserManagementComponent';
 import CrewModuleComponent from './components/CrewModuleComponent';
 import UpdateVesselComponent from './components/UpdateVesselComponent';
+import FormEditorComponent from './components/FormEditorComponent';  // Import the Form Editor component
 
 import './global.css';
 
@@ -59,6 +60,9 @@ const App = () => {
             </Route>
             <Route path="/update-vessel/:vesselId?">
               <UpdateVesselComponent token={token} />
+            </Route>
+            <Route path="/form-editor">
+              <FormEditorComponent token={token} />
             </Route>
             <Route exact path="/">
               <LoginComponent setToken={setToken} />

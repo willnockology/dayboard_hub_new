@@ -134,9 +134,33 @@ const updateVessel = asyncHandler(async (req, res) => {
   }
 });
 
+// @desc    Get vessel params
+// @route   GET /api/vessels/params
+// @access  Private
+const getVesselParams = asyncHandler(async (req, res) => {
+  try {
+    console.log('Fetching distinct flagStates');
+    const flagStates = await Vessel.distinct('flagState');
+    console.log('Fetching distinct typeOfRegistrations');
+    const typeOfRegistrations = await Vessel.distinct('typeOfRegistration');
+    console.log('Fetching distinct typeOfVessels');
+    const typeOfVessels = await Vessel.distinct('typeOfVessel');
+
+    res.json({
+      flagStates,
+      typeOfRegistrations,
+      typeOfVessels,
+    });
+  } catch (error) {
+    console.error('Error fetching vessel parameters:', error);
+    res.status(500).json({ message: 'Error fetching vessel parameters', error });
+  }
+});
+
 module.exports = {
   registerVessel,
   getVessels,
   getVesselById,
   updateVessel,
+  getVesselParams,
 };

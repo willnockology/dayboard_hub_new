@@ -1,14 +1,18 @@
 const mongoose = require('mongoose');
 
 const formFieldSchema = mongoose.Schema({
-  label: { type: String, required: true },
-  type: { type: String, required: true },
+  field_name: { type: String, required: true },
+  field_title: { type: String, required: true },
+  field_type: { type: String, required: true },
   options: [String], // For dropdowns
 });
 
 const formDefinitionSchema = mongoose.Schema({
-  formId: { type: String, required: true, unique: true },
+  form_name: { type: String, required: true },
   fields: [formFieldSchema],
+  gross_tonnage_min: { type: Number, required: false },
+  gross_tonnage_max: { type: Number, required: false },
+  subcategory: { type: String, required: true },
 }, {
   timestamps: true,
 });
