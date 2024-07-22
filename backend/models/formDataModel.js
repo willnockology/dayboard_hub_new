@@ -12,10 +12,12 @@ const formDataSchema = mongoose.Schema(
       of: String,
       required: true,
     },
-    signature: {
-      type: String,
-      required: false,
-    },
+    images: [
+      {
+        url: String,
+        _id: false,
+      },
+    ],
     completedBy: {
       type: String,
       required: true,

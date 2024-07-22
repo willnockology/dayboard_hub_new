@@ -41,6 +41,10 @@ const vesselSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  numberOfPeople: {
+    type: Number,
+    required: true,
+  },
 });
 
 const Vessel = mongoose.model('Vessel', vesselSchema);

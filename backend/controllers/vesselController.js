@@ -16,6 +16,7 @@ const registerVessel = asyncHandler(async (req, res) => {
       typeOfVessel,
       callSign,
       portOfRegistry,
+      numberOfPeople
     } = req.body;
 
     console.log('Registering new vessel with data:', req.body);
@@ -29,7 +30,8 @@ const registerVessel = asyncHandler(async (req, res) => {
       !typeOfRegistration ||
       !typeOfVessel ||
       !callSign ||
-      !portOfRegistry
+      !portOfRegistry ||
+      !numberOfPeople
     ) {
       res.status(400);
       throw new Error('Please fill in all fields');
@@ -45,6 +47,7 @@ const registerVessel = asyncHandler(async (req, res) => {
       typeOfVessel,
       callSign,
       portOfRegistry,
+      numberOfPeople
     });
 
     const createdVessel = await vessel.save();
@@ -104,6 +107,7 @@ const updateVessel = asyncHandler(async (req, res) => {
     typeOfVessel,
     callSign,
     portOfRegistry,
+    numberOfPeople
   } = req.body;
 
   try {
@@ -120,6 +124,7 @@ const updateVessel = asyncHandler(async (req, res) => {
       vessel.typeOfVessel = typeOfVessel || vessel.typeOfVessel;
       vessel.callSign = callSign || vessel.callSign;
       vessel.portOfRegistry = portOfRegistry || vessel.portOfRegistry;
+      vessel.numberOfPeople = numberOfPeople || vessel.numberOfPeople;
 
       const updatedVessel = await vessel.save();
       console.log('Vessel updated:', updatedVessel);

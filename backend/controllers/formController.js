@@ -19,10 +19,17 @@ const createPDF = (formData, user) => {
   doc.fontSize(20).text(`Form: ${formData._id}`, { align: 'center' });
   doc.moveDown();
 
-  formData.fields.forEach((field) => {
-    doc.fontSize(12).text(`${field.field_title}: ${field.value}`);
+  formData.fields.forEach((value, key) => {
+    doc.fontSize(12).text(`${key}: ${value}`);
     doc.moveDown();
   });
+
+  if (formData.images) {
+    formData.images.forEach((image, index) => {
+      doc.fontSize(12).text(`Image ${index + 1}: ${image.url}`);
+      doc.moveDown();
+    });
+  }
 
   doc.fontSize(12).text(`Completed by: ${user.firstName} ${user.lastName}`);
   doc.fontSize(12).text(`Completed at: ${formData.completedAt}`);
@@ -60,30 +67,54 @@ const getFormDefinitions = asyncHandler(async (req, res) => {
   res.json(formDefinitions);
 });
 
+// Helper function to parse gross tonnage
+const parseGrossTonnage = (gross_tonnage, label) => {
+  if (gross_tonnage && gross_tonnage !== 'no min' && gross_tonnage !== 'no max') {
+    const parsedValue = parseFloat(gross_tonnage);
+    if (isNaN(parsedValue)) {
+      throw new Error(`Gross tonnage ${label} must be a valid number`);
+    }
+    return parsedValue;
+  }
+  return undefined;
+};
+
 // @desc    Create new form definition
 // @route   POST /api/forms/definitions
 // @access  Private
 const createFormDefinition = asyncHandler(async (req, res) => {
-  const { form_name, fields, subcategory, gross_tonnage_min, gross_tonnage_max, flagStates, typeOfRegistrations, typeOfVessels } = req.body;
+  const { form_name, fields, subcategory, gross_tonnage_min, gross_tonnage_max, people_min, length_min, flagStates, typeOfRegistrations, typeOfVessels } = req.body;
+
+  console.log('Received request body:', req.body); // Log the request body for debugging
 
   if (!form_name || !fields || !Array.isArray(fields) || !subcategory) {
     return res.status(400).json({ message: 'Form name, fields, and subcategory are required' });
   }
 
+  let parsedGrossTonnageMin, parsedGrossTonnageMax;
+  try {
+    parsedGrossTonnageMin = parseGrossTonnage(gross_tonnage_min, 'min');
+    parsedGrossTonnageMax = parseGrossTonnage(gross_tonnage_max, 'max');
+  } catch (error) {
+    return res.status(400).json({ message: error.message });
+  }
+
   const form = new FormDefinition({
     form_name,
     fields: fields.map(field => ({
-      field_name: field.field_name || `field_${Date.now()}`, // Ensure field_name is set
-      field_title: field.field_title || '',
+      field_name: field.field_name || '',
+      field_description: field.field_description || '', // Updated field name
       field_type: field.field_type || 'text',
-      options: field.field_type === 'dropdown' ? field.options || [] : undefined,
+      options: ['dropdown', 'radio'].includes(field.field_type) ? field.options || [] : undefined,
     })),
     subcategory,
-    gross_tonnage_min: gross_tonnage_min === 'no min' ? null : gross_tonnage_min,
-    gross_tonnage_max: gross_tonnage_max === 'no max' ? null : gross_tonnage_max,
-    flagStates,
-    typeOfRegistrations,
-    typeOfVessels,
+    gross_tonnage_min: parsedGrossTonnageMin,
+    gross_tonnage_max: parsedGrossTonnageMax,
+    people_min: Array.isArray(people_min) ? people_min : [],
+    length_min: Array.isArray(length_min) ? length_min : [],
+    flagStates: Array.isArray(flagStates) ? flagStates : [],
+    typeOfRegistrations: Array.isArray(typeOfRegistrations) ? typeOfRegistrations : [],
+    typeOfVessels: Array.isArray(typeOfVessels) ? typeOfVessels : [],
   });
 
   try {
@@ -105,10 +136,20 @@ const updateFormDefinition = asyncHandler(async (req, res) => {
     return;
   }
 
-  const { form_name, fields, subcategory, gross_tonnage_min, gross_tonnage_max, flagStates, typeOfRegistrations, typeOfVessels } = req.body;
+  const { form_name, fields, subcategory, gross_tonnage_min, gross_tonnage_max, people_min, length_min, flagStates, typeOfRegistrations, typeOfVessels } = req.body;
+
+  console.log('Received request body for update:', req.body); // Log the request body for debugging
 
   if (!form_name || !fields || !Array.isArray(fields) || !subcategory) {
     return res.status(400).json({ message: 'Form name, fields, and subcategory are required' });
+  }
+
+  let parsedGrossTonnageMin, parsedGrossTonnageMax;
+  try {
+    parsedGrossTonnageMin = parseGrossTonnage(gross_tonnage_min, 'min');
+    parsedGrossTonnageMax = parseGrossTonnage(gross_tonnage_max, 'max');
+  } catch (error) {
+    return res.status(400).json({ message: error.message });
   }
 
   const form = await FormDefinition.findById(id);
@@ -120,17 +161,19 @@ const updateFormDefinition = asyncHandler(async (req, res) => {
 
   form.form_name = form_name;
   form.fields = fields.map(field => ({
-    field_name: field.field_name || `field_${Date.now()}`, // Ensure field_name is set
-    field_title: field.field_title || '',
+    field_name: field.field_name || '',
+    field_description: field.field_description || '', // Updated field name
     field_type: field.field_type || 'text',
-    options: field.field_type === 'dropdown' ? field.options || [] : undefined,
+    options: ['dropdown', 'radio'].includes(field.field_type) ? field.options || [] : undefined,
   }));
   form.subcategory = subcategory;
-  form.gross_tonnage_min = gross_tonnage_min === 'no min' ? null : gross_tonnage_min;
-  form.gross_tonnage_max = gross_tonnage_max === 'no max' ? null : gross_tonnage_max;
-  form.flagStates = flagStates;
-  form.typeOfRegistrations = typeOfRegistrations;
-  form.typeOfVessels = typeOfVessels;
+  form.gross_tonnage_min = parsedGrossTonnageMin;
+  form.gross_tonnage_max = parsedGrossTonnageMax;
+  form.people_min = Array.isArray(people_min) ? people_min : [];
+  form.length_min = Array.isArray(length_min) ? length_min : [];
+  form.flagStates = Array.isArray(flagStates) ? flagStates : [];
+  form.typeOfRegistrations = Array.isArray(typeOfRegistrations) ? typeOfRegistrations : [];
+  form.typeOfVessels = Array.isArray(typeOfVessels) ? typeOfVessels : [];
 
   try {
     const updatedForm = await form.save();
@@ -191,20 +234,20 @@ const createItem = asyncHandler(async (req, res) => {
 // @route   POST /api/forms/data
 // @access  Private
 const submitFormData = asyncHandler(async (req, res) => {
-  const { formId, fields, completedBy, completedAt, itemId } = req.body;
+  const { formDefinitionId, fields, completedBy, completedAt, itemId } = req.body;
   const user = req.user; // Assuming user is available in req.user from auth middleware
 
-  if (!formId || !fields || !completedBy || !completedAt || !itemId) {
-    console.log('Form submission error: Missing fields', { formId, fields, completedBy, completedAt, itemId });
+  if (!formDefinitionId || !fields || !completedBy || !completedAt || !itemId) {
+    console.log('Form submission error: Missing fields', { formDefinitionId, fields, completedBy, completedAt, itemId });
     res.status(400).json({ message: 'All fields are required' });
     return;
   }
 
   try {
-    console.log('Received form submission data:', { formId, fields, completedBy, completedAt, itemId });
+    console.log('Received form submission data:', { formDefinitionId, fields, completedBy, completedAt, itemId });
 
     const newFormData = new FormData({
-      formId,
+      formDefinitionId,
       fields,
       completedBy,
       completedAt,

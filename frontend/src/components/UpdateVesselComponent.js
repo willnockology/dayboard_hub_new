@@ -14,14 +14,14 @@ const UpdateVesselComponent = ({ token }) => {
     typeOfRegistration: '',
     typeOfVessel: '',
     callSign: '',
-    portOfRegistry: ''
+    portOfRegistry: '',
+    numberOfPeople: '',
   });
   const [user, setUser] = useState(null);
   const [message, setMessage] = useState('');
 
   const fetchVesselDetails = useCallback(async (vesselId) => {
     try {
-      console.log(`Fetching vessel details for vesselId: ${vesselId}`);
       const response = await axios.get(`http://localhost:5001/api/vessels/${vesselId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -34,9 +34,9 @@ const UpdateVesselComponent = ({ token }) => {
         typeOfRegistration: response.data.typeOfRegistration || '',
         typeOfVessel: response.data.typeOfVessel || '',
         callSign: response.data.callSign || '',
-        portOfRegistry: response.data.portOfRegistry || ''
+        portOfRegistry: response.data.portOfRegistry || '',
+        numberOfPeople: response.data.numberOfPeople || '',
       });
-      console.log('Vessel details:', response.data);
     } catch (error) {
       console.error('Error fetching vessel details:', error);
     }
@@ -46,10 +46,9 @@ const UpdateVesselComponent = ({ token }) => {
     const fetchUserDetails = async () => {
       const user = JSON.parse(localStorage.getItem('user'));
       setUser(user);
-      console.log('User:', user);
 
       if (user && user.role === 'Captain' && user.assignedVessels.length > 0) {
-        const vesselId = user.assignedVessels[0]; // Assuming the user is assigned to one vessel
+        const vesselId = user.assignedVessels[0]; 
         setSelectedVesselId(vesselId);
         fetchVesselDetails(vesselId);
       }
@@ -61,12 +60,10 @@ const UpdateVesselComponent = ({ token }) => {
   useEffect(() => {
     const fetchVessels = async () => {
       try {
-        console.log('Fetching vessels...');
         const response = await axios.get('http://localhost:5001/api/vessels', {
           headers: { Authorization: `Bearer ${token}` },
         });
         setVessels(response.data);
-        console.log('Vessels:', response.data);
       } catch (error) {
         console.error('Error fetching vessels:', error);
       }
@@ -90,7 +87,8 @@ const UpdateVesselComponent = ({ token }) => {
         typeOfRegistration: '',
         typeOfVessel: '',
         callSign: '',
-        portOfRegistry: ''
+        portOfRegistry: '',
+        numberOfPeople: '',
       });
     }
   };
@@ -178,6 +176,7 @@ const UpdateVesselComponent = ({ token }) => {
                   name="typeOfRegistration"
                   value={vesselDetails.typeOfRegistration}
                   onChange={handleChange}
+                  disabled={vesselDetails.typeOfVessel !== 'Yacht'}
                 >
                   <option value="">Select Type of Registration</option>
                   <option value="PY">PY</option>
@@ -217,6 +216,15 @@ const UpdateVesselComponent = ({ token }) => {
                   type="text"
                   name="portOfRegistry"
                   value={vesselDetails.portOfRegistry}
+                  onChange={handleChange}
+                />
+              </label>
+              <label>
+                Number of People
+                <input
+                  type="number"
+                  name="numberOfPeople"
+                  value={vesselDetails.numberOfPeople}
                   onChange={handleChange}
                 />
               </label>
@@ -293,6 +301,7 @@ const UpdateVesselComponent = ({ token }) => {
                     name="typeOfRegistration"
                     value={vesselDetails.typeOfRegistration}
                     onChange={handleChange}
+                    disabled={vesselDetails.typeOfVessel !== 'Yacht'}
                   >
                     <option value="">Select Type of Registration</option>
                     <option value="PY">PY</option>
@@ -332,6 +341,15 @@ const UpdateVesselComponent = ({ token }) => {
                     type="text"
                     name="portOfRegistry"
                     value={vesselDetails.portOfRegistry}
+                    onChange={handleChange}
+                  />
+                </label>
+                <label>
+                  Number of People
+                  <input
+                    type="number"
+                    name="numberOfPeople"
+                    value={vesselDetails.numberOfPeople}
                     onChange={handleChange}
                   />
                 </label>

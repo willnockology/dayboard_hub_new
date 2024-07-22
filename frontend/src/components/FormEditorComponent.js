@@ -20,11 +20,12 @@ const FormEditorComponent = () => {
     typeOfVessels: [],
   });
   const [applicabilityRange, setApplicabilityRange] = useState({
-    min: 'no min',
-    max: 'no max',
+    min: ['no min'],
+    max: ['no max'],
   });
   const [isAddingNew, setIsAddingNew] = useState(false);
   const [newItemName, setNewItemName] = useState('');
+  const [errors, setErrors] = useState({});
 
   const applicabilityOptions = [
     'no min', '15+ Persons', '16+ persons', '24 meters', '80 GT', '100 GT', '300 GT', '400 GT', '500 GT', '1000 GT'
@@ -118,10 +119,10 @@ const FormEditorComponent = () => {
       });
 
       const fields = response.data.fields.map(field => ({
-        field_name: field.field_name || '', // Ensure field_name is set
-        field_title: field.field_title || '',
+        field_name: field.field_name || '',
+        field_description: field.field_description || '', // Changed from field_title to field_description
         field_type: field.field_type || 'text',
-        options: field.field_type === 'dropdown' ? field.options || [] : undefined,
+        options: ['dropdown', 'radio'].includes(field.field_type) ? field.options || [] : undefined,
       }));
 
       setFormFields(fields);
@@ -137,7 +138,7 @@ const FormEditorComponent = () => {
   };
 
   const handleAddField = () => {
-    setFormFields([...formFields, { field_name: '', field_title: '', field_type: 'text', options: [] }]);
+    setFormFields([...formFields, { field_name: '', field_description: '', field_type: 'text', options: [] }]);
   };
 
   const handleDeleteField = (index) => {
@@ -145,17 +146,42 @@ const FormEditorComponent = () => {
     setFormFields(updatedFields);
   };
 
+  const validateForm = () => {
+    let valid = true;
+    const newErrors = {};
+
+    if (!newItemName && (!selectedItem || selectedItem === 'new')) {
+      newErrors.form_name = 'Form name is required';
+      valid = false;
+    }
+
+    formFields.forEach((field, index) => {
+      if (!field.field_name) {
+        newErrors[`field_name_${index}`] = 'Field name is required';
+        valid = false;
+      }
+    });
+
+    setErrors(newErrors);
+    return valid;
+  };
+
   const handleSave = async () => {
+    if (!validateForm()) {
+      console.error('Validation failed');
+      return;
+    }
+
     try {
-      const updatedFields = formFields.map((field, index) => ({
-        field_name: field.field_name || `field_${index}`, // Ensure field_name is set
-        field_title: field.field_title || '',
+      const updatedFields = formFields.map(field => ({
+        field_name: field.field_name || '',
+        field_description: field.field_description || '', // Changed from field_title to field_description
         field_type: field.field_type || 'text',
-        options: field.field_type === 'dropdown' ? field.options || [] : undefined,
+        options: ['dropdown', 'radio'].includes(field.field_type) ? field.options || [] : undefined,
       }));
 
-      const min = applicabilityRange.min === 'no min' ? null : applicabilityRange.min;
-      const max = applicabilityRange.max === 'no max' ? null : applicabilityRange.max;
+      const min = applicabilityRange.min.includes('no min') ? null : applicabilityRange.min;
+      const max = applicabilityRange.max.includes('no max') ? null : applicabilityRange.max;
 
       const payload = {
         form_name: selectedItem && selectedItem !== 'new' ? selectedItem.form_name : newItemName,
@@ -189,7 +215,7 @@ const FormEditorComponent = () => {
       console.log('Form saved successfully');
     } catch (error) {
       console.error('Error saving form:', error);
-      if (error.response) {
+      if (error.response && error.response.data) {
         console.error('Server Response:', error.response.data);
       }
     }
@@ -210,6 +236,15 @@ const FormEditorComponent = () => {
 
   const handleParamChange = (type, value, checked) => {
     setSelectedParams(prev => ({
+      ...prev,
+      [type]: checked
+        ? [...prev[type], value]
+        : prev[type].filter(item => item !== value),
+    }));
+  };
+
+  const handleApplicabilityChange = (type, value, checked) => {
+    setApplicabilityRange(prev => ({
       ...prev,
       [type]: checked
         ? [...prev[type], value]
@@ -274,23 +309,32 @@ const FormEditorComponent = () => {
               value={newItemName}
               onChange={(e) => setNewItemName(e.target.value)}
             />
+            {errors.form_name && <p className="error">{errors.form_name}</p>}
             <div>
               <label>Minimum Applicability:</label>
-              <select value={applicabilityRange.min} onChange={(e) => setApplicabilityRange(prev => ({ ...prev, min: e.target.value }))}>
-                <option value="no min">no min</option>
-                {applicabilityOptions.map(option => (
-                  <option key={option} value={option}>{option}</option>
-                ))}
-              </select>
+              {applicabilityOptions.map(option => (
+                <label key={option}>
+                  <input
+                    type="checkbox"
+                    checked={applicabilityRange.min.includes(option)}
+                    onChange={(e) => handleApplicabilityChange('min', option, e.target.checked)}
+                  />
+                  {option}
+                </label>
+              ))}
             </div>
             <div>
               <label>Maximum Applicability:</label>
-              <select value={applicabilityRange.max} onChange={(e) => setApplicabilityRange(prev => ({ ...prev, max: e.target.value }))}>
-                <option value="no max">no max</option>
-                {applicabilityOptions.map(option => (
-                  <option key={option} value={option}>{option}</option>
-                ))}
-              </select>
+              {['no max', '500 GT'].map(option => (
+                <label key={option}>
+                  <input
+                    type="checkbox"
+                    checked={applicabilityRange.max.includes(option)}
+                    onChange={(e) => handleApplicabilityChange('max', option, e.target.checked)}
+                  />
+                  {option}
+                </label>
+              ))}
             </div>
             <div>
               <h3>Flag States</h3>
@@ -336,12 +380,22 @@ const FormEditorComponent = () => {
                 <div key={index} className="form-field">
                   <div className="field-row">
                     <div className="field-column">
-                      <label>Field Label</label>
+                      <label>Field Name</label>
                       <input
                         type="text"
-                        value={field.field_title}
-                        onChange={(e) => handleFieldChange(index, 'field_title', e.target.value)}
-                        placeholder="Field Label"
+                        value={field.field_name}
+                        onChange={(e) => handleFieldChange(index, 'field_name', e.target.value)}
+                        placeholder="Field Name"
+                      />
+                      {errors[`field_name_${index}`] && <p className="error">{errors[`field_name_${index}`]}</p>}
+                    </div>
+                    <div className="field-column">
+                      <label>Field Description</label>
+                      <input
+                        type="text"
+                        value={field.field_description} // Changed from field_title to field_description
+                        onChange={(e) => handleFieldChange(index, 'field_description', e.target.value)} // Changed from field_title to field_description
+                        placeholder="Field Description"
                       />
                     </div>
                     <div className="field-column">
@@ -354,16 +408,24 @@ const FormEditorComponent = () => {
                         <option value="dropdown">Dropdown</option>
                         <option value="date">Date</option>
                         <option value="checkbox">Checkbox</option>
-                        <option value="textarea">Textarea</option>
-                        <option value="signature">Signature</option>
+                        <option value="paragraph">Paragraph</option>
+                        <option value="radio">Radio</option>
+                        <option value="image">Image</option>
+                        <option value="file">File</option>
+                        <option value="richText">Rich Text</option>
+                        <option value="rating">Rating</option>
+                        <option value="number">Number</option>
+                        <option value="slider">Slider</option>
+                        <option value="time">Time</option>
+                        <option value="toggle">Toggle</option>
                       </select>
                     </div>
                   </div>
-                  {field.field_type === 'dropdown' && (
+                  {['dropdown', 'radio'].includes(field.field_type) && (
                     <textarea
                       value={field.options ? field.options.join('\n') : ''}
                       onChange={(e) => handleFieldChange(index, 'options', e.target.value.split('\n'))}
-                      placeholder="Dropdown options (one per line)"
+                      placeholder="Dropdown or radio options (one per line)"
                     ></textarea>
                   )}
                   <div className="button-row">
@@ -386,12 +448,22 @@ const FormEditorComponent = () => {
             <div key={index} className="form-field">
               <div className="field-row">
                 <div className="field-column">
-                  <label>Field Label</label>
+                  <label>Field Name</label>
                   <input
                     type="text"
-                    value={field.field_title}
-                    onChange={(e) => handleFieldChange(index, 'field_title', e.target.value)}
-                    placeholder="Field Label"
+                    value={field.field_name}
+                    onChange={(e) => handleFieldChange(index, 'field_name', e.target.value)}
+                    placeholder="Field Name"
+                  />
+                  {errors[`field_name_${index}`] && <p className="error">{errors[`field_name_${index}`]}</p>}
+                </div>
+                <div className="field-column">
+                  <label>Field Description</label>
+                  <input
+                    type="text"
+                    value={field.field_description} // Changed from field_title to field_description
+                    onChange={(e) => handleFieldChange(index, 'field_description', e.target.value)} // Changed from field_title to field_description
+                    placeholder="Field Description"
                   />
                 </div>
                 <div className="field-column">
@@ -404,16 +476,24 @@ const FormEditorComponent = () => {
                     <option value="dropdown">Dropdown</option>
                     <option value="date">Date</option>
                     <option value="checkbox">Checkbox</option>
-                    <option value="textarea">Textarea</option>
-                    <option value="signature">Signature</option>
+                    <option value="paragraph">Paragraph</option>
+                    <option value="radio">Radio</option>
+                    <option value="image">Image</option>
+                    <option value="file">File</option>
+                    <option value="richText">Rich Text</option>
+                    <option value="rating">Rating</option>
+                    <option value="number">Number</option>
+                    <option value="slider">Slider</option>
+                    <option value="time">Time</option>
+                    <option value="toggle">Toggle</option>
                   </select>
                 </div>
               </div>
-              {field.field_type === 'dropdown' && (
+              {['dropdown', 'radio'].includes(field.field_type) && (
                 <textarea
                   value={field.options ? field.options.join('\n') : ''}
                   onChange={(e) => handleFieldChange(index, 'options', e.target.value.split('\n'))}
-                  placeholder="Dropdown options (one per line)"
+                  placeholder="Dropdown or radio options (one per line)"
                 ></textarea>
               )}
               <div className="button-row">

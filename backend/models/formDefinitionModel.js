@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 
 const formFieldSchema = mongoose.Schema({
   field_name: { type: String, required: true },
-  field_title: { type: String, required: true },
+  field_description: { type: String, required: true },
   field_type: { type: String, required: true },
   options: [String], // For dropdowns
 });
