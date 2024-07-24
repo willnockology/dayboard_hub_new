@@ -83,12 +83,12 @@ const parseGrossTonnage = (gross_tonnage, label) => {
 // @route   POST /api/forms/definitions
 // @access  Private
 const createFormDefinition = asyncHandler(async (req, res) => {
-  const { form_name, fields, subcategory, gross_tonnage_min, gross_tonnage_max, people_min, length_min, flagStates, typeOfRegistrations, typeOfVessels } = req.body;
+  const { form_name, category, fields, subcategory, gross_tonnage_min, gross_tonnage_max, people_min, length_min, flagStates, typeOfRegistrations, typeOfVessels } = req.body;
 
   console.log('Received request body:', req.body); // Log the request body for debugging
 
-  if (!form_name || !fields || !Array.isArray(fields) || !subcategory) {
-    return res.status(400).json({ message: 'Form name, fields, and subcategory are required' });
+  if (!form_name || !category || !fields || !Array.isArray(fields) || !subcategory) {
+    return res.status(400).json({ message: 'Form name, category, fields, and subcategory are required' });
   }
 
   let parsedGrossTonnageMin, parsedGrossTonnageMax;
@@ -101,11 +101,13 @@ const createFormDefinition = asyncHandler(async (req, res) => {
 
   const form = new FormDefinition({
     form_name,
+    category,
     fields: fields.map(field => ({
       field_name: field.field_name || '',
       field_description: field.field_description || '', // Updated field name
       field_type: field.field_type || 'text',
       options: ['dropdown', 'radio'].includes(field.field_type) ? field.options || [] : undefined,
+      required: field.required || false,
     })),
     subcategory,
     gross_tonnage_min: parsedGrossTonnageMin,
@@ -136,12 +138,12 @@ const updateFormDefinition = asyncHandler(async (req, res) => {
     return;
   }
 
-  const { form_name, fields, subcategory, gross_tonnage_min, gross_tonnage_max, people_min, length_min, flagStates, typeOfRegistrations, typeOfVessels } = req.body;
+  const { form_name, category, fields, subcategory, gross_tonnage_min, gross_tonnage_max, people_min, length_min, flagStates, typeOfRegistrations, typeOfVessels } = req.body;
 
   console.log('Received request body for update:', req.body); // Log the request body for debugging
 
-  if (!form_name || !fields || !Array.isArray(fields) || !subcategory) {
-    return res.status(400).json({ message: 'Form name, fields, and subcategory are required' });
+  if (!form_name || !category || !fields || !Array.isArray(fields) || !subcategory) {
+    return res.status(400).json({ message: 'Form name, category, fields, and subcategory are required' });
   }
 
   let parsedGrossTonnageMin, parsedGrossTonnageMax;
@@ -160,11 +162,13 @@ const updateFormDefinition = asyncHandler(async (req, res) => {
   }
 
   form.form_name = form_name;
+  form.category = category;
   form.fields = fields.map(field => ({
     field_name: field.field_name || '',
     field_description: field.field_description || '', // Updated field name
     field_type: field.field_type || 'text',
     options: ['dropdown', 'radio'].includes(field.field_type) ? field.options || [] : undefined,
+    required: field.required || false,
   }));
   form.subcategory = subcategory;
   form.gross_tonnage_min = parsedGrossTonnageMin;
@@ -326,28 +330,24 @@ const getSubcategoriesByCategory = asyncHandler(async (req, res) => {
   res.json(subcategories);
 });
 
-// @desc    Get items based on subcategory and vessel ID
-// @route   GET /api/forms/items/:vesselId/:subcategory
+// @desc    Get items based on subcategory
+// @route   GET /api/forms/items/:subcategory
 // @access  Private
-const getItemsByVessel = asyncHandler(async (req, res) => {
-  const { vesselId, subcategory } = req.params;
-  const vessel = await Vessel.findById(vesselId);
+const getItemsBySubcategory = asyncHandler(async (req, res) => {
+  const { subcategory } = req.params;
 
-  if (!vessel) {
-    res.status(404).json({ message: 'Vessel not found' });
+  if (!subcategory) {
+    res.status(400).json({ message: 'Subcategory is required' });
     return;
   }
 
-  const grossTonnage = vessel.grossTonnage;
-  const items = await FormDefinition.find({
-    subcategory,
-    $or: [
-      { gross_tonnage_min: { $lte: grossTonnage }, gross_tonnage_max: { $gte: grossTonnage } },
-      { gross_tonnage_min: { $lte: grossTonnage }, gross_tonnage_max: null },
-    ],
-  }).distinct('form_name');
+  const items = await FormDefinition.find({ subcategory }).distinct('form_name');
 
-  res.json(items);
+  if (!items || items.length === 0) {
+    res.status(404).json({ message: 'No items found' });
+  } else {
+    res.json(items);
+  }
 });
 
 // @desc    Get vessel params
@@ -383,6 +383,6 @@ module.exports = {
   submitFormData,
   getCategoriesByVessel,
   getSubcategoriesByCategory,
-  getItemsByVessel,
+  getItemsBySubcategory, // Export getItemsBySubcategory
   getVesselParams,
 };

@@ -1,4 +1,5 @@
 const express = require('express');
+const router = express.Router();
 const {
   getFormDefinition,
   getFormDefinitions,
@@ -9,23 +10,21 @@ const {
   submitFormData,
   getCategoriesByVessel,
   getSubcategoriesByCategory,
-  getItemsByVessel,
+  getItemsBySubcategory, // Ensure this is imported correctly
   getVesselParams
 } = require('../controllers/formController');
-const { protect } = require('../middleware/authMiddleware');
 
-const router = express.Router();
-
-router.route('/definitions/:id').get(protect, getFormDefinition);
-router.route('/definitions').get(protect, getFormDefinitions);
-router.route('/definitions').post(protect, createFormDefinition);
-router.route('/definitions/:id').put(protect, updateFormDefinition);
-router.route('/data/:id').get(protect, getFormData);
-router.route('/items').post(protect, createItem);
-router.route('/data').post(protect, submitFormData);
-router.route('/categories/:vesselId').get(protect, getCategoriesByVessel);
-router.route('/subcategories/:category').get(protect, getSubcategoriesByCategory);
-router.route('/items/:vesselId/:subcategory').get(protect, getItemsByVessel);
-router.route('/vessels/params').get(protect, getVesselParams);
+// Define your routes here
+router.get('/definitions/:id', getFormDefinition);
+router.get('/definitions', getFormDefinitions);
+router.post('/definitions', createFormDefinition);
+router.put('/definitions/:id', updateFormDefinition);
+router.get('/data/:id', getFormData);
+router.post('/data', submitFormData);
+router.post('/items', createItem);
+router.get('/categories/:vesselId', getCategoriesByVessel);
+router.get('/subcategories/:category', getSubcategoriesByCategory);
+router.get('/items/:subcategory', getItemsBySubcategory); // Ensure this route is correct
+router.get('/vessels/params', getVesselParams);
 
 module.exports = router;

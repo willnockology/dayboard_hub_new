@@ -29,6 +29,7 @@ function DashboardComponent({ setToken }) {
     vessel: '',
     role: ''  // Ensure role is part of the state
   });
+  const [categories, setCategories] = useState([]);
   const [subcategories, setSubcategories] = useState([]);
   const [itemOptions, setItemOptions] = useState([]);
   const [error, setError] = useState('');
@@ -107,10 +108,54 @@ function DashboardComponent({ setToken }) {
     }
   };
 
+  const fetchCategories = async () => {
+    try {
+      const token = localStorage.getItem('authToken');
+      const response = await axios.get('http://localhost:5001/api/forms/definitions', {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      const categories = [...new Set(response.data.map(form => form.category))];
+      setCategories(categories);
+    } catch (error) {
+      console.error('Error fetching categories:', error);
+    }
+  };
+
+  const fetchSubcategoriesByCategory = async (category) => {
+    try {
+      const token = localStorage.getItem('authToken');
+      const response = await axios.get(`http://localhost:5001/api/forms/subcategories/${category}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setSubcategories(response.data);
+    } catch (error) {
+      console.error('Error fetching subcategories:', error);
+    }
+  };
+
+  const fetchItemsBySubcategory = async (subcategory) => {
+    try {
+      const token = localStorage.getItem('authToken');
+      const response = await axios.get(`http://localhost:5001/api/forms/items/${subcategory}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setItemOptions(response.data);
+    } catch (error) {
+      console.error('Error fetching items:', error);
+    }
+  };  
+
   useEffect(() => {
     fetchItems();
     fetchVessels();
     fetchUserRole();
+    fetchCategories();
     checkAllUnreadComments();
   }, []);
 
@@ -140,9 +185,9 @@ function DashboardComponent({ setToken }) {
     }));
 
     if (name === 'category') {
-      fetchSubcategoriesByVesselAndCategory(selectedVessel, value);
+      fetchSubcategoriesByCategory(value);
     } else if (name === 'subcategory') {
-      fetchItemsByVesselAndSubcategory(selectedVessel, value);
+      fetchItemsBySubcategory(value);
     }
   };
 
@@ -393,7 +438,7 @@ function DashboardComponent({ setToken }) {
     setFilterSubcategory('');
     setFilterItem('');
     if (selectedCategory) {
-      fetchSubcategoriesByVesselAndCategory(selectedVessel, selectedCategory);
+      fetchSubcategoriesByCategory(selectedCategory);
     } else {
       setSubcategories([]);
     }
@@ -404,11 +449,11 @@ function DashboardComponent({ setToken }) {
     setFilterSubcategory(selectedSubcategory);
     setFilterItem('');
     if (selectedSubcategory) {
-      fetchItemsByVesselAndSubcategory(selectedVessel, selectedSubcategory);
+      fetchItemsBySubcategory(selectedSubcategory);
     } else {
       setItemOptions([]);
     }
-  };
+  };  
 
   const handleFilterItemChange = (e) => {
     setFilterItem(e.target.value);
@@ -419,53 +464,6 @@ function DashboardComponent({ setToken }) {
     setFilterSubcategory('');
     setFilterItem('');
     setSelectedVessel('');
-  };
-
-  const fetchSubcategoriesByVesselAndCategory = async (vesselId, category) => {
-    if (!vesselId || !category) return;
-    try {
-      const token = localStorage.getItem('authToken');
-      const response = await axios.get(`http://localhost:5001/api/forms/subcategories/${vesselId}/${category}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      setSubcategories(response.data);
-    } catch (error) {
-      console.error('Error fetching subcategories:', error);
-    }
-  };
-
-  const fetchItemsByVesselAndSubcategory = async (vesselId, subcategory) => {
-    if (!vesselId || !subcategory) return;
-    try {
-      const token = localStorage.getItem('authToken');
-      const response = await axios.get(`http://localhost:5001/api/forms/items/${vesselId}/${subcategory}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      setItemOptions(response.data);
-    } catch (error) {
-      console.error('Error fetching items:', error);
-    }
-  };
-
-  const getAvailableCategories = () => {
-    const categories = items.map(item => item.category);
-    return Array.from(new Set(categories));
-  };
-
-  const getAvailableSubcategories = () => {
-    if (!filterCategory) return [];
-    const subcategories = items.filter(item => item.category === filterCategory).map(item => item.subcategory);
-    return Array.from(new Set(subcategories));
-  };
-
-  const getAvailableItems = () => {
-    if (!filterSubcategory) return [];
-    const items = items.filter(item => item.subcategory === filterSubcategory).map(item => item.name);
-    return Array.from(new Set(items));
   };
 
   return (
@@ -508,7 +506,7 @@ function DashboardComponent({ setToken }) {
               onChange={handleInputChange}
             >
               <option value="">Select Category</option>
-              {getAvailableCategories().map((category, index) => (
+              {categories.map((category, index) => (
                 <option key={index} value={category}>
                   {category}
                 </option>
@@ -650,7 +648,7 @@ function DashboardComponent({ setToken }) {
           onChange={handleFilterCategoryChange}
         >
           <option value="">Filter by Category</option>
-          {getAvailableCategories().map((category, index) => (
+          {categories.map((category, index) => (
             <option key={index} value={category}>
               {category}
             </option>
@@ -663,7 +661,7 @@ function DashboardComponent({ setToken }) {
           disabled={!filterCategory}
         >
           <option value="">Filter by Subcategory</option>
-          {getAvailableSubcategories().map((subcategory, index) => (
+          {subcategories.map((subcategory, index) => (
             <option key={index} value={subcategory}>
               {subcategory}
             </option>
@@ -676,12 +674,13 @@ function DashboardComponent({ setToken }) {
           disabled={!filterSubcategory}
         >
           <option value="">Filter by Item</option>
-          {getAvailableItems().map((item, index) => (
+          {itemOptions.map((item, index) => (
             <option key={index} value={item}>
               {item}
             </option>
           ))}
         </select>
+
         <button onClick={handleClearFilters}>Clear Filters</button>
         <div className="show-completed">
           <label>

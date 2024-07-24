@@ -26,6 +26,7 @@ const FormEditorComponent = () => {
   const [isAddingNew, setIsAddingNew] = useState(false);
   const [newItemName, setNewItemName] = useState('');
   const [errors, setErrors] = useState({});
+  const [successMessage, setSuccessMessage] = useState('');
 
   const applicabilityOptions = [
     'no min', '15+ Persons', '16+ persons', '24 meters', '80 GT', '100 GT', '300 GT', '400 GT', '500 GT', '1000 GT'
@@ -123,6 +124,7 @@ const FormEditorComponent = () => {
         field_description: field.field_description || '', // Changed from field_title to field_description
         field_type: field.field_type || 'text',
         options: ['dropdown', 'radio'].includes(field.field_type) ? field.options || [] : undefined,
+        required: field.required || false,
       }));
 
       setFormFields(fields);
@@ -138,7 +140,7 @@ const FormEditorComponent = () => {
   };
 
   const handleAddField = () => {
-    setFormFields([...formFields, { field_name: '', field_description: '', field_type: 'text', options: [] }]);
+    setFormFields([...formFields, { field_name: '', field_description: '', field_type: 'text', options: [], required: false }]);
   };
 
   const handleDeleteField = (index) => {
@@ -178,6 +180,7 @@ const FormEditorComponent = () => {
         field_description: field.field_description || '', // Changed from field_title to field_description
         field_type: field.field_type || 'text',
         options: ['dropdown', 'radio'].includes(field.field_type) ? field.options || [] : undefined,
+        required: field.required || false,
       }));
 
       const min = applicabilityRange.min.includes('no min') ? null : applicabilityRange.min;
@@ -185,6 +188,7 @@ const FormEditorComponent = () => {
 
       const payload = {
         form_name: selectedItem && selectedItem !== 'new' ? selectedItem.form_name : newItemName,
+        category: selectedCategory,
         fields: updatedFields,
         subcategory: selectedSubcategory,
         gross_tonnage_min: min,
@@ -212,7 +216,11 @@ const FormEditorComponent = () => {
 
       fetchSubcategories();
       setIsAddingNew(false);
-      console.log('Form saved successfully');
+      setSuccessMessage('Form saved successfully');
+      setTimeout(() => {
+        setSuccessMessage('');
+        window.location.reload(); // Refresh the page
+      }, 2000);
     } catch (error) {
       console.error('Error saving form:', error);
       if (error.response && error.response.data) {
@@ -252,6 +260,12 @@ const FormEditorComponent = () => {
     }));
   };
 
+  const handleRequiredChange = (index, checked) => {
+    const updatedFields = [...formFields];
+    updatedFields[index].required = checked;
+    setFormFields(updatedFields);
+  };
+
   const staticSubcategories = {
     'Form or Checklist': ['SMS', 'Contingency Plan', 'Security', 'Crew', 'Permits to Work'],
     Document: ['Flag', 'Class', 'Crew', 'Statutory', 'Insurance'],
@@ -260,6 +274,7 @@ const FormEditorComponent = () => {
   return (
     <div className="form-editor-container">
       <h1>Edit Form</h1>
+      {successMessage && <div className="success-message">{successMessage}</div>}
       {!isAddingNew && (
         <div className="form-editor-controls">
           <select value={selectedCategory} onChange={handleCategoryChange}>
@@ -420,6 +435,14 @@ const FormEditorComponent = () => {
                         <option value="toggle">Toggle</option>
                       </select>
                     </div>
+                    <div className="field-column">
+                      <label>Required</label>
+                      <input
+                        type="checkbox"
+                        checked={field.required}
+                        onChange={(e) => handleRequiredChange(index, e.target.checked)}
+                      />
+                    </div>
                   </div>
                   {['dropdown', 'radio'].includes(field.field_type) && (
                     <textarea
@@ -487,6 +510,14 @@ const FormEditorComponent = () => {
                     <option value="time">Time</option>
                     <option value="toggle">Toggle</option>
                   </select>
+                </div>
+                <div className="field-column">
+                  <label>Required</label>
+                  <input
+                    type="checkbox"
+                    checked={field.required}
+                    onChange={(e) => handleRequiredChange(index, e.target.checked)}
+                  />
                 </div>
               </div>
               {['dropdown', 'radio'].includes(field.field_type) && (
