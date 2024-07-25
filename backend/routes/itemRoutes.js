@@ -16,7 +16,11 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage });
 
-router.route('/').get(protect, getItems).post(protect, upload.array('attachments'), createItem);
-router.route('/:id').delete(protect, deleteItem);
+router.route('/')
+  .get(protect, getItems)  // Use getItems here
+  .post(protect, upload.array('attachments'), createItem);
+
+router.route('/:id')
+  .delete(protect, deleteItem);
 
 module.exports = router;

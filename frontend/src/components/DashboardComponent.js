@@ -27,7 +27,8 @@ function DashboardComponent({ setToken }) {
     attachments: [],
     title: '',
     vessel: '',
-    role: ''  // Ensure role is part of the state
+    customName: '',
+    role: ''
   });
   const [categories, setCategories] = useState([]);
   const [subcategories, setSubcategories] = useState([]);
@@ -48,19 +49,23 @@ function DashboardComponent({ setToken }) {
   const [searchQuery, setSearchQuery] = useState('');
   const history = useHistory();
 
-  const fetchItems = async () => {
+  const fetchItems = async (subcategory = '') => {
     try {
-      const token = localStorage.getItem('authToken');
-      const response = await axios.get('http://localhost:5001/api/items', {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      setItems(response.data);
+        const token = localStorage.getItem('authToken');
+        const url = subcategory ? `http://localhost:5001/api/items?subcategory=${subcategory}` : `http://localhost:5001/api/items`;
+        console.log('Fetching items with URL:', url);
+        const response = await axios.get(url, {
+            headers: {
+                Authorization: `Bearer ${token}`,
+            },
+        });
+        console.log('Items fetched:', response.data);
+        setItems(response.data);
     } catch (error) {
-      setError('Error fetching items');
+        setError('Error fetching items');
+        console.error('Error fetching items:', error.response ? error.response.data : error.message);
     }
-  };
+};
 
   const fetchVessels = async () => {
     try {
@@ -72,9 +77,6 @@ function DashboardComponent({ setToken }) {
         },
       });
 
-      console.log('User:', user);
-      console.log('All Vessels:', response.data);
-
       let userVessels;
       if (user.role === 'Superuser') {
         userVessels = response.data;
@@ -82,7 +84,6 @@ function DashboardComponent({ setToken }) {
         userVessels = response.data.filter(vessel => user.assignedVessels.includes(vessel._id));
       }
 
-      console.log('User Vessels:', userVessels);
       setVessels(userVessels);
     } catch (error) {
       setError('Error fetching vessels');
@@ -102,7 +103,6 @@ function DashboardComponent({ setToken }) {
         ...prevItem,
         role: response.data.role,
       }));
-      console.log('User Role:', response.data.role);
     } catch (error) {
       setError('Error fetching user role');
     }
@@ -137,19 +137,23 @@ function DashboardComponent({ setToken }) {
     }
   };
 
-  const fetchItemsBySubcategory = async (subcategory) => {
+  const fetchFormDefinitions = async (category, subcategory) => {
     try {
       const token = localStorage.getItem('authToken');
-      const response = await axios.get(`http://localhost:5001/api/forms/items/${subcategory}`, {
+      const response = await axios.get(`http://localhost:5001/api/forms/definitions`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
+        params: {
+          category,
+          subcategory,
+        },
       });
-      setItemOptions(response.data);
+      setItemOptions(response.data); // Assuming response data is an array of form definitions
     } catch (error) {
-      console.error('Error fetching items:', error);
+      console.error('Error fetching form definitions:', error);
     }
-  };  
+  };
 
   useEffect(() => {
     fetchItems();
@@ -180,15 +184,30 @@ function DashboardComponent({ setToken }) {
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setNewItem((prevItem) => ({
-      ...prevItem,
-      [name]: value,
+        ...prevItem,
+        [name]: value,
     }));
 
     if (name === 'category') {
-      fetchSubcategoriesByCategory(value);
+        fetchSubcategoriesByCategory(value);
+        setNewItem((prevItem) => ({
+          ...prevItem,
+          subcategory: '',
+          name: '',
+          customName: '',
+          dueDate: '',
+        }));
+        setItemOptions([]);
     } else if (name === 'subcategory') {
-      fetchItemsBySubcategory(value);
+        fetchFormDefinitions(newItem.category, value); // Fetch form definitions based on category and subcategory
+        setNewItem((prevItem) => ({
+          ...prevItem,
+          name: '',
+          customName: '',
+          dueDate: '',
+        }));
     }
+    console.log('Input changed:', name, value);
   };
 
   const handleFileChange = (e) => {
@@ -222,13 +241,11 @@ function DashboardComponent({ setToken }) {
       const token = localStorage.getItem('authToken');
       const formData = new FormData();
 
-      // Add fields to formData
       formData.append('category', newItem.category);
       formData.append('dueDate', newItem.dueDate);
       formData.append('vessel', newItem.vessel);
-      formData.append('role', newItem.role);  // Include role
+      formData.append('role', newItem.role);
 
-      // Conditionally add fields based on category
       if (newItem.category === 'Form or Checklist' || newItem.category === 'Document') {
         const itemName = newItem.name === 'custom' ? newItem.customName : newItem.name;
         formData.append('name', itemName);
@@ -260,8 +277,8 @@ function DashboardComponent({ setToken }) {
         attachments: [],
         title: '',
         vessel: '',
-        customName: '',  // Reset custom name
-        role: newItem.role  // Retain role
+        customName: '',
+        role: newItem.role
       });
       setShowForm(false);
       fetchItems();
@@ -301,14 +318,13 @@ function DashboardComponent({ setToken }) {
     }
   };
 
-  const handleCompleteForm = (item) => {
-    history.push(`/form/${item._id}`);
+  const handleCompleteForm = (itemId) => {
+    history.push(`/form/${itemId}`);
   };
 
   const filteredAndSortedItems = () => {
     let filteredItems = items;
 
-    // Filter by search query
     if (searchQuery) {
       const lowercasedQuery = searchQuery.toLowerCase();
       filteredItems = filteredItems.filter(item => {
@@ -321,34 +337,28 @@ function DashboardComponent({ setToken }) {
       });
     }
 
-    // Filter by category
     if (filterCategory) {
       filteredItems = filteredItems.filter(item => item.category === filterCategory);
     }
 
-    // Filter by subcategory
     if (filterSubcategory) {
       filteredItems = filteredItems.filter(item => item.subcategory === filterSubcategory);
     }
 
-    // Filter by item
     if (filterItem) {
       filteredItems = filteredItems.filter(item => item.name === filterItem);
     }
 
-    // Filter by vessel
     if (selectedVessel) {
       filteredItems = filteredItems.filter(item => item.vessel && item.vessel._id === selectedVessel);
     }
 
-    // Filter by completion status
     if (completedFilter === 'Completed') {
       filteredItems = filteredItems.filter(item => item.completed);
     } else if (completedFilter === 'Outstanding') {
       filteredItems = filteredItems.filter(item => !item.completed);
     }
 
-    // Sort items
     if (!sortConfig.key) return filteredItems;
     return [...filteredItems].sort((a, b) => {
       const aValue = sortConfig.key === 'submitted' ? new Date(a.updatedAt) :
@@ -449,11 +459,13 @@ function DashboardComponent({ setToken }) {
     setFilterSubcategory(selectedSubcategory);
     setFilterItem('');
     if (selectedSubcategory) {
-      fetchItemsBySubcategory(selectedSubcategory);
+        fetchItems(selectedSubcategory);  // Fetch items by subcategory
     } else {
-      setItemOptions([]);
+        fetchItems();  // Fetch all items if no subcategory is selected
+        setItemOptions([]);
     }
-  };  
+    console.log('Filter subcategory changed:', selectedSubcategory);
+};
 
   const handleFilterItemChange = (e) => {
     setFilterItem(e.target.value);
@@ -535,8 +547,8 @@ function DashboardComponent({ setToken }) {
                 >
                   <option value="">Select Item</option>
                   {itemOptions.map((item, index) => (
-                    <option key={index} value={item}>
-                      {item}
+                    <option key={item._id} value={item.form_name}>
+                      {item.form_name}
                     </option>
                   ))}
                   <option value="custom">Custom</option>
@@ -566,38 +578,6 @@ function DashboardComponent({ setToken }) {
                     multiple
                     style={{ display: newItem.dueDate ? 'block' : 'none' }}
                   />
-                )}
-                {newItem.category === 'Form or Checklist' && role !== 'Superuser' && role !== 'Company User' && (
-                  <div style={{ display: newItem.name || newItem.customName ? 'block' : 'none' }}>
-                    <label>
-                      <input
-                        type="radio"
-                        name="completeNow"
-                        value="now"
-                        checked={newItem.completeNow === 'now'}
-                        onChange={handleInputChange}
-                      />
-                      Complete Form or Checklist Now
-                    </label>
-                    <label>
-                      <input
-                        type="radio"
-                        name="completeNow"
-                        value="later"
-                        checked={newItem.completeNow === 'later'}
-                        onChange={handleInputChange}
-                      />
-                      Choose a Date
-                    </label>
-                    {newItem.completeNow === 'later' && (
-                      <input
-                        type="date"
-                        name="dueDate"
-                        value={newItem.dueDate}
-                        onChange={handleInputChange}
-                      />
-                    )}
-                  </div>
                 )}
               </>
             )}
@@ -675,12 +655,11 @@ function DashboardComponent({ setToken }) {
         >
           <option value="">Filter by Item</option>
           {itemOptions.map((item, index) => (
-            <option key={index} value={item}>
-              {item}
+            <option key={index} value={item.form_name}>
+              {item.form_name}
             </option>
           ))}
         </select>
-
         <button onClick={handleClearFilters}>Clear Filters</button>
         <div className="show-completed">
           <label>
@@ -800,7 +779,7 @@ function DashboardComponent({ setToken }) {
                       <FontAwesomeIcon icon={faComments} />
                     </button>
                     {!item.completed && item.category === 'Form or Checklist' && (
-                      <button onClick={() => handleCompleteForm(item)}>
+                      <button onClick={() => handleCompleteForm(item.formDefinitionId)}>
                         <FontAwesomeIcon icon={faEdit} style={{ color: 'orange' }} />
                       </button>
                     )}
