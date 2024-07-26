@@ -28,7 +28,8 @@ function DashboardComponent({ setToken }) {
     title: '',
     vessel: '',
     customName: '',
-    role: ''
+    role: '',
+    formDefinitionId: '', // Add formDefinitionId to the state
   });
   const [categories, setCategories] = useState([]);
   const [subcategories, setSubcategories] = useState([]);
@@ -51,21 +52,21 @@ function DashboardComponent({ setToken }) {
 
   const fetchItems = async (subcategory = '') => {
     try {
-        const token = localStorage.getItem('authToken');
-        const url = subcategory ? `http://localhost:5001/api/items?subcategory=${subcategory}` : `http://localhost:5001/api/items`;
-        console.log('Fetching items with URL:', url);
-        const response = await axios.get(url, {
-            headers: {
-                Authorization: `Bearer ${token}`,
-            },
-        });
-        console.log('Items fetched:', response.data);
-        setItems(response.data);
+      const token = localStorage.getItem('authToken');
+      const url = subcategory ? `http://localhost:5001/api/items?subcategory=${subcategory}` : `http://localhost:5001/api/items`;
+      console.log('Fetching items with URL:', url);
+      const response = await axios.get(url, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      console.log('Items fetched:', response.data);
+      setItems(response.data);
     } catch (error) {
-        setError('Error fetching items');
-        console.error('Error fetching items:', error.response ? error.response.data : error.message);
+      setError('Error fetching items');
+      console.error('Error fetching items:', error.response ? error.response.data : error.message);
     }
-};
+  };
 
   const fetchVessels = async () => {
     try {
@@ -206,6 +207,19 @@ function DashboardComponent({ setToken }) {
           customName: '',
           dueDate: '',
         }));
+    } else if (name === 'name') {
+        const selectedItem = itemOptions.find(item => item.form_name === value);
+        if (selectedItem) {
+          setNewItem((prevItem) => ({
+            ...prevItem,
+            formDefinitionId: selectedItem._id,
+          }));
+        } else {
+          setNewItem((prevItem) => ({
+            ...prevItem,
+            formDefinitionId: '',
+          }));
+        }
     }
     console.log('Input changed:', name, value);
   };
@@ -245,6 +259,7 @@ function DashboardComponent({ setToken }) {
       formData.append('dueDate', newItem.dueDate);
       formData.append('vessel', newItem.vessel);
       formData.append('role', newItem.role);
+      formData.append('formDefinitionId', newItem.formDefinitionId); // Include formDefinitionId in the form data
 
       if (newItem.category === 'Form or Checklist' || newItem.category === 'Document') {
         const itemName = newItem.name === 'custom' ? newItem.customName : newItem.name;
@@ -278,7 +293,8 @@ function DashboardComponent({ setToken }) {
         title: '',
         vessel: '',
         customName: '',
-        role: newItem.role
+        role: newItem.role,
+        formDefinitionId: '',
       });
       setShowForm(false);
       fetchItems();
@@ -318,8 +334,12 @@ function DashboardComponent({ setToken }) {
     }
   };
 
-  const handleCompleteForm = (itemId) => {
-    history.push(`/form/${itemId}`);
+  const handleCompleteForm = async (formDefinitionId) => {
+    if (formDefinitionId) {
+      history.push(`/form/${formDefinitionId}`);
+    } else {
+      console.error('Form definition ID not found');
+    }
   };
 
   const filteredAndSortedItems = () => {
@@ -465,7 +485,7 @@ function DashboardComponent({ setToken }) {
         setItemOptions([]);
     }
     console.log('Filter subcategory changed:', selectedSubcategory);
-};
+  };
 
   const handleFilterItemChange = (e) => {
     setFilterItem(e.target.value);
@@ -655,7 +675,7 @@ function DashboardComponent({ setToken }) {
         >
           <option value="">Filter by Item</option>
           {itemOptions.map((item, index) => (
-            <option key={index} value={item.form_name}>
+            <option key={item._id} value={item.form_name}>
               {item.form_name}
             </option>
           ))}

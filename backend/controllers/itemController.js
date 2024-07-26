@@ -47,6 +47,7 @@ const createItem = asyncHandler(async (req, res) => {
     vessel,
     customName,
     role,
+    formDefinitionId  // Add this line
   } = req.body;
 
   console.log('Received request body:', req.body);
@@ -56,7 +57,7 @@ const createItem = asyncHandler(async (req, res) => {
 
   const itemName = name === 'custom' ? customName : name;
 
-  if (!itemName || !category || !dueDate || !vessel || !role) {
+  if (!itemName || !category || !dueDate || !vessel || !role || !formDefinitionId) {  // Include formDefinitionId in validation
     console.error('Validation error: Missing required fields');
     res.status(400).json({ message: 'All required fields must be filled' });
     return;
@@ -73,7 +74,8 @@ const createItem = asyncHandler(async (req, res) => {
     attachments,
     pdfPath,
     vessel,
-    role
+    role,
+    formDefinitionId  // Add this line
   });
 
   try {

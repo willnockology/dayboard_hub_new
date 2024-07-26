@@ -43,6 +43,11 @@ const itemSchema = new mongoose.Schema({
   role: {
     type: String,
     required: true
+  },
+  formDefinitionId: {  // Add this line
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'FormDefinition',  // Assuming your form definitions are stored in a collection named 'FormDefinition'
+    required: true  // Adjust this if you do not want it to be required
   }
 }, {
   timestamps: true

@@ -3,7 +3,7 @@ import axios from 'axios';
 import { useParams, useHistory } from 'react-router-dom';
 
 const DynamicFormComponent = () => {
-  const { formType, id: itemId } = useParams();  // Get itemId from URL params
+  const { id: formId } = useParams();  // Get formId from URL params
   const history = useHistory();
   const [formDefinition, setFormDefinition] = useState(null);
   const [formData, setFormData] = useState({});
@@ -15,7 +15,8 @@ const DynamicFormComponent = () => {
     const fetchFormDefinition = async () => {
       try {
         const token = localStorage.getItem('authToken');
-        const response = await axios.get(`http://localhost:5001/api/forms/definitions/${formType}`, {
+        console.log(`Fetching form definition for formId: ${formId}`);
+        const response = await axios.get(`http://localhost:5001/api/forms/definitions/${formId}`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -29,18 +30,21 @@ const DynamicFormComponent = () => {
     };
 
     fetchFormDefinition();
-  }, [formType]);
+  }, [formId]);
 
   if (error) {
+    console.log('Error:', error);
     return <div>{error}</div>;
   }
 
   if (!formDefinition) {
+    console.log('Form definition not yet loaded.');
     return <div>Loading...</div>;
   }
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
+    console.log(`Input change detected: ${name} = ${type === 'checkbox' ? checked : value}`);
     setFormData((prevData) => ({
       ...prevData,
       [name]: type === 'checkbox' ? checked : value,
@@ -51,10 +55,11 @@ const DynamicFormComponent = () => {
     const errors = [];
     formDefinition.fields.forEach((field) => {
       if (field.required && !formData[field.field_name]) {
-        errors.push(`${field.field_title} is required`);
+        errors.push(`${field.field_name} is required`);
       }
     });
     setValidationErrors(errors);
+    console.log('Validation errors:', errors);
     return errors.length === 0;
   };
 
@@ -62,8 +67,10 @@ const DynamicFormComponent = () => {
     e.preventDefault();
     setSubmissionError('');
     setValidationErrors([]);
+    console.log('Form data on submit:', formData);
 
     if (!validateForm()) {
+      console.log('Form validation failed.');
       return;
     }
 
@@ -73,6 +80,7 @@ const DynamicFormComponent = () => {
 
       if (!userJson) {
         setSubmissionError('User information is missing. Please login again.');
+        console.error('User information missing in local storage.');
         return;
       }
 
@@ -80,6 +88,7 @@ const DynamicFormComponent = () => {
 
       if (!user || !user.firstName) {
         setSubmissionError('User information is missing. Please login again.');
+        console.error('User information is invalid.');
         return;
       }
 
@@ -88,7 +97,6 @@ const DynamicFormComponent = () => {
         fields: formData,
         completedBy: `${user.firstName} ${user.lastName}`,
         completedAt: new Date().toISOString(),
-        itemId: itemId,  // Add itemId to submission data
       };
 
       console.log('Submitting form data:', submissionData);
@@ -119,8 +127,8 @@ const DynamicFormComponent = () => {
       <h1>{formDefinition.form_name}</h1>
       <form onSubmit={handleSubmit}>
         {formDefinition.fields.map((field) => (
-          <div key={field.field_name}>
-            <label>{field.field_title}</label>
+          <div key={field._id}>
+            <label>{field.field_name}</label>
             {field.field_type === 'text' && (
               <input
                 type="text"
@@ -174,7 +182,7 @@ const DynamicFormComponent = () => {
               />
             )}
             {field.field_type === 'section' && (
-              <h2>{field.field_title}</h2>
+              <h2>{field.field_name}</h2>
             )}
           </div>
         ))}
