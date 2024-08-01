@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useParams, useHistory } from 'react-router-dom';
+import './DynamicFormComponent.css';  // Import the CSS file
 
 const DynamicFormComponent = () => {
   const { id: formId } = useParams();  // Get formId from URL params
@@ -10,21 +11,19 @@ const DynamicFormComponent = () => {
   const [error, setError] = useState('');
   const [submissionError, setSubmissionError] = useState('');
   const [validationErrors, setValidationErrors] = useState([]);
+  const [successMessage, setSuccessMessage] = useState(''); // New state for success message
 
   useEffect(() => {
     const fetchFormDefinition = async () => {
       try {
         const token = localStorage.getItem('authToken');
-        console.log(`Fetching form definition for formId: ${formId}`);
         const response = await axios.get(`http://localhost:5001/api/forms/definitions/${formId}`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
         });
-        console.log('Fetched formDefinition:', response.data);
         setFormDefinition(response.data);
       } catch (error) {
-        console.error('Error fetching form definition:', error);
         setError('Error fetching form definition');
       }
     };
@@ -32,22 +31,19 @@ const DynamicFormComponent = () => {
     fetchFormDefinition();
   }, [formId]);
 
-  if (error) {
-    console.log('Error:', error);
-    return <div>{error}</div>;
-  }
-
-  if (!formDefinition) {
-    console.log('Form definition not yet loaded.');
-    return <div>Loading...</div>;
-  }
-
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
-    console.log(`Input change detected: ${name} = ${type === 'checkbox' ? checked : value}`);
     setFormData((prevData) => ({
       ...prevData,
       [name]: type === 'checkbox' ? checked : value,
+    }));
+  };
+
+  const handleFileChange = (e) => {
+    const { name, files } = e.target;
+    setFormData((prevData) => ({
+      ...prevData,
+      [name]: files[0], // Assuming single file upload for now
     }));
   };
 
@@ -59,7 +55,6 @@ const DynamicFormComponent = () => {
       }
     });
     setValidationErrors(errors);
-    console.log('Validation errors:', errors);
     return errors.length === 0;
   };
 
@@ -67,10 +62,8 @@ const DynamicFormComponent = () => {
     e.preventDefault();
     setSubmissionError('');
     setValidationErrors([]);
-    console.log('Form data on submit:', formData);
 
     if (!validateForm()) {
-      console.log('Form validation failed.');
       return;
     }
 
@@ -80,50 +73,50 @@ const DynamicFormComponent = () => {
 
       if (!userJson) {
         setSubmissionError('User information is missing. Please login again.');
-        console.error('User information missing in local storage.');
         return;
       }
 
       const user = JSON.parse(userJson);
+      const submissionData = new FormData();
+      submissionData.append('formId', formDefinition._id);
+      submissionData.append('completedBy', `${user.firstName} ${user.lastName}`);
+      submissionData.append('completedAt', new Date().toISOString());
 
-      if (!user || !user.firstName) {
-        setSubmissionError('User information is missing. Please login again.');
-        console.error('User information is invalid.');
-        return;
-      }
+      // Append form data to the submission
+      Object.keys(formData).forEach((key) => {
+        submissionData.append(key, formData[key]);
+      });
 
-      const submissionData = {
-        formId: formDefinition._id,
-        fields: formData,
-        completedBy: `${user.firstName} ${user.lastName}`,
-        completedAt: new Date().toISOString(),
-      };
-
-      console.log('Submitting form data:', submissionData);
-
-      const response = await axios.post('http://localhost:5001/api/forms/data', submissionData, {
+      await axios.post('http://localhost:5001/api/forms/data', submissionData, {
         headers: {
           Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
+          'Content-Type': 'multipart/form-data',
         },
       });
 
-      console.log('Submission response:', response.data);
-
-      // Show success popup
-      alert('Form submitted successfully');
+      // Show success message
+      setSuccessMessage('Form submitted successfully');
       
-      // Update items in the dashboard after successful form submission
-      history.push('/dashboard');
-      window.location.reload();  // Reload the page to fetch the updated items
+      // Redirect to dashboard after a short delay
+      setTimeout(() => {
+        history.push('/dashboard');
+      }, 2000); // 2-second delay
+
     } catch (error) {
-      console.error('Error submitting form:', error);
       setSubmissionError('Error submitting form: ' + error.message);
     }
   };
 
+  if (error) {
+    return <div>{error}</div>;
+  }
+
+  if (!formDefinition) {
+    return <div>Loading...</div>;
+  }
+
   return (
-    <div>
+    <div id="dynamic-form-container">
       <h1>{formDefinition.form_name}</h1>
       <form onSubmit={handleSubmit}>
         {formDefinition.fields.map((field) => (
@@ -140,6 +133,14 @@ const DynamicFormComponent = () => {
             {field.field_type === 'date' && (
               <input
                 type="date"
+                name={field.field_name}
+                value={formData[field.field_name] || ''}
+                onChange={handleInputChange}
+              />
+            )}
+            {field.field_type === 'time' && (
+              <input
+                type="time"
                 name={field.field_name}
                 value={formData[field.field_name] || ''}
                 onChange={handleInputChange}
@@ -173,13 +174,21 @@ const DynamicFormComponent = () => {
                 onChange={handleInputChange}
               ></textarea>
             )}
-            {field.field_type === 'signature' && (
+            {field.field_type === 'image' && (
               <input
-                type="text"
+                type="file"
+                name={field.field_name}
+                accept="image/*"
+                onChange={handleFileChange}
+              />
+            )}
+            {field.field_type === 'paragraph' && (
+              <textarea
                 name={field.field_name}
                 value={formData[field.field_name] || ''}
                 onChange={handleInputChange}
-              />
+                rows={5}
+              ></textarea>
             )}
             {field.field_type === 'section' && (
               <h2>{field.field_name}</h2>
@@ -198,6 +207,7 @@ const DynamicFormComponent = () => {
           </div>
         )}
         {submissionError && <div style={{ color: 'red' }}>{submissionError}</div>}
+        {successMessage && <div style={{ color: 'green' }}>{successMessage}</div>}
       </form>
     </div>
   );

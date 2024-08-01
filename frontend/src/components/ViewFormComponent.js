@@ -7,6 +7,8 @@ const ViewFormComponent = () => {
   const [formDefinition, setFormDefinition] = useState(null);
   const [formData, setFormData] = useState({});
   const [error, setError] = useState('');
+  const [loadingDefinition, setLoadingDefinition] = useState(true);
+  const [loadingData, setLoadingData] = useState(true);
 
   useEffect(() => {
     const fetchFormDefinition = async () => {
@@ -21,6 +23,8 @@ const ViewFormComponent = () => {
       } catch (error) {
         console.error('Error fetching form definition:', error.response ? error.response.data : error.message);
         setError('Error fetching form definition');
+      } finally {
+        setLoadingDefinition(false);
       }
     };
 
@@ -40,18 +44,24 @@ const ViewFormComponent = () => {
       } catch (error) {
         console.error('Error fetching form data:', error.response ? error.response.data : error.message);
         setError('Error fetching form data');
+      } finally {
+        setLoadingData(false);
       }
     };
 
     fetchFormData();
   }, [id]);
 
+  if (loadingDefinition || loadingData) {
+    return <div>Loading...</div>;
+  }
+
   if (error) {
     return <div>{error}</div>;
   }
 
   if (!formDefinition) {
-    return <div>Loading...</div>;
+    return <div>No form definition found</div>;
   }
 
   return (
@@ -60,7 +70,7 @@ const ViewFormComponent = () => {
       <form>
         {formDefinition.fields.map((field) => (
           <div key={field.field_name}>
-            <label>{field.field_title}</label>
+            <label>{field.field_description}</label>
             <input
               type={field.field_type}
               name={field.field_name}

@@ -13,7 +13,7 @@ import VesselRegistrationComponent from './components/VesselRegistrationComponen
 import UserManagementComponent from './components/UserManagementComponent';
 import CrewModuleComponent from './components/CrewModuleComponent';
 import UpdateVesselComponent from './components/UpdateVesselComponent';
-import FormEditorComponent from './components/FormEditorComponent';  // Import the Form Editor component
+import FormEditorComponent from './components/FormEditorComponent';
 
 import './global.css';
 
@@ -46,8 +46,9 @@ const App = () => {
             <Route path="/dashboard">
               <DashboardComponent setToken={setToken} />
             </Route>
-            <Route path="/form/:formType/:id" component={DynamicFormComponent} />
-            <Route path="/form/view/:formType/:id" component={ViewFormComponent} />
+            {/* Updated route to match the expected URL structure */}
+            <Route path="/form/:id" component={DynamicFormComponent} />
+            <Route path="/form/view/:id" component={ViewFormComponent} />
             <Route path="/contact" component={ContactComponent} />
             <Route path="/vessel-registration">
               <VesselRegistrationComponent token={token} />

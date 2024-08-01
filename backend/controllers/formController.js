@@ -36,7 +36,7 @@ const createPDF = (formData, user) => {
 
   doc.end();
 
-  return `/uploads/${fileName}`;  // Ensure relative path
+  return `/uploads/${fileName}`;
 };
 
 // @desc    Get form definition
@@ -45,15 +45,13 @@ const createPDF = (formData, user) => {
 const getFormDefinition = asyncHandler(async (req, res) => {
   const { id } = req.params;
   if (!mongoose.Types.ObjectId.isValid(id)) {
-    res.status(400).json({ message: 'Invalid form ID' });
-    return;
+    return res.status(400).json({ message: 'Invalid form ID' });
   }
 
   const formDefinition = await FormDefinition.findById(id);
 
   if (!formDefinition) {
-    res.status(404).json({ message: 'Form definition not found' });
-    return;
+    return res.status(404).json({ message: 'Form definition not found' });
   }
 
   res.json(formDefinition);
@@ -85,7 +83,7 @@ const parseGrossTonnage = (gross_tonnage, label) => {
 const createFormDefinition = asyncHandler(async (req, res) => {
   const { form_name, category, fields, subcategory, gross_tonnage_min, gross_tonnage_max, people_min, length_min, flagStates, typeOfRegistrations, typeOfVessels } = req.body;
 
-  console.log('Received request body:', req.body); // Log the request body for debugging
+  console.log('Received request body:', req.body);
 
   if (!form_name || !category || !fields || !Array.isArray(fields) || !subcategory) {
     return res.status(400).json({ message: 'Form name, category, fields, and subcategory are required' });
@@ -104,7 +102,7 @@ const createFormDefinition = asyncHandler(async (req, res) => {
     category,
     fields: fields.map(field => ({
       field_name: field.field_name || '',
-      field_description: field.field_description || '', // Updated field name
+      field_description: field.field_description || '',
       field_type: field.field_type || 'text',
       options: ['dropdown', 'radio'].includes(field.field_type) ? field.options || [] : undefined,
       required: field.required || false,
@@ -134,13 +132,12 @@ const createFormDefinition = asyncHandler(async (req, res) => {
 const updateFormDefinition = asyncHandler(async (req, res) => {
   const { id } = req.params;
   if (!mongoose.Types.ObjectId.isValid(id)) {
-    res.status(400).json({ message: 'Invalid form ID' });
-    return;
+    return res.status(400).json({ message: 'Invalid form ID' });
   }
 
   const { form_name, category, fields, subcategory, gross_tonnage_min, gross_tonnage_max, people_min, length_min, flagStates, typeOfRegistrations, typeOfVessels } = req.body;
 
-  console.log('Received request body for update:', req.body); // Log the request body for debugging
+  console.log('Received request body for update:', req.body);
 
   if (!form_name || !category || !fields || !Array.isArray(fields) || !subcategory) {
     return res.status(400).json({ message: 'Form name, category, fields, and subcategory are required' });
@@ -157,15 +154,14 @@ const updateFormDefinition = asyncHandler(async (req, res) => {
   const form = await FormDefinition.findById(id);
 
   if (!form) {
-    res.status(404).json({ message: 'Form definition not found' });
-    return;
+    return res.status(404).json({ message: 'Form definition not found' });
   }
 
   form.form_name = form_name;
   form.category = category;
   form.fields = fields.map(field => ({
     field_name: field.field_name || '',
-    field_description: field.field_description || '', // Updated field name
+    field_description: field.field_description || '',
     field_type: field.field_type || 'text',
     options: ['dropdown', 'radio'].includes(field.field_type) ? field.options || [] : undefined,
     required: field.required || false,
@@ -194,15 +190,13 @@ const updateFormDefinition = asyncHandler(async (req, res) => {
 const getFormData = asyncHandler(async (req, res) => {
   const { id } = req.params;
   if (!mongoose.Types.ObjectId.isValid(id)) {
-    res.status(400).json({ message: 'Invalid form data ID' });
-    return;
+    return res.status(400).json({ message: 'Invalid form data ID' });
   }
 
   const formData = await FormData.findById(id);
 
   if (!formData) {
-    res.status(404).json({ message: 'Form data not found' });
-    return;
+    return res.status(404).json({ message: 'Form data not found' });
   }
 
   res.json(formData);
@@ -223,7 +217,7 @@ const createItem = asyncHandler(async (req, res) => {
     dueDate,
     attachments,
     vessel: (role === 'Superuser' || role === 'Company User') ? vessel : undefined,
-    role // Needed to validate the vessel requirement
+    role
   });
 
   try {
@@ -239,12 +233,11 @@ const createItem = asyncHandler(async (req, res) => {
 // @access  Private
 const submitFormData = asyncHandler(async (req, res) => {
   const { formDefinitionId, fields, completedBy, completedAt, itemId } = req.body;
-  const user = req.user; // Assuming user is available in req.user from auth middleware
+  const user = req.user;
 
   if (!formDefinitionId || !fields || !completedBy || !completedAt || !itemId) {
     console.log('Form submission error: Missing fields', { formDefinitionId, fields, completedBy, completedAt, itemId });
-    res.status(400).json({ message: 'All fields are required' });
-    return;
+    return res.status(400).json({ message: 'All fields are required' });
   }
 
   try {
@@ -256,7 +249,7 @@ const submitFormData = asyncHandler(async (req, res) => {
       completedBy,
       completedAt,
       user: user._id,
-      itemId,  // Save itemId in FormData
+      itemId,
     });
 
     const createdFormData = await newFormData.save();
@@ -295,8 +288,7 @@ const getCategoriesByVessel = asyncHandler(async (req, res) => {
   const vessel = await Vessel.findById(vesselId);
 
   if (!vessel) {
-    res.status(404).json({ message: 'Vessel not found' });
-    return;
+    return res.status(404).json({ message: 'Vessel not found' });
   }
 
   const grossTonnage = vessel.grossTonnage;
@@ -317,14 +309,13 @@ const getSubcategoriesByCategory = asyncHandler(async (req, res) => {
   const { category } = req.params;
 
   if (!category) {
-    res.status(400).json({ message: 'Category is required' });
-    return;
+    return res.status(400).json({ message: 'Category is required' });
   }
 
   const subcategories = await FormDefinition.find({ category }).distinct('subcategory');
   
   if (!subcategories) {
-    res.status(404).json({ message: 'No subcategories found' });
+    return res.status(404).json({ message: 'No subcategories found' });
   }
 
   res.json(subcategories);
@@ -337,14 +328,13 @@ const getItemsBySubcategory = asyncHandler(async (req, res) => {
   const { subcategory } = req.params;
 
   if (!subcategory) {
-    res.status(400).json({ message: 'Subcategory is required' });
-    return;
+    return res.status(400).json({ message: 'Subcategory is required' });
   }
 
   const items = await FormDefinition.find({ subcategory }).distinct('form_name');
 
   if (!items || items.length === 0) {
-    res.status(404).json({ message: 'No items found' });
+    return res.status(404).json({ message: 'No items found' });
   } else {
     res.json(items);
   }
@@ -383,6 +373,6 @@ module.exports = {
   submitFormData,
   getCategoriesByVessel,
   getSubcategoriesByCategory,
-  getItemsBySubcategory, // Export getItemsBySubcategory
+  getItemsBySubcategory,
   getVesselParams,
 };
