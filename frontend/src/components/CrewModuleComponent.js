@@ -21,6 +21,7 @@ const CrewModuleComponent = () => {
     vessel: '',
     role: 'Crew',
     active: true,
+    imageUrl: '', // New field for image URL
   });
   const [filterVessel, setFilterVessel] = useState(null);
   const [userRole, setUserRole] = useState('');
@@ -72,8 +73,8 @@ const CrewModuleComponent = () => {
     e.preventDefault();
     const formData = {
       ...newCrew,
-      assignedVessels: [newCrew.vessel], // Ensure vessel is included as an array
-      active: newCrew.active, // Ensure active status is included
+      assignedVessels: [newCrew.vessel],
+      active: newCrew.active,
     };
 
     try {
@@ -97,6 +98,7 @@ const CrewModuleComponent = () => {
         vessel: '',
         role: 'Crew',
         active: true,
+        imageUrl: '', // Reset imageUrl
       });
       setShowForm(false);
     } catch (error) {
@@ -282,6 +284,16 @@ const CrewModuleComponent = () => {
               onChange={(e) => handleInputChange({ target: { name: 'active', value: e.target.checked } })}
             />
           </label>
+          <label>
+            Profile Image URL
+            <input
+              type="text"
+              name="imageUrl"
+              value={newCrew.imageUrl}
+              onChange={handleInputChange}
+              placeholder="Image URL"
+            />
+          </label>
           <button type="submit">Add Crew Member</button>
         </form>
       )}
@@ -303,6 +315,7 @@ const CrewModuleComponent = () => {
           <table>
             <thead>
               <tr>
+                <th>Profile Image</th>
                 <th>First Name</th>
                 <th>Last Name</th>
                 <th>Position</th>
@@ -317,6 +330,14 @@ const CrewModuleComponent = () => {
             <tbody>
               {activeCrew.map((c) => (
                 <tr key={c._id}>
+                  <td>
+                    <img
+                      src={c.imageUrl || 'https://via.placeholder.com/50'} // Placeholder if no image is available
+                      alt={`${c.firstName} ${c.lastName}`}
+                      width="50"
+                      height="50"
+                    />
+                  </td>
                   <td>{c.firstName}</td>
                   <td>{c.lastName}</td>
                   <td>{c.position}</td>
@@ -340,6 +361,7 @@ const CrewModuleComponent = () => {
           <table>
             <thead>
               <tr>
+                <th>Profile Image</th>
                 <th>First Name</th>
                 <th>Last Name</th>
                 <th>Position</th>
@@ -354,6 +376,14 @@ const CrewModuleComponent = () => {
             <tbody>
               {inactiveCrew.map((c) => (
                 <tr key={c._id}>
+                  <td>
+                    <img
+                      src={c.imageUrl || 'https://via.placeholder.com/50'} // Placeholder if no image is available
+                      alt={`${c.firstName} ${c.lastName}`}
+                      width="50"
+                      height="50"
+                    />
+                  </td>
                   <td>{c.firstName}</td>
                   <td>{c.lastName}</td>
                   <td>{c.position}</td>

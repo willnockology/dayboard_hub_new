@@ -794,7 +794,7 @@ function DashboardComponent({ setToken }) {
                     </button>
                     <button
                       onClick={() => handleToggleChat(item._id)}
-                      style={{ color: showChatForItem ? 'black' : unreadComments[item._id] ? 'red' : 'white' }}
+                      style={{ color: showChatForItem ? 'black' : unreadComments[item._id] ? 'orange' : 'white' }}
                     >
                       <FontAwesomeIcon icon={faComments} />
                     </button>

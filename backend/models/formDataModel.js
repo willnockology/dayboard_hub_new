@@ -9,7 +9,7 @@ const formDataSchema = mongoose.Schema(
     },
     fields: {
       type: Map,
-      of: String,
+      of: mongoose.Schema.Types.Mixed, // Allow mixed types to store dates as Date objects
       required: true,
     },
     images: [
@@ -38,6 +38,16 @@ const formDataSchema = mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Item',
       required: true,
+    },
+    location: {
+      lat: {
+        type: Number,
+        required: true,
+      },
+      long: {
+        type: Number,
+        required: true,
+      },
     },
   },
   {

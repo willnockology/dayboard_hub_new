@@ -1,17 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useParams, useHistory } from 'react-router-dom';
-import './DynamicFormComponent.css';  // Import the CSS file
+import './DynamicFormComponent.css';
 
 const DynamicFormComponent = () => {
-  const { id: formId } = useParams();  // Get formId from URL params
+  const { id: formId } = useParams();
   const history = useHistory();
   const [formDefinition, setFormDefinition] = useState(null);
   const [formData, setFormData] = useState({});
   const [error, setError] = useState('');
   const [submissionError, setSubmissionError] = useState('');
   const [validationErrors, setValidationErrors] = useState([]);
-  const [successMessage, setSuccessMessage] = useState(''); // New state for success message
+  const [successMessage, setSuccessMessage] = useState('');
 
   useEffect(() => {
     const fetchFormDefinition = async () => {
@@ -43,7 +43,7 @@ const DynamicFormComponent = () => {
     const { name, files } = e.target;
     setFormData((prevData) => ({
       ...prevData,
-      [name]: files[0], // Assuming single file upload for now
+      [name]: files[0],
     }));
   };
 

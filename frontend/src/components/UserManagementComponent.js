@@ -7,6 +7,16 @@ const UserManagementComponent = () => {
   const [selectedUser, setSelectedUser] = useState(null);
   const [selectedVessels, setSelectedVessels] = useState([]);
   const [isCommercial, setIsCommercial] = useState(false);
+  const [userDetails, setUserDetails] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    phoneNumber: '',
+    position: '',
+    nationality: '',
+    passportNumber: '',
+    photo: null,
+  });
 
   useEffect(() => {
     fetchUsers();
@@ -37,6 +47,16 @@ const UserManagementComponent = () => {
     setSelectedUser(user);
     setSelectedVessels(user.assignedVessels.map(vessel => vessel._id));
     setIsCommercial(user.commercial);
+    setUserDetails({
+      firstName: user.firstName,
+      lastName: user.lastName,
+      email: user.email,
+      phoneNumber: user.phoneNumber,
+      position: user.position,
+      nationality: user.nationality,
+      passportNumber: user.passportNumber,
+      photo: user.photo,
+    });
   };
 
   const handleVesselChange = (e) => {
@@ -56,18 +76,50 @@ const UserManagementComponent = () => {
     setIsCommercial(e.target.checked);
   };
 
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setUserDetails((prevDetails) => ({
+      ...prevDetails,
+      [name]: value,
+    }));
+  };
+
+  const handleFileChange = (e) => {
+    setUserDetails((prevDetails) => ({
+      ...prevDetails,
+      photo: e.target.files[0], // Handling file input
+    }));
+  };
+
   const handleSave = async () => {
     const token = localStorage.getItem('authToken');
-    await axios.put(`http://localhost:5001/api/users/${selectedUser._id}/vessels`, {
-      vessels: selectedVessels,
-      commercial: isCommercial,
-    }, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-    alert('User updated successfully');
-    fetchUsers();
+    const formData = new FormData();
+    formData.append('firstName', userDetails.firstName);
+    formData.append('lastName', userDetails.lastName);
+    formData.append('email', userDetails.email);
+    formData.append('phoneNumber', userDetails.phoneNumber);
+    formData.append('position', userDetails.position);
+    formData.append('nationality', userDetails.nationality);
+    formData.append('passportNumber', userDetails.passportNumber);
+    formData.append('commercial', isCommercial);
+    formData.append('vessels', JSON.stringify(selectedVessels));
+
+    if (userDetails.photo) {
+      formData.append('photo', userDetails.photo);
+    }
+
+    try {
+      await axios.put(`http://localhost:5001/api/users/${selectedUser._id}/update`, formData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      alert('User updated successfully');
+      fetchUsers(); // Refresh the list after saving
+    } catch (error) {
+      console.error('Error updating user:', error);
+    }
   };
 
   return (
@@ -117,6 +169,77 @@ const UserManagementComponent = () => {
       {selectedUser && selectedUser.role !== 'Superuser' && (
         <div>
           <h2>Edit {selectedUser.username}</h2>
+          <label>
+            First Name
+            <input
+              type="text"
+              name="firstName"
+              value={userDetails.firstName}
+              onChange={handleInputChange}
+            />
+          </label>
+          <label>
+            Last Name
+            <input
+              type="text"
+              name="lastName"
+              value={userDetails.lastName}
+              onChange={handleInputChange}
+            />
+          </label>
+          <label>
+            Email
+            <input
+              type="email"
+              name="email"
+              value={userDetails.email}
+              onChange={handleInputChange}
+            />
+          </label>
+          <label>
+            Phone Number
+            <input
+              type="tel"
+              name="phoneNumber"
+              value={userDetails.phoneNumber}
+              onChange={handleInputChange}
+            />
+          </label>
+          <label>
+            Position
+            <input
+              type="text"
+              name="position"
+              value={userDetails.position}
+              onChange={handleInputChange}
+            />
+          </label>
+          <label>
+            Nationality
+            <input
+              type="text"
+              name="nationality"
+              value={userDetails.nationality}
+              onChange={handleInputChange}
+            />
+          </label>
+          <label>
+            Passport Number
+            <input
+              type="text"
+              name="passportNumber"
+              value={userDetails.passportNumber}
+              onChange={handleInputChange}
+            />
+          </label>
+          <label>
+            Profile Image
+            <input
+              type="file"
+              name="photo"
+              onChange={handleFileChange}
+            />
+          </label>
           <label>
             <input
               type="checkbox"
