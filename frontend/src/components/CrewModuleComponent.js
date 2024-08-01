@@ -2,12 +2,15 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import Select from 'react-select';
 import countryList from 'react-select-country-list';
+import AvatarEditor from 'react-avatar-editor';
 import './CrewModuleComponent.css';
 
 const CrewModuleComponent = () => {
   const [crew, setCrew] = useState([]);
   const [vessels, setVessels] = useState([]);
   const [showForm, setShowForm] = useState(false);
+  const [editMode, setEditMode] = useState(false);
+  const [selectedCrew, setSelectedCrew] = useState(null);
   const [newCrew, setNewCrew] = useState({
     firstName: '',
     lastName: '',
@@ -21,10 +24,17 @@ const CrewModuleComponent = () => {
     vessel: '',
     role: 'Crew',
     active: true,
-    imageUrl: '', // New field for image URL
+    imageFile: null,
   });
   const [filterVessel, setFilterVessel] = useState(null);
   const [userRole, setUserRole] = useState('');
+  const [imagePreview, setImagePreview] = useState(null);
+  const [editor, setEditor] = useState(null);
+
+  useEffect(() => {
+    fetchCrew();
+    fetchVessels();
+  }, []);
 
   const fetchCrew = async () => {
     try {
@@ -56,11 +66,6 @@ const CrewModuleComponent = () => {
     }
   };
 
-  useEffect(() => {
-    fetchCrew();
-    fetchVessels();
-  }, []);
-
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setNewCrew((prevCrew) => ({
@@ -69,41 +74,115 @@ const CrewModuleComponent = () => {
     }));
   };
 
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file && file.size < 500000 && (file.type === 'image/jpeg' || file.type === 'image/png')) {
+      setNewCrew((prevCrew) => ({
+        ...prevCrew,
+        imageFile: file,
+      }));
+      const reader = new FileReader();
+      reader.onload = () => setImagePreview(reader.result);
+      reader.readAsDataURL(file);
+    } else {
+      alert('Invalid file. Please upload a JPG or PNG image smaller than 500kb.');
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const formData = {
-      ...newCrew,
-      assignedVessels: [newCrew.vessel],
-      active: newCrew.active,
-    };
+    const formData = new FormData();
+    formData.append('firstName', newCrew.firstName);
+    formData.append('lastName', newCrew.lastName);
+    formData.append('username', newCrew.username);
+    formData.append('password', newCrew.password);
+    formData.append('position', newCrew.position);
+    formData.append('nationality', newCrew.nationality);
+    formData.append('email', newCrew.email);
+    formData.append('phoneNumber', newCrew.phoneNumber);
+    formData.append('passportNumber', newCrew.passportNumber);
+    formData.append('vessel', newCrew.vessel);
+    formData.append('role', newCrew.role);
+    formData.append('active', newCrew.active);
 
+    if (editor) {
+      editor.getImageScaledToCanvas().toBlob((blob) => {
+        formData.append('image', blob, newCrew.imageFile.name);
+        submitForm(formData);
+      });
+    } else {
+      submitForm(formData);
+    }
+  };
+
+  const submitForm = async (formData) => {
     try {
       const token = localStorage.getItem('authToken');
-      await axios.post('http://localhost:5001/api/users/register', formData, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      setCrew([...crew, formData]);
-      setNewCrew({
-        firstName: '',
-        lastName: '',
-        username: '',
-        password: '',
-        position: '',
-        nationality: '',
-        email: '',
-        phoneNumber: '',
-        passportNumber: '',
-        vessel: '',
-        role: 'Crew',
-        active: true,
-        imageUrl: '', // Reset imageUrl
-      });
-      setShowForm(false);
+      if (editMode) {
+        await axios.put(`http://localhost:5001/api/users/${selectedCrew._id}`, formData, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'multipart/form-data',
+          },
+        });
+        alert('Crew member updated successfully');
+      } else {
+        await axios.post('http://localhost:5001/api/users/register', formData, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'multipart/form-data',
+          },
+        });
+        alert('Crew member added successfully');
+      }
+      fetchCrew();
+      resetForm();
     } catch (error) {
-      console.error('Error adding crew member:', error);
+      console.error('Error saving crew member:', error);
     }
+  };
+
+  const resetForm = () => {
+    setNewCrew({
+      firstName: '',
+      lastName: '',
+      username: '',
+      password: '',
+      position: '',
+      nationality: '',
+      email: '',
+      phoneNumber: '',
+      passportNumber: '',
+      vessel: '',
+      role: 'Crew',
+      active: true,
+      imageFile: null,
+    });
+    setShowForm(false);
+    setEditMode(false);
+    setSelectedCrew(null);
+    setImagePreview(null);
+  };
+
+  const handleEditCrew = (crewMember) => {
+    setEditMode(true);
+    setSelectedCrew(crewMember);
+    setNewCrew({
+      firstName: crewMember.firstName,
+      lastName: crewMember.lastName,
+      username: crewMember.username,
+      password: '', // Password should be empty in edit mode
+      position: crewMember.position,
+      nationality: crewMember.nationality,
+      email: crewMember.email,
+      phoneNumber: crewMember.phoneNumber,
+      passportNumber: crewMember.passportNumber,
+      vessel: crewMember.assignedVessels.length > 0 ? crewMember.assignedVessels[0]._id : '',
+      role: crewMember.role,
+      active: crewMember.active,
+      imageFile: null,
+    });
+    setShowForm(true);
   };
 
   const handleToggleActive = async (id) => {
@@ -119,6 +198,23 @@ const CrewModuleComponent = () => {
       setCrew(crew.map((c) => (c._id === id ? updatedCrew : c)));
     } catch (error) {
       console.error('Error toggling active status:', error);
+    }
+  };
+
+  const handleDeleteCrew = async (id) => {
+    const confirmDelete = window.confirm('Are you sure you want to delete this crew member? This action cannot be undone.');
+    if (!confirmDelete) return;
+
+    try {
+      const token = localStorage.getItem('authToken');
+      await axios.delete(`http://localhost:5001/api/users/${id}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setCrew(crew.filter((c) => c._id !== id));
+    } catch (error) {
+      console.error('Error deleting crew member:', error);
     }
   };
 
@@ -140,9 +236,13 @@ const CrewModuleComponent = () => {
   return (
     <div className="crew-module-container">
       <h1>Crew Module</h1>
-      <button onClick={() => setShowForm(!showForm)} className="toggle-form-button">
+      <button onClick={() => {
+        setShowForm(!showForm);
+        resetForm();
+      }} className="toggle-form-button">
         {showForm ? 'Hide Form' : 'Add New Crew'}
       </button>
+
       {showForm && (
         <form onSubmit={handleSubmit} className="new-crew-form">
           <label>
@@ -176,19 +276,22 @@ const CrewModuleComponent = () => {
               onChange={handleInputChange}
               placeholder="Username"
               required
+              disabled={editMode} // Disable username editing in edit mode
             />
           </label>
-          <label>
-            Password
-            <input
-              type="password"
-              name="password"
-              value={newCrew.password}
-              onChange={handleInputChange}
-              placeholder="Password"
-              required
-            />
-          </label>
+          {!editMode && (
+            <label>
+              Password
+              <input
+                type="password"
+                name="password"
+                value={newCrew.password}
+                onChange={handleInputChange}
+                placeholder="Password"
+                required={!editMode} // Required only in add mode
+              />
+            </label>
+          )}
           <label>
             Position
             <select
@@ -285,16 +388,26 @@ const CrewModuleComponent = () => {
             />
           </label>
           <label>
-            Profile Image URL
+            Profile Image
             <input
-              type="text"
-              name="imageUrl"
-              value={newCrew.imageUrl}
-              onChange={handleInputChange}
-              placeholder="Image URL"
+              type="file"
+              name="imageFile"
+              accept=".jpg,.png"
+              onChange={handleFileChange}
             />
           </label>
-          <button type="submit">Add Crew Member</button>
+          {imagePreview && (
+            <AvatarEditor
+              ref={setEditor}
+              image={imagePreview}
+              width={250}
+              height={250}
+              border={50}
+              scale={1.2}
+              rotate={0}
+            />
+          )}
+          <button type="submit">{editMode ? 'Update Crew Member' : 'Add Crew Member'}</button>
         </form>
       )}
       {['Superuser', 'Company User'].includes(userRole) && (
@@ -332,12 +445,14 @@ const CrewModuleComponent = () => {
                 <tr key={c._id}>
                   <td>
                     <img
-                      src={c.imageUrl || 'https://via.placeholder.com/50'} // Placeholder if no image is available
+                      src={c.photo ? `http://localhost:5001${c.photo}` : 'https://via.placeholder.com/50'} // Correctly constructs the path to the image
                       alt={`${c.firstName} ${c.lastName}`}
-                      width="50"
-                      height="50"
+                      width="75"
+                      height="75"
+                      onError={(e) => e.target.src = 'https://via.placeholder.com/50'} // Fallback to placeholder if image fails to load
                     />
                   </td>
+
                   <td>{c.firstName}</td>
                   <td>{c.lastName}</td>
                   <td>{c.position}</td>
@@ -345,11 +460,19 @@ const CrewModuleComponent = () => {
                   <td>{c.email}</td>
                   <td>{c.phoneNumber}</td>
                   <td>{c.passportNumber}</td>
-                  {['Superuser', 'Company User'].includes(userRole) && (
+                  {['Superuser', 'Company User', 'Captain'].includes(userRole) && (
                     <td>{c.assignedVessels.map(v => v.name).join(', ')}</td>
                   )}
                   <td>
-                    <button onClick={() => handleToggleActive(c._id)}>Deactivate</button>
+                    <button onClick={() => handleToggleActive(c._id)}>
+                      {c.active ? 'Deactivate' : 'Activate'}
+                    </button>
+                    {['Superuser', 'Company User', 'Captain'].includes(userRole) && (
+                      <>
+                        <button onClick={() => handleEditCrew(c)}>Edit</button>
+                        <button onClick={() => handleDeleteCrew(c._id)}>Delete</button>
+                      </>
+                    )}
                   </td>
                 </tr>
               ))}
@@ -378,7 +501,7 @@ const CrewModuleComponent = () => {
                 <tr key={c._id}>
                   <td>
                     <img
-                      src={c.imageUrl || 'https://via.placeholder.com/50'} // Placeholder if no image is available
+                      src={c.photo || 'https://via.placeholder.com/50'} // Placeholder if no image is available
                       alt={`${c.firstName} ${c.lastName}`}
                       width="50"
                       height="50"
@@ -391,11 +514,19 @@ const CrewModuleComponent = () => {
                   <td>{c.email}</td>
                   <td>{c.phoneNumber}</td>
                   <td>{c.passportNumber}</td>
-                  {['Superuser', 'Company User'].includes(userRole) && (
+                  {['Superuser', 'Company User', 'Captain'].includes(userRole) && (
                     <td>{c.assignedVessels.map(v => v.name).join(', ')}</td>
                   )}
                   <td>
-                    <button onClick={() => handleToggleActive(c._id)}>Activate</button>
+                    <button onClick={() => handleToggleActive(c._id)}>
+                      {c.active ? 'Deactivate' : 'Activate'}
+                    </button>
+                    {['Superuser', 'Company User', 'Captain'].includes(userRole) && (
+                      <>
+                        <button onClick={() => handleEditCrew(c)}>Edit</button>
+                        <button onClick={() => handleDeleteCrew(c._id)}>Delete</button>
+                      </>
+                    )}
                   </td>
                 </tr>
               ))}

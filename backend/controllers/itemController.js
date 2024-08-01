@@ -47,7 +47,11 @@ const createItem = asyncHandler(async (req, res) => {
     vessel,
     customName,
     role,
-    formDefinitionId  // Add this line
+    formDefinitionId,
+    isRecurring,
+    recurrenceFrequency,
+    recurrenceInterval,
+    recurrenceBasis
   } = req.body;
 
   console.log('Received request body:', req.body);
@@ -57,10 +61,18 @@ const createItem = asyncHandler(async (req, res) => {
 
   const itemName = name === 'custom' ? customName : name;
 
-  if (!itemName || !category || !dueDate || !vessel || !role || !formDefinitionId) {  // Include formDefinitionId in validation
+  // Validate required fields
+  if (!itemName || !category || !dueDate || !vessel || !role || !formDefinitionId) {
     console.error('Validation error: Missing required fields');
-    res.status(400).json({ message: 'All required fields must be filled' });
-    return;
+    return res.status(400).json({ message: 'All required fields must be filled' });
+  }
+
+  // Validate recurrence fields if isRecurring is true
+  if (isRecurring) {
+    if (!recurrenceFrequency || !recurrenceInterval || !recurrenceBasis) {
+      console.error('Validation error: Missing recurrence fields');
+      return res.status(400).json({ message: 'Recurrence fields must be provided for recurring items' });
+    }
   }
 
   const newItem = new Item({
@@ -75,7 +87,11 @@ const createItem = asyncHandler(async (req, res) => {
     pdfPath,
     vessel,
     role,
-    formDefinitionId  // Add this line
+    formDefinitionId,
+    isRecurring: isRecurring || false,
+    recurrenceFrequency: isRecurring ? recurrenceFrequency : null,
+    recurrenceInterval: isRecurring ? recurrenceInterval : null,
+    recurrenceBasis: isRecurring ? recurrenceBasis : 'initial'
   });
 
   try {

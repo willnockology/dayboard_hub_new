@@ -2,6 +2,8 @@ const asyncHandler = require('express-async-handler');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const mongoose = require('mongoose');
+const multer = require('multer');
+const path = require('path');
 const User = require('../models/userModel');
 const Vessel = require('../models/vesselModel');
 
@@ -11,6 +13,31 @@ const generateToken = (id) => {
     expiresIn: '30d',
   });
 };
+
+// Set up multer for file uploads
+const storage = multer.diskStorage({
+  destination(req, file, cb) {
+    cb(null, 'uploads/');
+  },
+  filename(req, file, cb) {
+    cb(null, `${Date.now()}-${file.originalname}`);
+  }
+});
+
+const upload = multer({
+  storage,
+  fileFilter(req, file, cb) {
+    const filetypes = /jpeg|jpg|png/;
+    const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
+    const mimetype = filetypes.test(file.mimetype);
+
+    if (mimetype && extname) {
+      return cb(null, true);
+    } else {
+      cb(new Error('Images only (JPEG, PNG)!'));
+    }
+  }
+});
 
 // @desc    Auth user & get token
 // @route   POST /api/users/login
@@ -57,7 +84,11 @@ const authUser = asyncHandler(async (req, res) => {
 // @route   POST /api/users/register
 // @access  Private (Superuser, Company user, Captain)
 const registerUser = asyncHandler(async (req, res) => {
-  const { firstName, lastName, username, email, password, role, assignedVessels, phoneNumber, birthday, startDate, position, commercial, photo, nationality, embarked, passportNumber, active } = req.body;
+  const {
+    firstName, lastName, username, email, password, role,
+    assignedVessels, phoneNumber, birthday, startDate, position,
+    commercial, photo, nationality, embarked, passportNumber, active
+  } = req.body;
 
   console.log('Register user payload:', req.body);
 
@@ -195,7 +226,12 @@ const updateUserProfile = asyncHandler(async (req, res) => {
       user.startDate = req.body.startDate || user.startDate;
       user.position = req.body.position || user.position;
       user.commercial = req.body.commercial !== undefined ? req.body.commercial : user.commercial;
-      user.photo = req.body.photo || user.photo;
+      
+      // Update photo if a file is uploaded
+      if (req.file) {
+        user.photo = `/uploads/${req.file.filename}`;
+      }
+      
       user.nationality = req.body.nationality || user.nationality;
       user.embarked = req.body.embarked || user.embarked;
       user.passportNumber = req.body.passportNumber || user.passportNumber;
@@ -309,6 +345,21 @@ const updateUserVessels = asyncHandler(async (req, res) => {
   }
 });
 
+// @desc    Delete a user
+// @route   DELETE /api/users/:id
+// @access  Private/Superuser, Company User, Captain
+const deleteUser = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.params.id);
+
+  if (!user) {
+    res.status(404).json({ message: 'User not found' });
+    return;
+  }
+
+  await user.remove();
+  res.json({ message: 'User removed' });
+});
+
 module.exports = {
   authUser,
   registerUser,
@@ -317,4 +368,6 @@ module.exports = {
   getUsers,
   getCrewMembers,
   updateUserVessels,
+  deleteUser,
+  upload, // Export the multer upload middleware
 };

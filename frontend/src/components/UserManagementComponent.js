@@ -92,6 +92,8 @@ const UserManagementComponent = () => {
   };
 
   const handleSave = async () => {
+    if (!selectedUser) return;
+
     const token = localStorage.getItem('authToken');
     const formData = new FormData();
     formData.append('firstName', userDetails.firstName);
@@ -109,7 +111,7 @@ const UserManagementComponent = () => {
     }
 
     try {
-      await axios.put(`http://localhost:5001/api/users/${selectedUser._id}/update`, formData, {
+      await axios.put(`http://localhost:5001/api/users/${selectedUser._id}`, formData, {
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'multipart/form-data',
@@ -119,6 +121,24 @@ const UserManagementComponent = () => {
       fetchUsers(); // Refresh the list after saving
     } catch (error) {
       console.error('Error updating user:', error);
+    }
+  };
+
+  const handleDelete = async (userId) => {
+    const confirmDelete = window.confirm("Are you sure you want to delete this user? This action cannot be undone.");
+    if (!confirmDelete) return;
+
+    const token = localStorage.getItem('authToken');
+    try {
+      await axios.delete(`http://localhost:5001/api/users/${userId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      alert('User deleted successfully');
+      fetchUsers(); // Refresh the list after deletion
+    } catch (error) {
+      console.error('Error deleting user:', error);
     }
   };
 
@@ -160,6 +180,13 @@ const UserManagementComponent = () => {
                   disabled={user.role === 'Superuser'}
                 >
                   {user.role === 'Superuser' ? 'Assigned to all vessels' : 'Edit User'}
+                </button>
+                <button
+                  onClick={() => handleDelete(user._id)}
+                  disabled={user.role === 'Superuser'}
+                  style={{ marginLeft: '10px' }}
+                >
+                  Delete
                 </button>
               </td>
             </tr>

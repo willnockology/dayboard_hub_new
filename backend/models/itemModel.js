@@ -44,10 +44,28 @@ const itemSchema = new mongoose.Schema({
     type: String,
     required: true
   },
-  formDefinitionId: {  // Add this line
+  formDefinitionId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'FormDefinition',  // Assuming your form definitions are stored in a collection named 'FormDefinition'
-    required: true  // Adjust this if you do not want it to be required
+    ref: 'FormDefinition',
+    required: true
+  },
+  isRecurring: {
+    type: Boolean,
+    default: false
+  },
+  recurrenceFrequency: {
+    type: String,
+    enum: ['week', 'month', 'year'],
+    default: null // Ensure this is handled correctly in the controller
+  },
+  recurrenceInterval: {
+    type: Number,
+    default: null
+  },
+  recurrenceBasis: {
+    type: String,
+    enum: ['initial', 'completion'],
+    default: 'initial'
   }
 }, {
   timestamps: true

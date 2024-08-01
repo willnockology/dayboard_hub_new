@@ -29,7 +29,13 @@ function DashboardComponent({ setToken }) {
     vessel: '',
     customName: '',
     role: '',
-    formDefinitionId: '', // Add formDefinitionId to the state
+    formDefinitionId: '',
+    isRecurring: false,
+    recurrenceFrequency: '',
+    recurrenceInterval: '',
+    recurrenceBasis: 'initial',
+    type: '', // New state for Type
+    customType: '', // State for custom Type input
   });
   const [categories, setCategories] = useState([]);
   const [subcategories, setSubcategories] = useState([]);
@@ -54,17 +60,14 @@ function DashboardComponent({ setToken }) {
     try {
       const token = localStorage.getItem('authToken');
       const url = subcategory ? `http://localhost:5001/api/items?subcategory=${subcategory}` : `http://localhost:5001/api/items`;
-      console.log('Fetching items with URL:', url);
       const response = await axios.get(url, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
-      console.log('Items fetched:', response.data);
       setItems(response.data);
     } catch (error) {
       setError('Error fetching items');
-      console.error('Error fetching items:', error.response ? error.response.data : error.message);
     }
   };
 
@@ -150,7 +153,7 @@ function DashboardComponent({ setToken }) {
           subcategory,
         },
       });
-      setItemOptions(response.data); // Assuming response data is an array of form definitions
+      setItemOptions(response.data);
     } catch (error) {
       console.error('Error fetching form definitions:', error);
     }
@@ -183,45 +186,52 @@ function DashboardComponent({ setToken }) {
   };
 
   const handleInputChange = (e) => {
-    const { name, value } = e.target;
+    const { name, value, type, checked } = e.target;
+    const val = type === 'checkbox' ? checked : value;
     setNewItem((prevItem) => ({
-        ...prevItem,
-        [name]: value,
+      ...prevItem,
+      [name]: val,
     }));
 
     if (name === 'category') {
-        fetchSubcategoriesByCategory(value);
-        setNewItem((prevItem) => ({
-          ...prevItem,
-          subcategory: '',
-          name: '',
-          customName: '',
-          dueDate: '',
-        }));
-        setItemOptions([]);
+      fetchSubcategoriesByCategory(value);
+      setNewItem((prevItem) => ({
+        ...prevItem,
+        subcategory: '',
+        name: '',
+        customName: '',
+        dueDate: '',
+        type: '', // Reset type if category changes
+        customType: '', // Reset custom type if category changes
+      }));
+      setItemOptions([]);
     } else if (name === 'subcategory') {
-        fetchFormDefinitions(newItem.category, value); // Fetch form definitions based on category and subcategory
+      fetchFormDefinitions(newItem.category, value);
+      setNewItem((prevItem) => ({
+        ...prevItem,
+        name: '',
+        customName: '',
+        dueDate: '',
+        type: '', // Reset type if subcategory changes
+        customType: '', // Reset custom type if subcategory changes
+      }));
+    } else if (name === 'name') {
+      const selectedItem = itemOptions.find(item => item.form_name === value);
+      if (selectedItem) {
         setNewItem((prevItem) => ({
           ...prevItem,
-          name: '',
-          customName: '',
-          dueDate: '',
+          formDefinitionId: selectedItem._id,
+          type: '', // Reset type if name changes
+          customType: '', // Reset custom type if name changes
         }));
-    } else if (name === 'name') {
-        const selectedItem = itemOptions.find(item => item.form_name === value);
-        if (selectedItem) {
-          setNewItem((prevItem) => ({
-            ...prevItem,
-            formDefinitionId: selectedItem._id,
-          }));
-        } else {
-          setNewItem((prevItem) => ({
-            ...prevItem,
-            formDefinitionId: '',
-          }));
-        }
+      } else {
+        setNewItem((prevItem) => ({
+          ...prevItem,
+          formDefinitionId: '',
+        }));
+      }
     }
-    console.log('Input changed:', name, value);
+    console.log('Input changed:', name, val);
   };
 
   const handleFileChange = (e) => {
@@ -229,6 +239,23 @@ function DashboardComponent({ setToken }) {
     setNewItem((prevItem) => ({
       ...prevItem,
       attachments: files,
+    }));
+  };
+
+  const handleTypeChange = (e) => {
+    const { value } = e.target;
+    setNewItem((prevItem) => ({
+      ...prevItem,
+      type: value,
+      customType: value === 'Other' ? prevItem.customType : '', // Clear customType if not Other
+    }));
+  };
+
+  const handleCustomTypeChange = (e) => {
+    const { value } = e.target;
+    setNewItem((prevItem) => ({
+      ...prevItem,
+      customType: value,
     }));
   };
 
@@ -240,6 +267,7 @@ function DashboardComponent({ setToken }) {
     if (newItem.category === 'Track a Date' && !newItem.title) errors.push('Title is required');
     if (!newItem.dueDate) errors.push('Due date is required');
     if (!newItem.vessel && (role === 'Superuser' || role === 'Company User')) errors.push('Vessel is required');
+    if (newItem.formDefinitionId === '669edf84beec7dd7fcd9b5f0' && !newItem.type) errors.push('Type is required');
     return errors;
   };
 
@@ -255,15 +283,24 @@ function DashboardComponent({ setToken }) {
       const token = localStorage.getItem('authToken');
       const formData = new FormData();
 
+      // Append form data
       formData.append('category', newItem.category);
       formData.append('dueDate', newItem.dueDate);
       formData.append('vessel', newItem.vessel);
       formData.append('role', newItem.role);
-      formData.append('formDefinitionId', newItem.formDefinitionId); // Include formDefinitionId in the form data
+      formData.append('formDefinitionId', newItem.formDefinitionId);
+
+      let itemName = newItem.name === 'custom' ? newItem.customName : newItem.name;
+      
+      // Append Type if applicable
+      if (newItem.formDefinitionId === '669edf84beec7dd7fcd9b5f0') {
+        const typeName = newItem.type === 'Other' ? newItem.customType : newItem.type;
+        itemName += ` - ${typeName}`;
+      }
+
+      formData.append('name', itemName);
 
       if (newItem.category === 'Form or Checklist' || newItem.category === 'Document') {
-        const itemName = newItem.name === 'custom' ? newItem.customName : newItem.name;
-        formData.append('name', itemName);
         formData.append('subcategory', newItem.subcategory);
       }
 
@@ -275,6 +312,14 @@ function DashboardComponent({ setToken }) {
         newItem.attachments.forEach((file) => {
           formData.append('attachments', file);
         });
+      }
+
+      // Include recurrence settings if applicable
+      if ((role === 'Superuser' || role === 'Company User') && newItem.isRecurring) {
+        formData.append('isRecurring', newItem.isRecurring);
+        formData.append('recurrenceFrequency', newItem.recurrenceFrequency);
+        formData.append('recurrenceInterval', newItem.recurrenceInterval);
+        formData.append('recurrenceBasis', newItem.recurrenceBasis);
       }
 
       const response = await axios.post('http://localhost:5001/api/items', formData, {
@@ -295,6 +340,12 @@ function DashboardComponent({ setToken }) {
         customName: '',
         role: newItem.role,
         formDefinitionId: '',
+        isRecurring: false,
+        recurrenceFrequency: '',
+        recurrenceInterval: '',
+        recurrenceBasis: 'initial',
+        type: '',
+        customType: '',
       });
       setShowForm(false);
       fetchItems();
@@ -341,6 +392,20 @@ function DashboardComponent({ setToken }) {
       console.error('Form definition ID not found');
     }
   };
+
+  const renderDateSelector = () => (
+    <>
+      <label htmlFor="dueDate">Due Date</label>
+      <input
+        type="date"
+        name="dueDate"
+        id="dueDate"
+        value={newItem.dueDate}
+        onChange={handleInputChange}
+        style={{ display: newItem.name || newItem.customName ? 'block' : 'none' }}
+      />
+    </>
+  );
 
   const filteredAndSortedItems = () => {
     let filteredItems = items;
@@ -479,12 +544,11 @@ function DashboardComponent({ setToken }) {
     setFilterSubcategory(selectedSubcategory);
     setFilterItem('');
     if (selectedSubcategory) {
-        fetchItems(selectedSubcategory);  // Fetch items by subcategory
+      fetchItems(selectedSubcategory);
     } else {
-        fetchItems();  // Fetch all items if no subcategory is selected
-        setItemOptions([]);
+      fetchItems();
+      setItemOptions([]);
     }
-    console.log('Filter subcategory changed:', selectedSubcategory);
   };
 
   const handleFilterItemChange = (e) => {
@@ -583,13 +647,49 @@ function DashboardComponent({ setToken }) {
                     maxLength="75"
                   />
                 )}
-                <input
-                  type="date"
-                  name="dueDate"
-                  value={newItem.dueDate}
-                  onChange={handleInputChange}
-                  style={{ display: newItem.name || newItem.customName ? 'block' : 'none' }}
-                />
+                {renderDateSelector()}
+                {/* Show Type field if the selected item has the specific ID */}
+                {newItem.formDefinitionId === '669edf84beec7dd7fcd9b5f0' && (
+                  <>
+                    <label>
+                      Type:
+                      <select
+                        name="type"
+                        value={newItem.type}
+                        onChange={handleTypeChange}
+                      >
+                        <option value="">Select Type</option>
+                        <option value="Abandon Ship (w/ em'cy lighting)">Abandon Ship (w/ em'cy lighting)</option>
+                        <option value="Fire Drill">Fire Drill</option>
+                        <option value="Emergency Steering">Emergency Steering</option>
+                        <option value="Man Overboard">Man Overboard</option>
+                        <option value="Medical Emergency">Medical Emergency</option>
+                        <option value="Collision/Grounding/Flooding">Collision/Grounding/Flooding</option>
+                        <option value="Power Failure">Power Failure</option>
+                        <option value="Ship Oil Pollution Prevention">Ship Oil Pollution Prevention</option>
+                        <option value="LSA & Fire Onboard Training">LSA & Fire Onboard Training</option>
+                        <option value="Rescue Boat">Rescue Boat</option>
+                        <option value="Entry & Rescue in Enclosed Space">Entry & Rescue in Enclosed Space</option>
+                        <option value="Ship Security">Ship Security</option>
+                        <option value="SSAS">SSAS</option>
+                        <option value="Helicopter Operation">Helicopter Operation</option>
+                        <option value="ISPS Ship to Shore">ISPS Ship to Shore</option>
+                        <option value="ISM Ship to Shore">ISM Ship to Shore</option>
+                        <option value="Other">Other</option>
+                      </select>
+                    </label>
+                    {newItem.type === 'Other' && (
+                      <input
+                        type="text"
+                        name="customType"
+                        value={newItem.customType}
+                        onChange={handleCustomTypeChange}
+                        placeholder="Enter custom type"
+                        maxLength="75"
+                      />
+                    )}
+                  </>
+                )}
                 {newItem.category === 'Document' && (
                   <input
                     type="file"
@@ -598,6 +698,60 @@ function DashboardComponent({ setToken }) {
                     multiple
                     style={{ display: newItem.dueDate ? 'block' : 'none' }}
                   />
+                )}
+                {/* Recurrence options */}
+                {(role === 'Superuser' || role === 'Company User') && (
+                  <>
+                    <label>
+                      <input
+                        type="checkbox"
+                        name="isRecurring"
+                        checked={newItem.isRecurring}
+                        onChange={handleInputChange}
+                      />
+                      Recurring
+                    </label>
+                    {newItem.isRecurring && (
+                      <>
+                        <label>
+                          Frequency:
+                          <select
+                            name="recurrenceFrequency"
+                            value={newItem.recurrenceFrequency}
+                            onChange={handleInputChange}
+                          >
+                            <option value="">Select Frequency</option>
+                            <option value="week">Weekly</option>
+                            <option value="month">Monthly</option>
+                            <option value="year">Yearly</option>
+                          </select>
+                        </label>
+                        <label>
+                          Every:
+                          <input
+                            type="number"
+                            name="recurrenceInterval"
+                            value={newItem.recurrenceInterval}
+                            onChange={handleInputChange}
+                            min="1"
+                          />
+                          {newItem.recurrenceFrequency === 'week' ? 'week(s)' :
+                            newItem.recurrenceFrequency === 'month' ? 'month(s)' : 'year(s)'}
+                        </label>
+                        <label>
+                          Basis:
+                          <select
+                            name="recurrenceBasis"
+                            value={newItem.recurrenceBasis}
+                            onChange={handleInputChange}
+                          >
+                            <option value="initial">Initial Due Date</option>
+                            <option value="completion">Completion Date</option>
+                          </select>
+                        </label>
+                      </>
+                    )}
+                  </>
                 )}
               </>
             )}
@@ -610,12 +764,7 @@ function DashboardComponent({ setToken }) {
                   onChange={handleInputChange}
                   placeholder="Title"
                 />
-                <input
-                  type="date"
-                  name="dueDate"
-                  value={newItem.dueDate}
-                  onChange={handleInputChange}
-                />
+                {renderDateSelector()}
               </>
             )}
             <button type="submit">Add Item</button>
@@ -735,6 +884,7 @@ function DashboardComponent({ setToken }) {
                 Submitted {sortConfig.key === 'submitted' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
               </button>
             </th>
+            <th>Recurring</th>
             <th>Actions</th>
           </tr>
         </thead>
@@ -789,6 +939,9 @@ function DashboardComponent({ setToken }) {
                     {item.updatedAt ? formatDateTime(item.updatedAt) : 'N/A'}
                   </td>
                   <td>
+                    {item.isRecurring ? `Every ${item.recurrenceInterval} ${item.recurrenceFrequency}(s) by ${item.recurrenceBasis}` : 'No'}
+                  </td>
+                  <td>
                     <button onClick={() => handleDelete(item._id)}>
                       <FontAwesomeIcon icon={faTrashAlt} />
                     </button>
@@ -807,7 +960,7 @@ function DashboardComponent({ setToken }) {
                 </tr>
                 {showChatForItem && (
                   <tr key={`chat-${item._id}`} className="chat-row">
-                    <td colSpan="9">
+                    <td colSpan="10">
                       <ChatComponent documentId={item._id} itemName={item.name || item.title} markAsRead={markCommentsAsRead} />
                     </td>
                   </tr>
