@@ -6,6 +6,10 @@ body, html {
   padding: 0;
   box-sizing: border-box;
   height: 100%;
+  font-family: 'Roboto', sans-serif;
+  background-color: #f0f2f5;
+  color: #333;
+  line-height: 1.6;
 }
 
 #root {
@@ -14,24 +18,35 @@ body, html {
   min-height: 100vh;
 }
 
-body {
-  font-family: 'Roboto', sans-serif;
-  background-color: #f0f2f5;
-  color: #333;
-}
-
+/* Typography */
 h1, h2, h3, h4, h5, h6 {
   color: #004e7d;
   margin: 0 0 10px;
+  font-weight: 600;
 }
 
+p {
+  margin: 0 0 15px;
+}
+
+a {
+  color: #004e7d;
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+/* Container */
 .container {
-  padding-top: 60px; /* Ensure content starts below the navbar */
-  padding-left: 20px; /* Add left margin */
-  padding-right: 20px; /* Add right margin */
-  flex: 1; /* Allow the container to grow and fill the space */
+  padding-top: 60px;
+  padding-left: 20px;
+  padding-right: 20px;
+  flex: 1;
 }
 
+/* Buttons */
 button {
   background-color: #004e7d;
   color: white;
@@ -39,10 +54,29 @@ button {
   padding: 10px 20px;
   cursor: pointer;
   border-radius: 4px;
+  transition: background-color 0.3s ease;
 }
 
 button:hover {
   background-color: #003f63;
+}
+
+button:active {
+  background-color: #002a47;
+}
+
+/* Cards */
+.card {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  padding: 20px;
+  margin: 20px 0;
+  transition: box-shadow 0.3s ease;
+}
+
+.card:hover {
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
 }
 
 /* Table styles */
@@ -50,6 +84,7 @@ table {
   width: 100%;
   margin: 20px auto;
   border-collapse: collapse;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
 th, td {
@@ -84,7 +119,7 @@ form {
   margin: 20px 0;
   padding: 20px;
   background: white;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
   border-radius: 8px;
 }
 
@@ -100,6 +135,12 @@ form input, form select, form textarea {
   margin-bottom: 12px;
   border: 1px solid #ddd;
   border-radius: 4px;
+  transition: border-color 0.3s ease;
+}
+
+form input:focus, form select:focus, form textarea:focus {
+  border-color: #004e7d;
+  outline: none;
 }
 
 form input[type="file"] {
@@ -115,6 +156,7 @@ form input[type="file"] {
   width: 100%;
   top: 0;
   z-index: 1000;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
 .navbar-container {
@@ -185,7 +227,8 @@ form input[type="file"] {
   color: white;
   padding: 10px 0;
   text-align: center;
-  flex-shrink: 0; /* Ensure footer stays at the bottom */
+  flex-shrink: 0;
+  box-shadow: 0 -4px 8px rgba(0, 0, 0, 0.1);
 }
 
 .footer p {
@@ -195,6 +238,10 @@ form input[type="file"] {
 .footer a {
   color: white;
   text-decoration: underline;
+}
+
+.footer a:hover {
+  color: #ddd;
 }
 
 /* Responsive styles */

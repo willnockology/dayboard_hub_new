@@ -4,7 +4,7 @@ import axios from 'axios';
 import ChatComponent from './ChatComponent';
 import './DashboardComponent.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faTrashAlt, faComments, faEdit, faPaperclip } from '@fortawesome/free-solid-svg-icons';
+import { faTrashAlt, faComments, faEdit, faPaperclip, faAngleDoubleLeft, faAngleDoubleRight } from '@fortawesome/free-solid-svg-icons';
 
 const formatDate = (dateString) => {
   const options = { day: '2-digit', month: 'long', year: 'numeric' };
@@ -34,8 +34,8 @@ function DashboardComponent({ setToken }) {
     recurrenceFrequency: '',
     recurrenceInterval: '',
     recurrenceBasis: 'initial',
-    type: '', // New state for Type
-    customType: '', // State for custom Type input
+    type: '',
+    customType: '',
   });
   const [categories, setCategories] = useState([]);
   const [subcategories, setSubcategories] = useState([]);
@@ -53,7 +53,8 @@ function DashboardComponent({ setToken }) {
   const [completedFilter, setCompletedFilter] = useState('All');
   const [showChat, setShowChat] = useState(null);
   const [unreadComments, setUnreadComments] = useState({});
-  const [searchQuery, setSearchQuery] = useState('');
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+
   const history = useHistory();
 
   const fetchItems = async (subcategory = '') => {
@@ -201,8 +202,8 @@ function DashboardComponent({ setToken }) {
         name: '',
         customName: '',
         dueDate: '',
-        type: '', // Reset type if category changes
-        customType: '', // Reset custom type if category changes
+        type: '',
+        customType: '',
       }));
       setItemOptions([]);
     } else if (name === 'subcategory') {
@@ -212,8 +213,8 @@ function DashboardComponent({ setToken }) {
         name: '',
         customName: '',
         dueDate: '',
-        type: '', // Reset type if subcategory changes
-        customType: '', // Reset custom type if subcategory changes
+        type: '',
+        customType: '',
       }));
     } else if (name === 'name') {
       const selectedItem = itemOptions.find(item => item.form_name === value);
@@ -221,8 +222,8 @@ function DashboardComponent({ setToken }) {
         setNewItem((prevItem) => ({
           ...prevItem,
           formDefinitionId: selectedItem._id,
-          type: '', // Reset type if name changes
-          customType: '', // Reset custom type if name changes
+          type: '',
+          customType: '',
         }));
       } else {
         setNewItem((prevItem) => ({
@@ -231,7 +232,6 @@ function DashboardComponent({ setToken }) {
         }));
       }
     }
-    console.log('Input changed:', name, val);
   };
 
   const handleFileChange = (e) => {
@@ -247,7 +247,7 @@ function DashboardComponent({ setToken }) {
     setNewItem((prevItem) => ({
       ...prevItem,
       type: value,
-      customType: value === 'Other' ? prevItem.customType : '', // Clear customType if not Other
+      customType: value === 'Other' ? prevItem.customType : '',
     }));
   };
 
@@ -283,7 +283,6 @@ function DashboardComponent({ setToken }) {
       const token = localStorage.getItem('authToken');
       const formData = new FormData();
 
-      // Append form data
       formData.append('category', newItem.category);
       formData.append('dueDate', newItem.dueDate);
       formData.append('vessel', newItem.vessel);
@@ -292,7 +291,6 @@ function DashboardComponent({ setToken }) {
 
       let itemName = newItem.name === 'custom' ? newItem.customName : newItem.name;
       
-      // Append Type if applicable
       if (newItem.formDefinitionId === '669edf84beec7dd7fcd9b5f0') {
         const typeName = newItem.type === 'Other' ? newItem.customType : newItem.type;
         itemName += ` - ${typeName}`;
@@ -314,7 +312,6 @@ function DashboardComponent({ setToken }) {
         });
       }
 
-      // Include recurrence settings if applicable
       if ((role === 'Superuser' || role === 'Company User') && newItem.isRecurring) {
         formData.append('isRecurring', newItem.isRecurring);
         formData.append('recurrenceFrequency', newItem.recurrenceFrequency);
@@ -409,18 +406,6 @@ function DashboardComponent({ setToken }) {
 
   const filteredAndSortedItems = () => {
     let filteredItems = items;
-
-    if (searchQuery) {
-      const lowercasedQuery = searchQuery.toLowerCase();
-      filteredItems = filteredItems.filter(item => {
-        const nameMatch = (item.name || '').toLowerCase().includes(lowercasedQuery);
-        const titleMatch = (item.title || '').toLowerCase().includes(lowercasedQuery);
-        const categoryMatch = (item.category || '').toLowerCase().includes(lowercasedQuery);
-        const subcategoryMatch = (item.subcategory || '').toLowerCase().includes(lowercasedQuery);
-        const vesselMatch = (item.vessel && item.vessel.name.toLowerCase().includes(lowercasedQuery)) || false;
-        return nameMatch || titleMatch || categoryMatch || subcategoryMatch || vesselMatch;
-      });
-    }
 
     if (filterCategory) {
       filteredItems = filteredItems.filter(item => item.category === filterCategory);
@@ -562,414 +547,422 @@ function DashboardComponent({ setToken }) {
     setSelectedVessel('');
   };
 
+  const toggleSidebar = () => {
+    setIsSidebarCollapsed(!isSidebarCollapsed);
+  };
+
   return (
-    <div className="dashboard-container">
-      <h1 className="dashboard-header">Dashboard</h1>
-      <Link to="/crew" className="crew-module-link">Crew Module</Link>
-      {error && <p>{error}</p>}
-      {validationErrors.length > 0 && (
-        <div className="validation-errors">
-          <ul>
-            {validationErrors.map((error, index) => (
-              <li key={index}>{error}</li>
-            ))}
-          </ul>
+    <div className={`dashboard-layout ${isSidebarCollapsed ? 'collapsed' : ''}`}>
+      <div className={`sidebar ${isSidebarCollapsed ? 'collapsed' : ''}`}>
+        <div className="sidebar-toggle-container">
+          <div className="sidebar-toggle-btn" onClick={toggleSidebar}>
+            <FontAwesomeIcon icon={isSidebarCollapsed ? faAngleDoubleRight : faAngleDoubleLeft} />
+          </div>
         </div>
-      )}
-      <div className="button-and-form">
-        <button onClick={() => setShowForm(!showForm)} className="add-item-button">
-          {showForm ? 'Hide Form' : 'Add New Item'}
-        </button>
-        {showForm && (
-          <form onSubmit={handleSubmit} className="new-item-form">
-            {(role === 'Superuser' || role === 'Company User') && (
-              <select
-                name="vessel"
-                value={newItem.vessel}
-                onChange={handleInputChange}
-              >
-                <option value="">Select Vessel</option>
-                {vessels.map((vessel) => (
-                  <option key={vessel._id} value={vessel._id}>
-                    {vessel.name}
-                  </option>
-                ))}
-              </select>
-            )}
+        {!isSidebarCollapsed && (
+          <div className="filters">
             <select
-              name="category"
-              value={newItem.category}
-              onChange={handleInputChange}
+              name="filterVessel"
+              value={selectedVessel}
+              onChange={(e) => setSelectedVessel(e.target.value)}
             >
-              <option value="">Select Category</option>
+              <option value="">Filter by Vessel</option>
+              {vessels.map((vessel) => (
+                <option key={vessel._id} value={vessel._id}>
+                  {vessel.name}
+                </option>
+              ))}
+            </select>
+            <select
+              name="filterCategory"
+              value={filterCategory}
+              onChange={handleFilterCategoryChange}
+            >
+              <option value="">Filter by Category</option>
               {categories.map((category, index) => (
                 <option key={index} value={category}>
                   {category}
                 </option>
               ))}
             </select>
-            {(newItem.category === 'Form or Checklist' || newItem.category === 'Document') && (
-              <>
+            <select
+              name="filterSubcategory"
+              value={filterSubcategory}
+              onChange={handleFilterSubcategoryChange}
+              disabled={!filterCategory}
+            >
+              <option value="">Filter by Subcategory</option>
+              {subcategories.map((subcategory, index) => (
+                <option key={index} value={subcategory}>
+                  {subcategory}
+                </option>
+              ))}
+            </select>
+            <select
+              name="filterItem"
+              value={filterItem}
+              onChange={handleFilterItemChange}
+              disabled={!filterSubcategory}
+            >
+              <option value="">Filter by Item</option>
+              {itemOptions.map((item, index) => (
+                <option key={item._id} value={item.form_name}>
+                  {item.form_name}
+                </option>
+              ))}
+            </select>
+            <button onClick={handleClearFilters}>Clear Filters</button>
+            <div className="show-completed">
+              <label>
+                Show:
                 <select
-                  name="subcategory"
-                  value={newItem.subcategory}
-                  onChange={handleInputChange}
-                  style={{ display: newItem.category ? 'block' : 'none' }}
+                  value={completedFilter}
+                  onChange={(e) => setCompletedFilter(e.target.value)}
                 >
-                  <option value="">Select Subcategory</option>
-                  {subcategories.map((subcategory, index) => (
-                    <option key={index} value={subcategory}>
-                      {subcategory}
-                    </option>
-                  ))}
+                  <option value="All">All</option>
+                  <option value="Outstanding">Outstanding</option>
+                  <option value="Completed">Completed</option>
                 </select>
-                <select
-                  name="name"
-                  value={newItem.name}
-                  onChange={handleInputChange}
-                  style={{ display: newItem.subcategory ? 'block' : 'none' }}
-                >
-                  <option value="">Select Item</option>
-                  {itemOptions.map((item, index) => (
-                    <option key={item._id} value={item.form_name}>
-                      {item.form_name}
-                    </option>
-                  ))}
-                  <option value="custom">Custom</option>
-                </select>
-                {newItem.name === 'custom' && (
-                  <input
-                    type="text"
-                    name="customName"
-                    value={newItem.customName}
+              </label>
+            </div>
+            <div className="add-item-container">
+              <button onClick={() => setShowForm(!showForm)} className="add-item-button">
+                {showForm ? 'Hide Form' : 'Add New Item'}
+              </button>
+              {showForm && (
+                <form onSubmit={handleSubmit} className="new-item-form">
+                  {(role === 'Superuser' || role === 'Company User') && (
+                    <select
+                      name="vessel"
+                      value={newItem.vessel}
+                      onChange={handleInputChange}
+                    >
+                      <option value="">Select Vessel</option>
+                      {vessels.map((vessel) => (
+                        <option key={vessel._id} value={vessel._id}>
+                          {vessel.name}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                  <select
+                    name="category"
+                    value={newItem.category}
                     onChange={handleInputChange}
-                    placeholder="Enter custom item name"
-                    maxLength="75"
-                  />
-                )}
-                {renderDateSelector()}
-                {/* Show Type field if the selected item has the specific ID */}
-                {newItem.formDefinitionId === '669edf84beec7dd7fcd9b5f0' && (
-                  <>
-                    <label>
-                      Type:
+                  >
+                    <option value="">Select Category</option>
+                    {categories.map((category, index) => (
+                      <option key={index} value={category}>
+                        {category}
+                      </option>
+                    ))}
+                  </select>
+                  {(newItem.category === 'Form or Checklist' || newItem.category === 'Document') && (
+                    <>
                       <select
-                        name="type"
-                        value={newItem.type}
-                        onChange={handleTypeChange}
+                        name="subcategory"
+                        value={newItem.subcategory}
+                        onChange={handleInputChange}
+                        style={{ display: newItem.category ? 'block' : 'none' }}
                       >
-                        <option value="">Select Type</option>
-                        <option value="Abandon Ship (w/ em'cy lighting)">Abandon Ship (w/ em'cy lighting)</option>
-                        <option value="Fire Drill">Fire Drill</option>
-                        <option value="Emergency Steering">Emergency Steering</option>
-                        <option value="Man Overboard">Man Overboard</option>
-                        <option value="Medical Emergency">Medical Emergency</option>
-                        <option value="Collision/Grounding/Flooding">Collision/Grounding/Flooding</option>
-                        <option value="Power Failure">Power Failure</option>
-                        <option value="Ship Oil Pollution Prevention">Ship Oil Pollution Prevention</option>
-                        <option value="LSA & Fire Onboard Training">LSA & Fire Onboard Training</option>
-                        <option value="Rescue Boat">Rescue Boat</option>
-                        <option value="Entry & Rescue in Enclosed Space">Entry & Rescue in Enclosed Space</option>
-                        <option value="Ship Security">Ship Security</option>
-                        <option value="SSAS">SSAS</option>
-                        <option value="Helicopter Operation">Helicopter Operation</option>
-                        <option value="ISPS Ship to Shore">ISPS Ship to Shore</option>
-                        <option value="ISM Ship to Shore">ISM Ship to Shore</option>
-                        <option value="Other">Other</option>
+                        <option value="">Select Subcategory</option>
+                        {subcategories.map((subcategory, index) => (
+                          <option key={index} value={subcategory}>
+                            {subcategory}
+                          </option>
+                        ))}
                       </select>
-                    </label>
-                    {newItem.type === 'Other' && (
+                      <select
+                        name="name"
+                        value={newItem.name}
+                        onChange={handleInputChange}
+                        style={{ display: newItem.subcategory ? 'block' : 'none' }}
+                      >
+                        <option value="">Select Item</option>
+                        {itemOptions.map((item, index) => (
+                          <option key={item._id} value={item.form_name}>
+                            {item.form_name}
+                          </option>
+                        ))}
+                        <option value="custom">Custom</option>
+                      </select>
+                      {newItem.name === 'custom' && (
+                        <input
+                          type="text"
+                          name="customName"
+                          value={newItem.customName}
+                          onChange={handleInputChange}
+                          placeholder="Enter custom item name"
+                          maxLength="75"
+                        />
+                      )}
+                      {renderDateSelector()}
+                      {newItem.formDefinitionId === '669edf84beec7dd7fcd9b5f0' && (
+                        <>
+                          <label>
+                            Type:
+                            <select
+                              name="type"
+                              value={newItem.type}
+                              onChange={handleTypeChange}
+                            >
+                              <option value="">Select Type</option>
+                              <option value="Abandon Ship (w/ em'cy lighting)">Abandon Ship (w/ em'cy lighting)</option>
+                              <option value="Fire Drill">Fire Drill</option>
+                              <option value="Emergency Steering">Emergency Steering</option>
+                              <option value="Man Overboard">Man Overboard</option>
+                              <option value="Medical Emergency">Medical Emergency</option>
+                              <option value="Collision/Grounding/Flooding">Collision/Grounding/Flooding</option>
+                              <option value="Power Failure">Power Failure</option>
+                              <option value="Ship Oil Pollution Prevention">Ship Oil Pollution Prevention</option>
+                              <option value="LSA & Fire Onboard Training">LSA & Fire Onboard Training</option>
+                              <option value="Rescue Boat">Rescue Boat</option>
+                              <option value="Entry & Rescue in Enclosed Space">Entry & Rescue in Enclosed Space</option>
+                              <option value="Ship Security">Ship Security</option>
+                              <option value="SSAS">SSAS</option>
+                              <option value="Helicopter Operation">Helicopter Operation</option>
+                              <option value="ISPS Ship to Shore">ISPS Ship to Shore</option>
+                              <option value="ISM Ship to Shore">ISM Ship to Shore</option>
+                              <option value="Other">Other</option>
+                            </select>
+                          </label>
+                          {newItem.type === 'Other' && (
+                            <input
+                              type="text"
+                              name="customType"
+                              value={newItem.customType}
+                              onChange={handleCustomTypeChange}
+                              placeholder="Enter custom type"
+                              maxLength="75"
+                            />
+                          )}
+                        </>
+                      )}
+                      {newItem.category === 'Document' && (
+                        <input
+                          type="file"
+                          name="attachments"
+                          onChange={handleFileChange}
+                          multiple
+                          style={{ display: newItem.dueDate ? 'block' : 'none' }}
+                        />
+                      )}
+                      {(role === 'Superuser' || role === 'Company User') && (
+                        <>
+                          <label>
+                            <input
+                              type="checkbox"
+                              name="isRecurring"
+                              checked={newItem.isRecurring}
+                              onChange={handleInputChange}
+                            />
+                            Recurring
+                          </label>
+                          {newItem.isRecurring && (
+                            <>
+                              <label>
+                                Frequency:
+                                <select
+                                  name="recurrenceFrequency"
+                                  value={newItem.recurrenceFrequency}
+                                  onChange={handleInputChange}
+                                >
+                                  <option value="">Select Frequency</option>
+                                  <option value="week">Weekly</option>
+                                  <option value="month">Monthly</option>
+                                  <option value="year">Yearly</option>
+                                </select>
+                              </label>
+                              <label>
+                                Every:
+                                <input
+                                  type="number"
+                                  name="recurrenceInterval"
+                                  value={newItem.recurrenceInterval}
+                                  onChange={handleInputChange}
+                                  min="1"
+                                />
+                                {newItem.recurrenceFrequency === 'week' ? 'week(s)' :
+                                  newItem.recurrenceFrequency === 'month' ? 'month(s)' : 'year(s)'}
+                              </label>
+                              <label>
+                                Basis:
+                                <select
+                                  name="recurrenceBasis"
+                                  value={newItem.recurrenceBasis}
+                                  onChange={handleInputChange}
+                                >
+                                  <option value="initial">Initial Due Date</option>
+                                  <option value="completion">Completion Date</option>
+                                </select>
+                              </label>
+                            </>
+                          )}
+                        </>
+                      )}
+                    </>
+                  )}
+                  {newItem.category === 'Track a Date' && (
+                    <>
                       <input
                         type="text"
-                        name="customType"
-                        value={newItem.customType}
-                        onChange={handleCustomTypeChange}
-                        placeholder="Enter custom type"
-                        maxLength="75"
-                      />
-                    )}
-                  </>
-                )}
-                {newItem.category === 'Document' && (
-                  <input
-                    type="file"
-                    name="attachments"
-                    onChange={handleFileChange}
-                    multiple
-                    style={{ display: newItem.dueDate ? 'block' : 'none' }}
-                  />
-                )}
-                {/* Recurrence options */}
-                {(role === 'Superuser' || role === 'Company User') && (
-                  <>
-                    <label>
-                      <input
-                        type="checkbox"
-                        name="isRecurring"
-                        checked={newItem.isRecurring}
+                        name="title"
+                        value={newItem.title}
                         onChange={handleInputChange}
+                        placeholder="Title"
                       />
-                      Recurring
-                    </label>
-                    {newItem.isRecurring && (
-                      <>
-                        <label>
-                          Frequency:
-                          <select
-                            name="recurrenceFrequency"
-                            value={newItem.recurrenceFrequency}
-                            onChange={handleInputChange}
-                          >
-                            <option value="">Select Frequency</option>
-                            <option value="week">Weekly</option>
-                            <option value="month">Monthly</option>
-                            <option value="year">Yearly</option>
-                          </select>
-                        </label>
-                        <label>
-                          Every:
-                          <input
-                            type="number"
-                            name="recurrenceInterval"
-                            value={newItem.recurrenceInterval}
-                            onChange={handleInputChange}
-                            min="1"
-                          />
-                          {newItem.recurrenceFrequency === 'week' ? 'week(s)' :
-                            newItem.recurrenceFrequency === 'month' ? 'month(s)' : 'year(s)'}
-                        </label>
-                        <label>
-                          Basis:
-                          <select
-                            name="recurrenceBasis"
-                            value={newItem.recurrenceBasis}
-                            onChange={handleInputChange}
-                          >
-                            <option value="initial">Initial Due Date</option>
-                            <option value="completion">Completion Date</option>
-                          </select>
-                        </label>
-                      </>
-                    )}
-                  </>
-                )}
-              </>
-            )}
-            {newItem.category === 'Track a Date' && (
-              <>
-                <input
-                  type="text"
-                  name="title"
-                  value={newItem.title}
-                  onChange={handleInputChange}
-                  placeholder="Title"
-                />
-                {renderDateSelector()}
-              </>
-            )}
-            <button type="submit">Add Item</button>
-          </form>
+                      {renderDateSelector()}
+                    </>
+                  )}
+                  <button type="submit">Add Item</button>
+                </form>
+              )}
+            </div>
+          </div>
         )}
       </div>
 
-      <div className="filters">
-        <input
-          type="text"
-          placeholder="Search"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-        />
-        <select
-          name="filterVessel"
-          value={selectedVessel}
-          onChange={(e) => setSelectedVessel(e.target.value)}
-        >
-          <option value="">Filter by Vessel</option>
-          {vessels.map((vessel) => (
-            <option key={vessel._id} value={vessel._id}>
-              {vessel.name}
-            </option>
-          ))}
-        </select>
-        <select
-          name="filterCategory"
-          value={filterCategory}
-          onChange={handleFilterCategoryChange}
-        >
-          <option value="">Filter by Category</option>
-          {categories.map((category, index) => (
-            <option key={index} value={category}>
-              {category}
-            </option>
-          ))}
-        </select>
-        <select
-          name="filterSubcategory"
-          value={filterSubcategory}
-          onChange={handleFilterSubcategoryChange}
-          disabled={!filterCategory}
-        >
-          <option value="">Filter by Subcategory</option>
-          {subcategories.map((subcategory, index) => (
-            <option key={index} value={subcategory}>
-              {subcategory}
-            </option>
-          ))}
-        </select>
-        <select
-          name="filterItem"
-          value={filterItem}
-          onChange={handleFilterItemChange}
-          disabled={!filterSubcategory}
-        >
-          <option value="">Filter by Item</option>
-          {itemOptions.map((item, index) => (
-            <option key={item._id} value={item.form_name}>
-              {item.form_name}
-            </option>
-          ))}
-        </select>
-        <button onClick={handleClearFilters}>Clear Filters</button>
-        <div className="show-completed">
-          <label>
-            Show:
-            <select
-              value={completedFilter}
-              onChange={(e) => setCompletedFilter(e.target.value)}
-            >
-              <option value="All">All</option>
-              <option value="Outstanding">Outstanding</option>
-              <option value="Completed">Completed</option>
-            </select>
-          </label>
-        </div>
-      </div>
-
-      <table>
-        <thead>
-          <tr>
-            {(role === 'Company User' || role === 'Superuser') && (
-              <th>
-                <button type="button" onClick={() => requestSort('vessel')}>
-                  Vessel {sortConfig.key === 'vessel' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
-                </button>
-              </th>
-            )}
-            <th>
-              <button type="button" onClick={() => requestSort('name')}>
-                Item {sortConfig.key === 'name' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
-              </button>
-            </th>
-            <th>
-              <button type="button" onClick={() => requestSort('category')}>
-                Category {sortConfig.key === 'category' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
-              </button>
-            </th>
-            <th>
-              <button type="button" onClick={() => requestSort('subcategory')}>
-                Subcategory {sortConfig.key === 'subcategory' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
-              </button>
-            </th>
-            <th>
-              <button type="button" onClick={() => requestSort('dueDate')}>
-                Due/Expiry Date {sortConfig.key === 'dueDate' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
-              </button>
-            </th>
-            <th>Status</th>
-            <th>
-              <FontAwesomeIcon icon={faPaperclip} />
-            </th>
-            <th>
-              <button type="button" onClick={() => requestSort('submitted')}>
-                Submitted {sortConfig.key === 'submitted' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
-              </button>
-            </th>
-            <th>Recurring</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {filteredAndSortedItems().map((item) => {
-            const isCompleted = item.completed && item.pdfPath;
-            const showChatForItem = showChat === item._id;
-            return (
-              <React.Fragment key={item._id}>
-                <tr className={isCompleted ? 'completed-row' : ''}>
-                  {(role === 'Company User' || role === 'Superuser') && <td>{item.vessel ? item.vessel.name : 'N/A'}</td>}
-                  <td>{item.name || item.title}</td>
-                  <td>{item.category}</td>
-                  <td>{item.subcategory || 'N/A'}</td>
-                  <td>
-                    {isCompleted ? (
-                      'Completed'
-                    ) : (
-                      item.dueDate ? formatDate(item.dueDate) : ''
-                    )}
-                  </td>
-                  <td>
-                    <span
-                      className="status-dot"
-                      style={{ backgroundColor: calculateStatusColor(item) }}
-                    ></span>
-                  </td>
-                  <td>
-                    {item.category === 'Form or Checklist' ? (
-                      item.completed ? (
-                        item.pdfPath ? (
-                          <a href={`http://localhost:5001${item.pdfPath}`} target="_blank" rel="noopener noreferrer">
-                            <FontAwesomeIcon icon={faPaperclip} />
-                          </a>
+      {/* Main content area */}
+      <div className="main-content">
+        <Link to="/crew" className="crew-module-link">Crew Module</Link>
+        {error && <p>{error}</p>}
+        {validationErrors.length > 0 && (
+          <div className="validation-errors">
+            <ul>
+              {validationErrors.map((error, index) => (
+                <li key={index}>{error}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+        <div className="table-container">
+          <table>
+            <thead>
+              <tr>
+                {(role === 'Company User' || role === 'Superuser') && (
+                  <th>
+                    <button type="button" onClick={() => requestSort('vessel')}>
+                      Vessel {sortConfig.key === 'vessel' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
+                    </button>
+                  </th>
+                )}
+                <th>
+                  <button type="button" onClick={() => requestSort('name')}>
+                    Item {sortConfig.key === 'name' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
+                  </button>
+                </th>
+                <th>
+                  <button type="button" onClick={() => requestSort('category')}>
+                    Category {sortConfig.key === 'category' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
+                  </button>
+                </th>
+                <th>
+                  <button type="button" onClick={() => requestSort('subcategory')}>
+                    Subcategory {sortConfig.key === 'subcategory' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
+                  </button>
+                </th>
+                <th>
+                  <button type="button" onClick={() => requestSort('dueDate')}>
+                    Due/Expiry Date {sortConfig.key === 'dueDate' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
+                  </button>
+                </th>
+                <th>Status</th>
+                <th>
+                  <FontAwesomeIcon icon={faPaperclip} />
+                </th>
+                <th>
+                  <button type="button" onClick={() => requestSort('submitted')}>
+                    Submitted {sortConfig.key === 'submitted' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
+                  </button>
+                </th>
+                <th>Recurring</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredAndSortedItems().map((item) => {
+                const isCompleted = item.completed && item.pdfPath;
+                const showChatForItem = showChat === item._id;
+                return (
+                  <React.Fragment key={item._id}>
+                    <tr className={isCompleted ? 'completed-row' : ''}>
+                      {(role === 'Company User' || role === 'Superuser') && <td>{item.vessel ? item.vessel.name : 'N/A'}</td>}
+                      <td>{item.name || item.title}</td>
+                      <td>{item.category}</td>
+                      <td>{item.subcategory || 'N/A'}</td>
+                      <td>
+                        {isCompleted ? (
+                          'Completed'
+                        ) : (
+                          item.dueDate ? formatDate(item.dueDate) : ''
+                        )}
+                      </td>
+                      <td>
+                        <span
+                          className="status-dot"
+                          style={{ backgroundColor: calculateStatusColor(item) }}
+                        ></span>
+                      </td>
+                      <td>
+                        {item.category === 'Form or Checklist' ? (
+                          item.completed ? (
+                            item.pdfPath ? (
+                              <a href={`http://localhost:5001${item.pdfPath}`} target="_blank" rel="noopener noreferrer">
+                                <FontAwesomeIcon icon={faPaperclip} />
+                              </a>
+                            ) : (
+                              ''
+                            )
+                          ) : (
+                            ''
+                          )
+                        ) : item.attachments.length > 0 ? (
+                          item.attachments.map((attachment, index) => (
+                            <a key={index} href={`http://localhost:5001/uploads/${attachment}`} target="_blank" rel="noopener noreferrer">
+                              <FontAwesomeIcon icon={faPaperclip} />
+                            </a>
+                          ))
                         ) : (
                           ''
-                        )
-                      ) : (
-                        ''
-                      )
-                    ) : item.attachments.length > 0 ? (
-                      item.attachments.map((attachment, index) => (
-                        <a key={index} href={`http://localhost:5001/uploads/${attachment}`} target="_blank" rel="noopener noreferrer">
-                          <FontAwesomeIcon icon={faPaperclip} />
-                        </a>
-                      ))
-                    ) : (
-                      ''
+                        )}
+                      </td>
+                      <td>
+                        {item.updatedAt ? formatDateTime(item.updatedAt) : 'N/A'}
+                      </td>
+                      <td>
+                        {item.isRecurring ? `Every ${item.recurrenceInterval} ${item.recurrenceFrequency}(s) by ${item.recurrenceBasis}` : 'No'}
+                      </td>
+                      <td>
+                        <button onClick={() => handleDelete(item._id)}>
+                          <FontAwesomeIcon icon={faTrashAlt} />
+                        </button>
+                        <button
+                          onClick={() => handleToggleChat(item._id)}
+                          style={{ color: showChatForItem ? 'black' : unreadComments[item._id] ? 'orange' : 'white' }}
+                        >
+                          <FontAwesomeIcon icon={faComments} />
+                        </button>
+                        {!item.completed && item.category === 'Form or Checklist' && (
+                          <button onClick={() => handleCompleteForm(item.formDefinitionId)}>
+                            <FontAwesomeIcon icon={faEdit} style={{ color: 'orange' }} />
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                    {showChatForItem && (
+                      <tr key={`chat-${item._id}`} className="chat-row">
+                        <td colSpan="10">
+                          <ChatComponent documentId={item._id} itemName={item.name || item.title} markAsRead={markCommentsAsRead} />
+                        </td>
+                      </tr>
                     )}
-                  </td>
-                  <td>
-                    {item.updatedAt ? formatDateTime(item.updatedAt) : 'N/A'}
-                  </td>
-                  <td>
-                    {item.isRecurring ? `Every ${item.recurrenceInterval} ${item.recurrenceFrequency}(s) by ${item.recurrenceBasis}` : 'No'}
-                  </td>
-                  <td>
-                    <button onClick={() => handleDelete(item._id)}>
-                      <FontAwesomeIcon icon={faTrashAlt} />
-                    </button>
-                    <button
-                      onClick={() => handleToggleChat(item._id)}
-                      style={{ color: showChatForItem ? 'black' : unreadComments[item._id] ? 'orange' : 'white' }}
-                    >
-                      <FontAwesomeIcon icon={faComments} />
-                    </button>
-                    {!item.completed && item.category === 'Form or Checklist' && (
-                      <button onClick={() => handleCompleteForm(item.formDefinitionId)}>
-                        <FontAwesomeIcon icon={faEdit} style={{ color: 'orange' }} />
-                      </button>
-                    )}
-                  </td>
-                </tr>
-                {showChatForItem && (
-                  <tr key={`chat-${item._id}`} className="chat-row">
-                    <td colSpan="10">
-                      <ChatComponent documentId={item._id} itemName={item.name || item.title} markAsRead={markCommentsAsRead} />
-                    </td>
-                  </tr>
-                )}
-              </React.Fragment>
-            );
-          })}
-        </tbody>
-      </table>
+                  </React.Fragment>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   );
 }

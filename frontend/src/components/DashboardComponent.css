@@ -1,192 +1,195 @@
-.dashboard-container {
-  padding: 20px;
+/* General navbar styles */
+.navbar {
+  background-color: #004e7d;
+  padding: 10px 0;
+  position: fixed;
+  width: 100%;
+  top: 0;
+  z-index: 1000;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
-/* Ensure the H1 is fully visible below the navbar */
-.dashboard-header {
-  text-align: left;
-  margin-bottom: 20px;
-  margin-top: 60px; /* Adjust this value as needed to clear the navbar */
-}
-
-.new-item-container {
+.navbar-container {
   display: flex;
-  align-items: flex-start;
-  margin-bottom: 20px;
+  justify-content: space-between;
+  align-items: center;
+  width: 90%;
+  margin: 0 auto;
 }
 
-.new-item-container button {
-  margin-right: 20px;
+.navbar-logo-image {
+  height: 35px;
+  margin-right: 15px;
 }
 
-.new-item-form {
-  width: 50%;
+/* Sidebar styles */
+.dashboard-layout {
+  display: flex;
+  padding-top: 60px; /* Adjust for the navbar height */
+}
+
+.main-content {
+  flex: 1;
+  margin-left: 240px;
+  padding: 20px;
+  transition: margin-left 0.3s ease;
+}
+
+.dashboard-layout.collapsed .main-content {
+  margin-left: 60px;
+}
+
+/* Sidebar styles */
+.sidebar {
+  width: 240px; /* Adjusted to ensure consistent width */
+  background-color: #3eb4e4;
+  padding: 20px;
+  height: calc(100vh - 60px); /* Adjust for the navbar height */
+  position: fixed;
+  top: 60px; /* Place it beneath the navbar */
+  left: 0;
+  transition: width 0.3s ease;
+  z-index: 999; /* Ensure it's above main content but below navbar */
+  border-right: 1px solid #3eb4e4; /* Vertical line to show where the sidebar ends */
   display: flex;
   flex-direction: column;
+  justify-content: space-between; /* Ensure elements are spaced out */
+  overflow-y: auto; /* Make sidebar scrollable if content exceeds the height */
 }
 
-.new-item-form select,
-.new-item-form input[type="text"],
-.new-item-form input[type="date"],
-.new-item-form input[type="file"],
-.new-item-form button[type="submit"] {
-  margin-bottom: 10px;
+.sidebar.collapsed {
+  width: 60px;
   padding: 10px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  width: 100%;
-  box-sizing: border-box; /* Ensures padding is included in the width */
 }
 
-@media (max-width: 768px) {
-  .new-item-form {
-    width: 100%;
-  }
+.sidebar-toggle-container {
+  display: flex;
+  justify-content: center;
+  padding: 10px;
 }
 
-table {
-  width: 100%;
-  margin: 20px 0;
-  border-collapse: collapse;
-}
-
-th, td {
-  border: 1px solid #ddd;
-  padding: 8px;
-  text-align: center;
-  vertical-align: middle; /* Centers content vertically */
-}
-
-th {
+.sidebar-toggle-btn {
+  cursor: pointer;
+  padding: 10px;
   background-color: #004e7d;
   color: white;
+  border-radius: 5px;
+  text-align: center;
 }
 
-tr:nth-child(even) {
-  background-color: #f2f2f2;
-}
-
-tr:hover {
-  background-color: #ddd;
-}
-
-/* Completed row styling */
-.completed-row {
-  background-color: lightblue !important; /* Light blue background for completed rows */
-  color: grey !important; /* Grey text color for completed rows */
-}
-
-.status-dot {
-  height: 15px;
-  width: 15px;
-  border-radius: 50%;
-  display: inline-block;
-}
-
-/* New class for date and time formatting */
-td p {
-  line-height: 1.2;
-  margin: 2px 0;
-}
-
-/* Filter container styling */
 .filters {
+  flex-grow: 1;
   display: flex;
-  align-items: center;
+  flex-direction: column;
   gap: 10px;
-  margin-bottom: 20px;
-  flex-wrap: wrap;
+  overflow-y: auto; /* Allow scrolling for overflow content */
 }
 
+.filters input,
 .filters select,
-.filters input[type="checkbox"] {
-  padding: 5px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-}
-
-.filters label {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-}
-
-.filters .show-completed {
-  margin-left: auto;
-  display: flex;
-  align-items: center;
-}
-
-.filters .show-completed label {
-  gap: 5px;
+.filters button,
+.new-item-form select,
+.new-item-form input,
+.new-item-form button {
+  display: block;
+  width: 100%; /* Ensure consistent width across all elements */
+  margin-bottom: 10px;
+  padding: 8px;
+  box-sizing: border-box; /* Include padding and border in element's width and height */
 }
 
 .filters button {
-  padding: 5px 10px;
-  background-color: #3eb4e4;
+  background-color: #004e7d;
   color: white;
   border: none;
-  border-radius: 4px;
+  border-radius: 5px;
   cursor: pointer;
+  text-align: center;
 }
 
 .filters button:hover {
-  background-color: #00334d;
+  background-color: #003b5c;
 }
 
-/* Add margin below the button */
-.button-and-filters {
-  margin-bottom: 20px;
+/* New item form and button placement */
+.add-item-container {
+  margin-top: 20px;
+  margin-bottom: 20px; /* Add some spacing above the bottom of the screen */
 }
 
-.button-and-filters button {
-  margin-bottom: 10px;
+.add-item-button {
+    background-color: #FFA500 !important; /* Orange background */
+    color: white !important; /* White text color */
+    padding: 10px !important;
+    border: none !important;
+    border-radius: 5px !important;
+    cursor: pointer !important;
+    width: 100% !important; /* Ensures it matches the width of the container */
+    text-align: center !important;
+    font-weight: bold !important;
+  }
+  
+.add-item-button:hover {
+  background-color: #FF8C00 !important; /* Darker orange for hover effect */
+}  
+
+.new-item-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%; /* Ensures form takes up full width of the container */
+  max-width: 70%; /* Limits the form to 70% of its container's width */
+  margin: 0 auto; /* Centers the form within its container */
 }
 
+
+.new-item-form select,
+.new-item-form input,
+.new-item-form button {
+  width: 100%; /* Ensure consistent width across form fields */
+  padding: 8px;
+  box-sizing: border-box; /* Include padding and border in element's width and height */
+}
+
+/* Mobile responsive */
 @media (max-width: 768px) {
-  th, td {
-    padding: 5px;
-  }
-}
-
-@media (max-width: 480px) {
-  table, thead, tbody, th, td, tr {
-    display: block;
-  }
-
-  th {
-    display: none;
+  .sidebar {
+    width: 100%;
+    height: auto;
+    position: fixed;
+    top: 60px;
+    left: -100%;
+    transition: left 0.3s ease;
+    z-index: 1000;
   }
 
-  td {
-    position: relative;
-    padding-left: 50%;
-  }
-
-  td:before {
-    position: absolute;
+  .sidebar.open {
     left: 0;
-    width: 45%;
-    padding-right: 10px;
-    white-space: nowrap;
   }
 
-  td:nth-of-type(1):before { content: "Item"; }
-  td:nth-of-type(2):before { content: "Category"; }
-  td:nth-of-type(3):before { content: "Subcategory"; }
-  td:nth-of-type(4):before { content: "Due/Expiry Date"; }
-  td:nth-of-type(5):before { content: "Status"; }
-  td:nth-of-type(6):before { content: "Details"; }
-  td:nth-of-type(7):before { content: "Actions"; }
+  .sidebar.collapsed {
+    width: 100%;
+  }
+
+  .main-content {
+    margin-left: 0;
+  }
+
+  .sidebar-toggle-btn {
+    position: fixed;
+    right: 10px;
+    top: 80px;
+    z-index: 1001;
+  }
 }
 
-/* Chat row styling */
-.chat-row td {
-  padding: 0;
-  background-color: #f9f9f9;
+.table-container {
+  overflow-x: auto;
 }
 
-.chat-container {
-  padding: 10px;
-  border-top: 1px solid #ddd;
+.status-dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
 }

@@ -1,68 +1,33 @@
-/* General styles */
+/* General navbar styles */
 .navbar {
   background-color: #004e7d;
-  padding: 10px;
+  padding: 10px 0;
+  position: fixed;
+  width: 100%;
+  top: 0;
+  z-index: 1000;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
 .navbar-container {
   display: flex;
   justify-content: space-between;
   align-items: center;
-}
-
-.navbar-logo {
-  display: flex;
-  align-items: center;
+  width: 90%;
+  margin: 0 auto;
 }
 
 .navbar-logo-image {
-  height: 40px; /* Adjust the height as needed */
-  margin-right: 20px; /* Add margin around the logo */
+  height: 35px;
+  margin-right: 15px;
 }
 
-.navbar-brand {
-  color: white;
-  font-size: 24px;
-}
-
-.navbar-menu {
-  display: flex;
-  list-style-type: none;
-  margin: 0;
-  padding: 0;
-  gap: 20px;
-}
-
-.navbar-menu ul {
-  display: flex;
-  gap: 20px;
-}
-
-.navbar-menu li {
-  display: inline;
-}
-
-.navbar-menu a, .navbar-menu button {
-  color: white;
-  text-decoration: none;
-  padding: 10px 20px;
-}
-
-.navbar-menu button {
+.navbar-toggle {
   background: none;
   border: none;
   cursor: pointer;
-}
-
-.navbar-menu a:hover, .navbar-menu button:hover {
-  background-color: #00334d;
-}
-
-/* Hamburger menu */
-.navbar-toggle {
   display: none;
   flex-direction: column;
-  cursor: pointer;
   gap: 5px;
 }
 
@@ -70,10 +35,134 @@
   width: 25px;
   height: 3px;
   background-color: white;
+  transition: all 0.3s ease;
 }
 
-/* Media queries for responsiveness */
+.navbar-menu {
+  display: flex;
+  align-items: center;
+}
+
+.navbar-menu.is-active {
+  display: flex;
+}
+
+.navbar-menu ul {
+  list-style: none;
+  display: flex;
+  gap: 20px;
+  padding: 0;
+  margin: 0;
+}
+
+.navbar-menu ul li {
+  position: relative;
+}
+
+/* Navbar button styles */
+.navbar-button {
+  color: white;
+  text-decoration: none;
+  padding: 10px 20px;
+  border-radius: 4px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  text-align: center;
+  display: inline-block;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.navbar-button:hover {
+  background-color: #003f63;
+}
+
+.navbar-button.active {
+  background-color: orange;
+  color: white;
+}
+
+.navbar-button.active:hover {
+  background-color: orange; /* Ensure it stays orange even on hover */
+}
+
+/* Dropdown styles */
+.navbar-dropdown {
+  position: relative;
+}
+
+.navbar-dropdown-toggle {
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.dropdown-indicator {
+  margin-left: 5px;
+  transition: transform 0.3s ease;
+}
+
+.dropdown-indicator.open {
+  transform: rotate(180deg);
+}
+
+.navbar-dropdown-menu {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background-color: #004e7d;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  z-index: 1001;
+  flex-direction: column;
+  border-radius: 4px;
+  padding: 5px 0;
+}
+
+.navbar-dropdown-menu li {
+  margin: 0;
+  padding: 0;
+}
+
+.navbar-dropdown-menu li a {
+  color: white;
+  padding: 5px 15px;
+  font-size: 14px;
+  line-height: 1.2;
+  margin: 0;
+  display: block;
+  border-radius: 4px;
+}
+
+.navbar-dropdown-menu li a:hover {
+  background-color: #003f63;
+}
+
+/* Logout button */
+.logout-button {
+  background-color: #3eb4e4 !important;
+  color: white !important;
+  padding: 10px 20px;
+  border-radius: 4px;
+  cursor: pointer;
+  border: none !important;
+  transition: background-color 0.3s ease;
+  font: inherit;
+  text-align: center;
+  display: inline-block;
+}
+
+.logout-button:hover {
+  background-color: #339fc8 !important;
+}
+
+/* Responsive styles */
 @media (max-width: 768px) {
+  .navbar-toggle {
+    display: flex;
+  }
+
   .navbar-menu {
     display: none;
     flex-direction: column;
@@ -82,13 +171,10 @@
     position: absolute;
     top: 60px;
     left: 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
   }
 
   .navbar-menu.is-active {
-    display: flex;
-  }
-
-  .navbar-toggle {
     display: flex;
   }
 
@@ -102,8 +188,15 @@
     width: 100%;
   }
 
-  .navbar-menu a, .navbar-menu button {
+  .navbar-menu a,
+  .navbar-menu button {
     width: 100%;
     padding: 15px 0;
+  }
+
+  .navbar-dropdown-menu {
+    position: static;
+    box-shadow: none;
+    width: 100%;
   }
 }

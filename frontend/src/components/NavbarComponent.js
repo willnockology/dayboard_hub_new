@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useHistory } from 'react-router-dom';
+import { Link, useHistory, useLocation } from 'react-router-dom';
 import '../global.css';
 import './NavbarComponent.css';
 import commercialLogo from '../assets/dayboardmaritime_logo.png';
@@ -7,10 +7,16 @@ import nonCommercialLogo from '../assets/dbys_logo.png';
 
 const NavbarComponent = ({ setToken }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
   const history = useHistory();
+  const location = useLocation();
 
   const toggleMenu = () => {
     setIsOpen(!isOpen);
+  };
+
+  const toggleDropdown = () => {
+    setDropdownOpen(!dropdownOpen);
   };
 
   const handleLogout = () => {
@@ -39,34 +45,64 @@ const NavbarComponent = ({ setToken }) => {
         <div className={`navbar-menu ${isOpen ? 'is-active' : ''}`}>
           <ul>
             <li>
-              <Link to="/profile">Profile</Link>
+              <Link 
+                to="/dashboard" 
+                className={`navbar-button ${location.pathname === '/dashboard' ? 'active' : ''}`}
+              >
+                Dashboard
+              </Link>
             </li>
             <li>
-              <Link to="/contact">Contact</Link>
+              <Link 
+                to="/profile" 
+                className={`navbar-button ${location.pathname === '/profile' ? 'active' : ''}`}
+              >
+                Profile
+              </Link>
+            </li>
+            <li>
+              <Link 
+                to="/contact" 
+                className={`navbar-button ${location.pathname === '/contact' ? 'active' : ''}`}
+              >
+                Contact
+              </Link>
             </li>
             {user && ['Superuser', 'Company User', 'Captain'].includes(user.role) && (
               <li>
-                <Link to="/update-vessel">Update Vessel</Link>
+                <Link 
+                  to="/update-vessel" 
+                  className={`navbar-button ${location.pathname === '/update-vessel' ? 'active' : ''}`}
+                >
+                  Update Vessel
+                </Link>
               </li>
             )}
             {user && user.role === 'Superuser' && (
-              <>
-                <li>
-                  <Link to="/vessel-registration">Register Vessel</Link>
-                </li>
-                <li>
-                  <Link to="/user-management">User Management</Link>
-                </li>
-                <li>
-                  <Link to="/register">Register User</Link>
-                </li>
-                <li>
-                  <Link to="/form-editor">Form Editor</Link>
-                </li>
-              </>
+              <li className="navbar-dropdown">
+                <button onClick={toggleDropdown} className="navbar-button navbar-dropdown-toggle">
+                  Admin <span className={`dropdown-indicator ${dropdownOpen ? 'open' : ''}`}>&#9662;</span>
+                </button>
+                {dropdownOpen && (
+                  <ul className="navbar-dropdown-menu">
+                    <li>
+                      <Link to="/vessel-registration" className="navbar-button">Add Vessel</Link>
+                    </li>
+                    <li>
+                      <Link to="/user-management" className="navbar-button">Users</Link>
+                    </li>
+                    <li>
+                      <Link to="/register" className="navbar-button">Register User</Link>
+                    </li>
+                    <li>
+                      <Link to="/form-editor" className="navbar-button">Forms</Link>
+                    </li>
+                  </ul>
+                )}
+              </li>
             )}
             <li>
-              <button onClick={handleLogout}>Logout</button>
+              <button onClick={handleLogout} className="navbar-button logout-button">Logout</button>
             </li>
           </ul>
         </div>
