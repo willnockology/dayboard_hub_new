@@ -56,19 +56,29 @@ const itemSchema = new mongoose.Schema({
   recurrenceFrequency: {
     type: String,
     enum: ['week', 'month', 'year'],
-    default: null // Ensure this is handled correctly in the controller
+    default: undefined, // Use undefined instead of null
   },
   recurrenceInterval: {
     type: Number,
-    default: null
+    default: undefined, // Use undefined instead of null
   },
   recurrenceBasis: {
     type: String,
     enum: ['initial', 'completion'],
-    default: 'initial'
+    default: undefined, // Use undefined instead of null
   }
 }, {
   timestamps: true
+});
+
+// Ensure that non-recurring items do not store recurrence data
+itemSchema.pre('save', function (next) {
+  if (!this.isRecurring) {
+    this.recurrenceFrequency = undefined;
+    this.recurrenceInterval = undefined;
+    this.recurrenceBasis = undefined;
+  }
+  next();
 });
 
 const Item = mongoose.model('Item', itemSchema);

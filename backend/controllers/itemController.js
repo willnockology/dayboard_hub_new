@@ -67,15 +67,19 @@ const createItem = asyncHandler(async (req, res) => {
     return res.status(400).json({ message: 'All required fields must be filled' });
   }
 
-  // Validate recurrence fields if isRecurring is true
-  if (isRecurring) {
+  // Handle recurrence fields
+  const recurrenceData = {};
+  if (isRecurring === 'true') {  // 'true' is received as a string from the client
     if (!recurrenceFrequency || !recurrenceInterval || !recurrenceBasis) {
       console.error('Validation error: Missing recurrence fields');
       return res.status(400).json({ message: 'Recurrence fields must be provided for recurring items' });
     }
+    recurrenceData.recurrenceFrequency = recurrenceFrequency;
+    recurrenceData.recurrenceInterval = Number(recurrenceInterval); // Ensure it's a number
+    recurrenceData.recurrenceBasis = recurrenceBasis;
   }
 
-  const newItem = new Item({
+  const newItemData = {
     name: itemName,
     category,
     subcategory,
@@ -88,11 +92,18 @@ const createItem = asyncHandler(async (req, res) => {
     vessel,
     role,
     formDefinitionId,
-    isRecurring: isRecurring || false,
-    recurrenceFrequency: isRecurring ? recurrenceFrequency : null,
-    recurrenceInterval: isRecurring ? recurrenceInterval : null,
-    recurrenceBasis: isRecurring ? recurrenceBasis : 'initial'
+    isRecurring: isRecurring === 'true',
+    ...recurrenceData // Spread the recurrence data if it's a recurring item
+  };
+
+  // Remove undefined fields (to avoid issues with Mongoose validation)
+  Object.keys(newItemData).forEach(key => {
+    if (newItemData[key] === undefined || newItemData[key] === null) {
+      delete newItemData[key];
+    }
   });
+
+  const newItem = new Item(newItemData);
 
   try {
     const createdItem = await newItem.save();

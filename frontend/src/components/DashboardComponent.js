@@ -290,7 +290,7 @@ function DashboardComponent({ setToken }) {
       formData.append('formDefinitionId', newItem.formDefinitionId);
 
       let itemName = newItem.name === 'custom' ? newItem.customName : newItem.name;
-      
+
       if (newItem.formDefinitionId === '669edf84beec7dd7fcd9b5f0') {
         const typeName = newItem.type === 'Other' ? newItem.customType : newItem.type;
         itemName += ` - ${typeName}`;
@@ -312,11 +312,18 @@ function DashboardComponent({ setToken }) {
         });
       }
 
+      // Only append recurrence fields if isRecurring is true
       if ((role === 'Superuser' || role === 'Company User') && newItem.isRecurring) {
         formData.append('isRecurring', newItem.isRecurring);
         formData.append('recurrenceFrequency', newItem.recurrenceFrequency);
         formData.append('recurrenceInterval', newItem.recurrenceInterval);
         formData.append('recurrenceBasis', newItem.recurrenceBasis);
+      } else {
+        // If not recurring, ensure these fields are not included or set to undefined
+        formData.append('isRecurring', false);
+        formData.append('recurrenceFrequency', undefined);
+        formData.append('recurrenceInterval', undefined);
+        formData.append('recurrenceBasis', undefined);
       }
 
       const response = await axios.post('http://localhost:5001/api/items', formData, {
@@ -408,7 +415,6 @@ function DashboardComponent({ setToken }) {
       />
     </div>
   );
-  
 
   const filteredAndSortedItems = () => {
     let filteredItems = items;
