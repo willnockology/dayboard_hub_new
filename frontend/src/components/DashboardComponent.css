@@ -22,26 +22,33 @@
   margin-right: 15px;
 }
 
-/* Sidebar styles */
+/* Sidebar and content layout */
 .dashboard-layout {
   display: flex;
   padding-top: 60px; /* Adjust for the navbar height */
+  height: 100vh; /* Ensure it takes the full height of the viewport */
 }
 
 .main-content {
   flex: 1;
-  margin-left: 240px;
-  padding: 20px;
+  margin-left: 240px; /* Adjust based on sidebar width */
+  padding-top: 5px;
+  padding-bottom: 5px;
+  padding-left: 40px;
+  padding-right: 20px;
   transition: margin-left 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  font-size: 1.2vw; /* Responsive font size based on viewport width */
 }
 
 .dashboard-layout.collapsed .main-content {
-  margin-left: 60px;
+  margin-left: 60px; /* Adjust based on collapsed sidebar */
 }
 
 /* Sidebar styles */
 .sidebar {
-  width: 240px; /* Adjusted to ensure consistent width */
+  width: 240px;
   background-color: #3eb4e4;
   padding: 20px;
   height: calc(100vh - 60px); /* Adjust for the navbar height */
@@ -118,30 +125,29 @@
 }
 
 .add-item-button {
-    background-color: #FFA500 !important; /* Orange background */
-    color: white !important; /* White text color */
-    padding: 10px !important;
-    border: none !important;
-    border-radius: 5px !important;
-    cursor: pointer !important;
-    width: 100% !important; /* Ensures it matches the width of the container */
-    text-align: center !important;
-    font-weight: bold !important;
-  }
-  
+  background-color: #FFA500 !important; /* Orange background */
+  color: white !important; /* White text color */
+  padding: 10px !important;
+  border: none !important;
+  border-radius: 5px !important;
+  cursor: pointer !important;
+  width: 100% !important; /* Ensures it matches the width of the container */
+  text-align: center !important;
+  font-weight: bold !important;
+}
+
 .add-item-button:hover {
   background-color: #FF8C00 !important; /* Darker orange for hover effect */
-}  
+}
 
 .new-item-form {
   display: flex;
   flex-direction: column;
   gap: 10px;
   width: 100%; /* Ensures form takes up full width of the container */
-  max-width: 70%; /* Limits the form to 70% of its container's width */
+  box-sizing: border-box; /* Ensure padding and borders are included in the element's total width and height */
   margin: 0 auto; /* Centers the form within its container */
 }
-
 
 .new-item-form select,
 .new-item-form input,
@@ -151,8 +157,116 @@
   box-sizing: border-box; /* Include padding and border in element's width and height */
 }
 
+.new-item-form input[type="date"] {
+  width: 100%; /* Consistent width */
+  padding: 8px; /* Padding to match other inputs */
+  font-size: 16px; /* Consistent font size */
+  box-sizing: border-box; /* Include padding in width */
+  height: 40px; /* Set a specific height to match other fields */
+  line-height: 1.2; /* Adjust line-height to control text height */
+  border-radius: 5px; /* Match other input fields */
+  border: 1px solid #ccc; /* Match border style of other inputs */
+  background-color: #fff; /* Ensure background color consistency */
+  appearance: none; /* Remove default browser styling */
+  -webkit-appearance: none; /* Ensure consistency in Webkit-based browsers */
+  -moz-appearance: none; /* Ensure consistency in Firefox */
+}
+
+.new-item-form select,
+.new-item-form input {
+  height: 40px; /* Set consistent height across form fields */
+  padding: 8px;
+  box-sizing: border-box; /* Ensure padding is included in width/height calculations */
+  border-radius: 5px; /* Add consistent border radius */
+  border: 1px solid #ccc; /* Add consistent border */
+  background-color: #fff; /* Consistent background color */
+}
+
+/* Align checkbox with label */
+.new-item-form label {
+  display: flex;
+  align-items: center;
+  gap: 5px; /* Add some space between checkbox and label */
+}
+
+.new-item-form label input[type="checkbox"] {
+  margin: 0;
+  transform: scale(1.2); /* Make the checkbox slightly larger if needed */
+}
+
+/* Table styling */
+.table-container {
+  overflow-x: auto;
+  max-width: 100%; /* Ensure it takes up available space */
+  max-height: calc(100vh - 140px); /* Adjust for navbar and some padding */
+}
+
+table {
+  width: 100%; /* Ensure table takes full width */
+  border-collapse: collapse; /* Ensure there are no gaps between cells */
+  table-layout: fixed; /* Fixed layout to ensure columns are even */
+}
+
+th, td {
+  text-align: center; /* Center text horizontally */
+  padding: 8px;
+  border-bottom: 1px solid #ddd;
+  vertical-align: middle; /* Center text vertically */
+  white-space: nowrap; /* Prevent text from wrapping */
+  overflow: hidden;
+  text-overflow: ellipsis; /* Add ellipsis for overflowing text */
+}
+
+th {
+  background-color: #004e7d;
+  color: white;
+  font-weight: bold;
+  font-size: 16px; /* Consistent font size for headers */
+}
+
+th button {
+  all: unset; /* Remove default button styles */
+  width: 100%;
+  height: 100%;
+  font-size: 16px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+td {
+  font-size: 14px; /* Adjust the font size for table data */
+}
+
+
+/* Status dot styling */
+.status-dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
 /* Mobile responsive */
 @media (max-width: 768px) {
+  .main-content {
+    font-size: 2vw; /* Adjust font size for tablets and smaller devices */
+  }
+  th, td {
+    font-size: 12px; /* Smaller font size on small screens */
+    padding: 6px;
+  }
+
+  th button {
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .main-content {
+    font-size: 3.5vw; /* Further adjust font size for small smartphones */
+  }
+
   .sidebar {
     width: 100%;
     height: auto;
@@ -173,6 +287,7 @@
 
   .main-content {
     margin-left: 0;
+    width: 100%; /* Ensure main content takes full width */
   }
 
   .sidebar-toggle-btn {
@@ -181,15 +296,8 @@
     top: 80px;
     z-index: 1001;
   }
-}
 
-.table-container {
-  overflow-x: auto;
-}
-
-.status-dot {
-  display: inline-block;
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
+  table {
+    font-size: 3vw; /* Adjust table font size for small screens */
+  }
 }

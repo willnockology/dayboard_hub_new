@@ -123,28 +123,70 @@ form {
   border-radius: 8px;
 }
 
+/* General form styling */
 form label {
-  display: block;
-  margin-bottom: 8px;
+  display: flex; /* Align label and checkbox horizontally */
+  align-items: center; /* Vertically center the label with the checkbox */
+  gap: 10px; /* Space between checkbox and label text */
   font-weight: bold;
+  margin-bottom: 8px;
 }
 
-form input, form select, form textarea {
-  width: 100%;
-  padding: 10px;
-  margin-bottom: 12px;
+/* Specific adjustments for the date input field */
+.date-input-container {
+  position: relative; /* Necessary to position the calendar icon */
+}
+
+.date-input-container input[type="date"] {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-color: #fff;
   border: 1px solid #ddd;
+  padding: 8px;
+  font-size: 16px;
   border-radius: 4px;
-  transition: border-color 0.3s ease;
+  height: 40px; /* Consistent height */
+  width: 100%; /* Full width */
+  line-height: 1.2;
+  padding-right: 40px; /* Padding for the icon */
+  cursor: pointer;
 }
 
-form input:focus, form select:focus, form textarea:focus {
-  border-color: #004e7d;
+.date-input-container input[type="date"]::-webkit-inner-spin-button,
+.date-input-container input[type="date"]::-webkit-calendar-picker-indicator {
+  display: none; /* Hide the default calendar icon */
+}
+
+.date-input-container input[type="date"]:focus {
   outline: none;
+  border-color: #004e7d; /* Highlight border on focus */
 }
 
-form input[type="file"] {
-  padding: 3px;
+/* Style the calendar icon */
+.date-input-container .calendar-icon {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 20px;
+  height: 20px;
+  pointer-events: all;
+  cursor: pointer;
+  z-index: 10;
+}
+
+/* Recurring checkbox adjustment */
+.recurring-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+#recurring-checkbox {
+  margin: 0;
+  width: 16px;
+  height: 16px;
 }
 
 /* Navbar styles */

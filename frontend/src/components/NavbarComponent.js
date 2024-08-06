@@ -68,16 +68,14 @@ const NavbarComponent = ({ setToken }) => {
                 Contact
               </Link>
             </li>
-            {user && ['Superuser', 'Company User', 'Captain'].includes(user.role) && (
-              <li>
-                <Link 
-                  to="/update-vessel" 
-                  className={`navbar-button ${location.pathname === '/update-vessel' ? 'active' : ''}`}
-                >
-                  Update Vessel
-                </Link>
-              </li>
-            )}
+            <li>
+              <Link 
+                to="/crew" 
+                className={`navbar-button ${location.pathname === '/crew' ? 'active' : ''}`}
+              >
+                Crew
+              </Link>
+            </li>
             {user && user.role === 'Superuser' && (
               <li className="navbar-dropdown">
                 <button onClick={toggleDropdown} className="navbar-button navbar-dropdown-toggle">
@@ -96,6 +94,9 @@ const NavbarComponent = ({ setToken }) => {
                     </li>
                     <li>
                       <Link to="/form-editor" className="navbar-button">Forms</Link>
+                    </li>
+                    <li>
+                      <Link to="/update-vessel" className="navbar-button">Update Vessel</Link>
                     </li>
                   </ul>
                 )}

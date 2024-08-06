@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useHistory } from 'react-router-dom';
+import { useHistory } from 'react-router-dom';
 import axios from 'axios';
 import ChatComponent from './ChatComponent';
 import './DashboardComponent.css';
@@ -391,7 +391,7 @@ function DashboardComponent({ setToken }) {
   };
 
   const renderDateSelector = () => (
-    <>
+    <div className="date-input-container">
       <label htmlFor="dueDate">Due Date</label>
       <input
         type="date"
@@ -399,10 +399,16 @@ function DashboardComponent({ setToken }) {
         id="dueDate"
         value={newItem.dueDate}
         onChange={handleInputChange}
-        style={{ display: newItem.name || newItem.customName ? 'block' : 'none' }}
       />
-    </>
+      <img
+        src="./assets/calendar-icon.png"
+        alt="Calendar Icon"
+        className="calendar-icon"
+        onClick={() => document.getElementById('dueDate').focus()}
+      />
+    </div>
   );
+  
 
   const filteredAndSortedItems = () => {
     let filteredItems = items;
@@ -696,7 +702,29 @@ function DashboardComponent({ setToken }) {
                           maxLength="75"
                         />
                       )}
-                      {renderDateSelector()}
+                      {/* Show Date and Recurring fields only after an item is selected */}
+                      {newItem.name && (
+                        <>
+                          <label htmlFor="dueDate">Due Date</label>
+                          <input
+                            type="date"
+                            name="dueDate"
+                            id="dueDate"
+                            value={newItem.dueDate}
+                            onChange={handleInputChange}
+                          />
+                          <div className="recurring-container">
+                            <input
+                              type="checkbox"
+                              name="isRecurring"
+                              checked={newItem.isRecurring}
+                              onChange={handleInputChange}
+                              id="recurring-checkbox"
+                            />
+                            <label htmlFor="recurring-checkbox">Recurring</label>
+                          </div>
+                        </>
+                      )}
                       {newItem.formDefinitionId === '669edf84beec7dd7fcd9b5f0' && (
                         <>
                           <label>
@@ -747,57 +775,44 @@ function DashboardComponent({ setToken }) {
                           style={{ display: newItem.dueDate ? 'block' : 'none' }}
                         />
                       )}
-                      {(role === 'Superuser' || role === 'Company User') && (
+                      {(role === 'Superuser' || role === 'Company User') && newItem.isRecurring && (
                         <>
                           <label>
-                            <input
-                              type="checkbox"
-                              name="isRecurring"
-                              checked={newItem.isRecurring}
+                            Frequency:
+                            <select
+                              name="recurrenceFrequency"
+                              value={newItem.recurrenceFrequency}
                               onChange={handleInputChange}
-                            />
-                            Recurring
+                            >
+                              <option value="">Select Frequency</option>
+                              <option value="week">Weekly</option>
+                              <option value="month">Monthly</option>
+                              <option value="year">Yearly</option>
+                            </select>
                           </label>
-                          {newItem.isRecurring && (
-                            <>
-                              <label>
-                                Frequency:
-                                <select
-                                  name="recurrenceFrequency"
-                                  value={newItem.recurrenceFrequency}
-                                  onChange={handleInputChange}
-                                >
-                                  <option value="">Select Frequency</option>
-                                  <option value="week">Weekly</option>
-                                  <option value="month">Monthly</option>
-                                  <option value="year">Yearly</option>
-                                </select>
-                              </label>
-                              <label>
-                                Every:
-                                <input
-                                  type="number"
-                                  name="recurrenceInterval"
-                                  value={newItem.recurrenceInterval}
-                                  onChange={handleInputChange}
-                                  min="1"
-                                />
-                                {newItem.recurrenceFrequency === 'week' ? 'week(s)' :
-                                  newItem.recurrenceFrequency === 'month' ? 'month(s)' : 'year(s)'}
-                              </label>
-                              <label>
-                                Basis:
-                                <select
-                                  name="recurrenceBasis"
-                                  value={newItem.recurrenceBasis}
-                                  onChange={handleInputChange}
-                                >
-                                  <option value="initial">Initial Due Date</option>
-                                  <option value="completion">Completion Date</option>
-                                </select>
-                              </label>
-                            </>
-                          )}
+                          <label>
+                            Every:
+                            <input
+                              type="number"
+                              name="recurrenceInterval"
+                              value={newItem.recurrenceInterval}
+                              onChange={handleInputChange}
+                              min="1"
+                            />
+                            {newItem.recurrenceFrequency === 'week' ? 'week(s)' :
+                              newItem.recurrenceFrequency === 'month' ? 'month(s)' : 'year(s)'}
+                          </label>
+                          <label>
+                            Basis:
+                            <select
+                              name="recurrenceBasis"
+                              value={newItem.recurrenceBasis}
+                              onChange={handleInputChange}
+                            >
+                              <option value="initial">Initial Due Date</option>
+                              <option value="completion">Completion Date</option>
+                            </select>
+                          </label>
                         </>
                       )}
                     </>
@@ -824,7 +839,6 @@ function DashboardComponent({ setToken }) {
 
       {/* Main content area */}
       <div className="main-content">
-        <Link to="/crew" className="crew-module-link">Crew Module</Link>
         {error && <p>{error}</p>}
         {validationErrors.length > 0 && (
           <div className="validation-errors">
