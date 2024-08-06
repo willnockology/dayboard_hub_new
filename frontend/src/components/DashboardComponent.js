@@ -1,3 +1,5 @@
+// Full updated code with the trash icon color change
+
 import React, { useState, useEffect } from 'react';
 import { useHistory } from 'react-router-dom';
 import axios from 'axios';
@@ -859,18 +861,12 @@ function DashboardComponent({ setToken }) {
           <table>
             <thead>
               <tr>
-                {(role === 'Company User' || role === 'Superuser') && (
-                  <th>
-                    <button type="button" onClick={() => requestSort('vessel')}>
-                      Vessel {sortConfig.key === 'vessel' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
-                    </button>
-                  </th>
-                )}
                 <th>
-                  <button type="button" onClick={() => requestSort('name')}>
-                    Item {sortConfig.key === 'name' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
+                  <button type="button" onClick={() => requestSort('vessel')}>
+                    Vessel {sortConfig.key === 'vessel' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
                   </button>
                 </th>
+                <th>Status</th>
                 <th>
                   <button type="button" onClick={() => requestSort('category')}>
                     Category {sortConfig.key === 'category' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
@@ -882,20 +878,24 @@ function DashboardComponent({ setToken }) {
                   </button>
                 </th>
                 <th>
+                  <button type="button" onClick={() => requestSort('name')}>
+                    Item {sortConfig.key === 'name' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
+                  </button>
+                </th>
+                <th>
                   <button type="button" onClick={() => requestSort('dueDate')}>
                     Due/Expiry Date {sortConfig.key === 'dueDate' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
                   </button>
                 </th>
-                <th>Status</th>
-                <th>
-                  <FontAwesomeIcon icon={faPaperclip} />
-                </th>
+                <th>Recurring</th>
                 <th>
                   <button type="button" onClick={() => requestSort('submitted')}>
                     Submitted {sortConfig.key === 'submitted' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
                   </button>
                 </th>
-                <th>Recurring</th>
+                <th>
+                  <FontAwesomeIcon icon={faPaperclip} />
+                </th>
                 <th>Actions</th>
               </tr>
             </thead>
@@ -906,10 +906,16 @@ function DashboardComponent({ setToken }) {
                 return (
                   <React.Fragment key={item._id}>
                     <tr className={isCompleted ? 'completed-row' : ''}>
-                      {(role === 'Company User' || role === 'Superuser') && <td>{item.vessel ? item.vessel.name : 'N/A'}</td>}
-                      <td>{item.name || item.title}</td>
+                      <td>{item.vessel ? item.vessel.name : 'N/A'}</td>
+                      <td>
+                        <span
+                          className="status-dot"
+                          style={{ backgroundColor: calculateStatusColor(item) }}
+                        ></span>
+                      </td>
                       <td>{item.category}</td>
                       <td>{item.subcategory || 'N/A'}</td>
+                      <td>{item.name || item.title}</td>
                       <td>
                         {isCompleted ? (
                           'Completed'
@@ -918,10 +924,10 @@ function DashboardComponent({ setToken }) {
                         )}
                       </td>
                       <td>
-                        <span
-                          className="status-dot"
-                          style={{ backgroundColor: calculateStatusColor(item) }}
-                        ></span>
+                        {item.isRecurring ? `Every ${item.recurrenceInterval} ${item.recurrenceFrequency}(s) by ${item.recurrenceBasis}` : 'No'}
+                      </td>
+                      <td>
+                        {item.updatedAt ? formatDateTime(item.updatedAt) : 'N/A'}
                       </td>
                       <td>
                         {item.category === 'Form or Checklist' ? (
@@ -947,23 +953,18 @@ function DashboardComponent({ setToken }) {
                         )}
                       </td>
                       <td>
-                        {item.updatedAt ? formatDateTime(item.updatedAt) : 'N/A'}
-                      </td>
-                      <td>
-                        {item.isRecurring ? `Every ${item.recurrenceInterval} ${item.recurrenceFrequency}(s) by ${item.recurrenceBasis}` : 'No'}
-                      </td>
-                      <td>
-                        <button onClick={() => handleDelete(item._id)}>
+                        <button className="action-icon trash-icon" onClick={() => handleDelete(item._id)}>
                           <FontAwesomeIcon icon={faTrashAlt} />
                         </button>
                         <button
+                          className="action-icon"
                           onClick={() => handleToggleChat(item._id)}
-                          style={{ color: showChatForItem ? 'black' : unreadComments[item._id] ? 'orange' : 'white' }}
+                          style={{ color: showChatForItem ? 'black' : unreadComments[item._id] ? 'orange' : '#3eb4e4' }}
                         >
                           <FontAwesomeIcon icon={faComments} />
                         </button>
                         {!item.completed && item.category === 'Form or Checklist' && (
-                          <button onClick={() => handleCompleteForm(item.formDefinitionId)}>
+                          <button className="action-icon" onClick={() => handleCompleteForm(item.formDefinitionId)}>
                             <FontAwesomeIcon icon={faEdit} style={{ color: 'orange' }} />
                           </button>
                         )}

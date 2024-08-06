@@ -204,7 +204,7 @@
 table {
   width: 100%; /* Ensure table takes full width */
   border-collapse: collapse; /* Ensure there are no gaps between cells */
-  table-layout: fixed; /* Fixed layout to ensure columns are even */
+  table-layout: auto; /* Allow columns to adjust based on content */
 }
 
 th, td {
@@ -212,9 +212,10 @@ th, td {
   padding: 8px;
   border-bottom: 1px solid #ddd;
   vertical-align: middle; /* Center text vertically */
-  white-space: nowrap; /* Prevent text from wrapping */
+  white-space: normal; /* Allow text wrapping */
   overflow: hidden;
   text-overflow: ellipsis; /* Add ellipsis for overflowing text */
+  resize: horizontal; /* Allow manual column resizing */
 }
 
 th {
@@ -222,6 +223,7 @@ th {
   color: white;
   font-weight: bold;
   font-size: 16px; /* Consistent font size for headers */
+  cursor: col-resize; /* Indicate that the column is resizable */
 }
 
 th button {
@@ -238,13 +240,30 @@ td {
   font-size: 14px; /* Adjust the font size for table data */
 }
 
-
 /* Status dot styling */
 .status-dot {
   display: inline-block;
   width: 10px;
   height: 10px;
   border-radius: 50%;
+}
+
+/* Action icons styling */
+.action-icon {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 0.8em; /* Smaller icons */
+  padding: 5px;
+}
+
+.action-icon svg {
+  pointer-events: none; /* Make sure the icons don't interfere with button click */
+}
+
+/* Specific color for trash icon */
+.action-icon.trash-icon svg {
+  color: #3eb4e4;
 }
 
 /* Mobile responsive */
