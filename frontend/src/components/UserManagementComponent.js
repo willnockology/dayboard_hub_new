@@ -17,6 +17,8 @@ const UserManagementComponent = () => {
     passportNumber: '',
     photo: null,
   });
+  const [formType, setFormType] = useState(''); // 'add' or 'update'
+  const [message, setMessage] = useState('');
 
   useEffect(() => {
     fetchUsers();
@@ -43,20 +45,40 @@ const UserManagementComponent = () => {
     setVessels(response.data);
   };
 
-  const handleUserSelect = (user) => {
-    setSelectedUser(user);
-    setSelectedVessels(user.assignedVessels.map(vessel => vessel._id));
-    setIsCommercial(user.commercial);
-    setUserDetails({
-      firstName: user.firstName,
-      lastName: user.lastName,
-      email: user.email,
-      phoneNumber: user.phoneNumber,
-      position: user.position,
-      nationality: user.nationality,
-      passportNumber: user.passportNumber,
-      photo: user.photo,
-    });
+  const handleUserSelect = (e) => {
+    const userId = e.target.value;
+    const user = users.find((u) => u._id === userId);
+    if (user) {
+      setSelectedUser(user);
+      setSelectedVessels(user.assignedVessels.map(vessel => vessel._id));
+      setIsCommercial(user.commercial);
+      setUserDetails({
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+        phoneNumber: user.phoneNumber,
+        position: user.position,
+        nationality: user.nationality,
+        passportNumber: user.passportNumber,
+        photo: user.photo,
+      });
+      setFormType('update');
+    } else {
+      setSelectedUser(null);
+      setSelectedVessels([]);
+      setIsCommercial(false);
+      setUserDetails({
+        firstName: '',
+        lastName: '',
+        email: '',
+        phoneNumber: '',
+        position: '',
+        nationality: '',
+        passportNumber: '',
+        photo: null,
+      });
+      setFormType('add');
+    }
   };
 
   const handleVesselChange = (e) => {
@@ -91,9 +113,8 @@ const UserManagementComponent = () => {
     }));
   };
 
-  const handleSave = async () => {
-    if (!selectedUser) return;
-
+  const handleSubmit = async (e) => {
+    e.preventDefault();
     const token = localStorage.getItem('authToken');
     const formData = new FormData();
     formData.append('firstName', userDetails.firstName);
@@ -111,187 +132,166 @@ const UserManagementComponent = () => {
     }
 
     try {
-      await axios.put(`http://localhost:5001/api/users/${selectedUser._id}`, formData, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'multipart/form-data',
-        },
+      if (formType === 'update') {
+        await axios.put(`http://localhost:5001/api/users/${selectedUser._id}`, formData, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'multipart/form-data',
+          },
+        });
+        setMessage('User updated successfully');
+      } else {
+        await axios.post('http://localhost:5001/api/users', formData, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'multipart/form-data',
+          },
+        });
+        setMessage('User added successfully');
+      }
+      fetchUsers();
+      setFormType('');
+      setSelectedUser(null);
+      setUserDetails({
+        firstName: '',
+        lastName: '',
+        email: '',
+        phoneNumber: '',
+        position: '',
+        nationality: '',
+        passportNumber: '',
+        photo: null,
       });
-      alert('User updated successfully');
-      fetchUsers(); // Refresh the list after saving
+      setSelectedVessels([]);
+      setIsCommercial(false);
     } catch (error) {
-      console.error('Error updating user:', error);
-    }
-  };
-
-  const handleDelete = async (userId) => {
-    const confirmDelete = window.confirm("Are you sure you want to delete this user? This action cannot be undone.");
-    if (!confirmDelete) return;
-
-    const token = localStorage.getItem('authToken');
-    try {
-      await axios.delete(`http://localhost:5001/api/users/${userId}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      alert('User deleted successfully');
-      fetchUsers(); // Refresh the list after deletion
-    } catch (error) {
-      console.error('Error deleting user:', error);
+      console.error('Error submitting user data:', error);
+      setMessage('Error submitting user data');
     }
   };
 
   return (
     <div>
       <h1>User Management</h1>
-      <table>
-        <thead>
-          <tr>
-            <th>Username</th>
-            <th>Role</th>
-            <th>Email</th>
-            <th>First Name</th>
-            <th>Last Name</th>
-            <th>Commercial</th>
-            <th>Assigned Vessels</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
+      <button onClick={() => setFormType('add')}>Add New User</button>
+      <button onClick={() => setFormType('update')}>Update Existing User</button>
+      {formType === 'update' && (
+        <select onChange={handleUserSelect} value={selectedUser?._id || ''}>
+          <option value="">Select a user to update</option>
           {users.map((user) => (
-            <tr key={user._id}>
-              <td>{user.username}</td>
-              <td>{user.role}</td>
-              <td>{user.email}</td>
-              <td>{user.firstName}</td>
-              <td>{user.lastName}</td>
-              <td>{user.commercial ? 'Yes' : 'No'}</td>
-              <td>
-                {user.role === 'Superuser' ? (
-                  vessels.map(vessel => vessel.name).join(', ')
-                ) : (
-                  user.assignedVessels.map(vessel => vessel.name).join(', ')
-                )}
-              </td>
-              <td>
-                <button
-                  onClick={() => handleUserSelect(user)}
-                  disabled={user.role === 'Superuser'}
-                >
-                  {user.role === 'Superuser' ? 'Assigned to all vessels' : 'Edit User'}
-                </button>
-                <button
-                  onClick={() => handleDelete(user._id)}
-                  disabled={user.role === 'Superuser'}
-                  style={{ marginLeft: '10px' }}
-                >
-                  Delete
-                </button>
-              </td>
-            </tr>
+            <option key={user._id} value={user._id}>
+              {user.username}
+            </option>
           ))}
-        </tbody>
-      </table>
-      {selectedUser && selectedUser.role !== 'Superuser' && (
+        </select>
+      )}
+      {(formType === 'add' || (formType === 'update' && selectedUser)) && (
         <div>
-          <h2>Edit {selectedUser.username}</h2>
-          <label>
-            First Name
-            <input
-              type="text"
-              name="firstName"
-              value={userDetails.firstName}
-              onChange={handleInputChange}
-            />
-          </label>
-          <label>
-            Last Name
-            <input
-              type="text"
-              name="lastName"
-              value={userDetails.lastName}
-              onChange={handleInputChange}
-            />
-          </label>
-          <label>
-            Email
-            <input
-              type="email"
-              name="email"
-              value={userDetails.email}
-              onChange={handleInputChange}
-            />
-          </label>
-          <label>
-            Phone Number
-            <input
-              type="tel"
-              name="phoneNumber"
-              value={userDetails.phoneNumber}
-              onChange={handleInputChange}
-            />
-          </label>
-          <label>
-            Position
-            <input
-              type="text"
-              name="position"
-              value={userDetails.position}
-              onChange={handleInputChange}
-            />
-          </label>
-          <label>
-            Nationality
-            <input
-              type="text"
-              name="nationality"
-              value={userDetails.nationality}
-              onChange={handleInputChange}
-            />
-          </label>
-          <label>
-            Passport Number
-            <input
-              type="text"
-              name="passportNumber"
-              value={userDetails.passportNumber}
-              onChange={handleInputChange}
-            />
-          </label>
-          <label>
-            Profile Image
-            <input
-              type="file"
-              name="photo"
-              onChange={handleFileChange}
-            />
-          </label>
-          <label>
-            <input
-              type="checkbox"
-              checked={isCommercial}
-              onChange={handleCommercialChange}
-            />
-            Commercial
-          </label>
-          <h3>Assign Vessels</h3>
-          <ul>
-            {vessels.map((vessel) => (
-              <li key={vessel._id}>
-                <label>
-                  <input
-                    type="checkbox"
-                    value={vessel._id}
-                    checked={selectedVessels.includes(vessel._id)}
-                    onChange={handleVesselChange}
-                  />
-                  {vessel.name}
-                </label>
-              </li>
-            ))}
-          </ul>
-          <button onClick={handleSave}>Save</button>
+          <form onSubmit={handleSubmit}>
+            <label>
+              First Name
+              <input
+                type="text"
+                name="firstName"
+                value={userDetails.firstName}
+                onChange={handleInputChange}
+                required
+              />
+            </label>
+            <label>
+              Last Name
+              <input
+                type="text"
+                name="lastName"
+                value={userDetails.lastName}
+                onChange={handleInputChange}
+                required
+              />
+            </label>
+            <label>
+              Email
+              <input
+                type="email"
+                name="email"
+                value={userDetails.email}
+                onChange={handleInputChange}
+                required
+              />
+            </label>
+            <label>
+              Phone Number
+              <input
+                type="tel"
+                name="phoneNumber"
+                value={userDetails.phoneNumber}
+                onChange={handleInputChange}
+                required
+              />
+            </label>
+            <label>
+              Position
+              <input
+                type="text"
+                name="position"
+                value={userDetails.position}
+                onChange={handleInputChange}
+                required
+              />
+            </label>
+            <label>
+              Nationality
+              <input
+                type="text"
+                name="nationality"
+                value={userDetails.nationality}
+                onChange={handleInputChange}
+                required
+              />
+            </label>
+            <label>
+              Passport Number
+              <input
+                type="text"
+                name="passportNumber"
+                value={userDetails.passportNumber}
+                onChange={handleInputChange}
+              />
+            </label>
+            <label>
+              Profile Image
+              <input
+                type="file"
+                name="photo"
+                onChange={handleFileChange}
+              />
+            </label>
+            <label>
+              <input
+                type="checkbox"
+                checked={isCommercial}
+                onChange={handleCommercialChange}
+              />
+              Commercial
+            </label>
+            <h3>Assign Vessels</h3>
+            <ul>
+              {vessels.map((vessel) => (
+                <li key={vessel._id}>
+                  <label>
+                    <input
+                      type="checkbox"
+                      value={vessel._id}
+                      checked={selectedVessels.includes(vessel._id)}
+                      onChange={handleVesselChange}
+                    />
+                    {vessel.name}
+                  </label>
+                </li>
+              ))}
+            </ul>
+            <button type="submit">{formType === 'add' ? 'Add User' : 'Update User'}</button>
+          </form>
+          {message && <p>{message}</p>}
         </div>
       )}
     </div>

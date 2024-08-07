@@ -8,12 +8,10 @@ import ViewFormComponent from './components/ViewFormComponent';
 import NavbarComponent from './components/NavbarComponent';
 import FooterComponent from './components/FooterComponent';
 import ContactComponent from './components/ContactComponent';
-import RegisterComponent from './components/RegisterComponent';
-import VesselRegistrationComponent from './components/VesselRegistrationComponent';
 import UserManagementComponent from './components/UserManagementComponent';
 import CrewModuleComponent from './components/CrewModuleComponent';
-import UpdateVesselComponent from './components/UpdateVesselComponent';
 import FormEditorComponent from './components/FormEditorComponent';
+import VesselFormComponent from './components/VesselFormComponent'; // New Component
 
 import './global.css';
 
@@ -37,30 +35,23 @@ const App = () => {
             <Route path="/login">
               <LoginComponent setToken={setToken} />
             </Route>
-            <Route path="/register">
-              <RegisterComponent setToken={setToken} />
-            </Route>
             <Route path="/profile">
               <ProfileComponent />
             </Route>
             <Route path="/dashboard">
               <DashboardComponent setToken={setToken} />
             </Route>
-            {/* Updated route to match the expected URL structure */}
             <Route path="/form/:id" component={DynamicFormComponent} />
             <Route path="/form/view/:id" component={ViewFormComponent} />
             <Route path="/contact" component={ContactComponent} />
-            <Route path="/vessel-registration">
-              <VesselRegistrationComponent token={token} />
+            <Route path="/vessel-form">
+              <VesselFormComponent token={token} />
             </Route>
             <Route path="/user-management">
               <UserManagementComponent />
             </Route>
             <Route path="/crew">
               <CrewModuleComponent />
-            </Route>
-            <Route path="/update-vessel/:vesselId?">
-              <UpdateVesselComponent token={token} />
             </Route>
             <Route path="/form-editor">
               <FormEditorComponent token={token} />

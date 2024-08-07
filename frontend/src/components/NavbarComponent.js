@@ -19,6 +19,10 @@ const NavbarComponent = ({ setToken }) => {
     setDropdownOpen(!dropdownOpen);
   };
 
+  const closeDropdown = () => {
+    setDropdownOpen(false);
+  };
+
   const handleLogout = () => {
     localStorage.removeItem('authToken');
     localStorage.removeItem('user');
@@ -54,10 +58,10 @@ const NavbarComponent = ({ setToken }) => {
             </li>
             <li>
               <Link 
-                to="/profile" 
-                className={`navbar-button ${location.pathname === '/profile' ? 'active' : ''}`}
+                to="/crew" 
+                className={`navbar-button ${location.pathname === '/crew' ? 'active' : ''}`}
               >
-                Profile
+                Crew
               </Link>
             </li>
             <li>
@@ -68,35 +72,30 @@ const NavbarComponent = ({ setToken }) => {
                 Contact
               </Link>
             </li>
-            <li>
-              <Link 
-                to="/crew" 
-                className={`navbar-button ${location.pathname === '/crew' ? 'active' : ''}`}
-              >
-                Crew
-              </Link>
-            </li>
             {user && user.role === 'Superuser' && (
-              <li className="navbar-dropdown">
-                <button onClick={toggleDropdown} className="navbar-button navbar-dropdown-toggle">
-                  Admin <span className={`dropdown-indicator ${dropdownOpen ? 'open' : ''}`}>&#9662;</span>
+              <li 
+                className="navbar-dropdown" 
+                onMouseLeave={closeDropdown}
+              >
+                <button 
+                  onClick={toggleDropdown} 
+                  className="navbar-button navbar-dropdown-toggle"
+                >
+                  Vessels <span className={`dropdown-indicator ${dropdownOpen ? 'open' : ''}`}>&#9662;</span>
                 </button>
                 {dropdownOpen && (
                   <ul className="navbar-dropdown-menu">
                     <li>
-                      <Link to="/vessel-registration" className="navbar-button">Add Vessel</Link>
+                      <Link to="/user-management" className="navbar-button" onClick={closeDropdown}>Users</Link>
                     </li>
                     <li>
-                      <Link to="/user-management" className="navbar-button">Users</Link>
+                      <Link to="/vessel-form" className="navbar-button" onClick={closeDropdown}>Add/Update Vessel</Link>
                     </li>
                     <li>
-                      <Link to="/register" className="navbar-button">Register User</Link>
+                      <Link to="/form-editor" className="navbar-button" onClick={closeDropdown}>Forms</Link>
                     </li>
                     <li>
-                      <Link to="/form-editor" className="navbar-button">Forms</Link>
-                    </li>
-                    <li>
-                      <Link to="/update-vessel" className="navbar-button">Update Vessel</Link>
+                      <Link to="/profile" className="navbar-button" onClick={closeDropdown}>Profile</Link>
                     </li>
                   </ul>
                 )}
