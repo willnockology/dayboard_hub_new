@@ -1,127 +1,167 @@
 .form-editor-container {
     padding: 20px;
     margin-top: 80px; /* Adjust this value based on your navbar height */
-  }
-  
-  .form-editor-controls {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
+    background-color: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.form-editor-controls {
+    display: block; /* Changed to block layout */
     margin-bottom: 20px;
-  }
-  
-  .form-editor-controls select,
-  .form-editor-controls input,
-  .new-item-form input {
-    padding: 10px;
+}
+
+.form-editor-controls select,
+.form-editor-controls input,
+.new-item-form input {
+    padding: 8px;
     border: 1px solid #ccc;
     border-radius: 4px;
-    flex: 1 1 200px;
+    width: 100%; /* Changed to full width */
     margin-bottom: 10px;
-  }
-  
-  .form-fields {
+    font-size: 14px;
+}
+
+.form-fields {
     margin-top: 20px;
-  }
-  
-  .form-field {
-    display: flex;
-    flex-direction: column;
+}
+
+.form-field {
+    display: block; /* Changed to block layout */
     margin-bottom: 20px;
     padding: 10px;
     border: 1px solid #ccc;
     border-radius: 4px;
     background-color: #f9f9f9;
-  }
-  
-  .form-field .field-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+}
+
+.form-field .field-row {
+    display: block; /* Changed to block layout */
     margin-bottom: 10px;
-  }
-  
-  .form-field .field-column {
-    display: flex;
-    flex-direction: column;
-    flex: 1;
-    margin-right: 10px;
-  }
-  
-  .form-field .field-column label {
+}
+
+.form-field .field-column {
+    display: block; /* Changed to block layout */
+    margin-bottom: 10px;
+}
+
+.form-field .field-column label {
     margin-bottom: 5px;
     font-weight: bold;
-  }
-  
-  .form-field input,
-  .form-field select,
-  .form-field textarea {
-    padding: 10px;
+    font-size: 14px;
+}
+
+.form-field input,
+.form-field select,
+.form-field textarea {
+    padding: 8px;
     border: 1px solid #ccc;
     border-radius: 4px;
     margin-bottom: 5px;
     width: 100%;
-  }
-  
-  .form-field .button-row {
-    display: flex;
-    justify-content: flex-start;
-    gap: 5px;
-  }
-  
-  .form-field .button-row button {
-    padding: 5px 10px;
+    font-size: 14px;
+}
+
+/* Proper checkbox styling */
+.custom-checkbox {
+    width: 16px !important;
+    height: 16px !important;
+    margin-right: 5px;
+    display: inline-block;
+    cursor: pointer;
+    border: 1px solid #004e7d;
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background-color: #fff;
+    border-radius: 2px;
+    outline: none;
+}
+
+.custom-checkbox:checked {
+    background-color: #004e7d !important;
+    border: none !important;
+    position: relative !important;
+}
+
+.custom-checkbox:checked::after {
+    content: '✓';
+    font-size: 12px !important;
+    color: white !important;
+    position: absolute !important;
+    top: 50% !important;
+    left: 50% !important;
+    transform: translate(-50%, -50%) !important;
+}
+
+.custom-checkbox-container {
+    margin-bottom: 5px;
+}
+
+/* Table styling */
+.applicability-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 20px;
+}
+
+.applicability-table th,
+.applicability-table td {
+    border: 1px solid #ccc;
+    padding: 10px;
+    text-align: left;
+}
+
+.applicability-table th {
+    background-color: #004e7d;
+    color: white;
+}
+
+textarea {
+    height: 60px;
+    resize: vertical;
+}
+
+button {
+    padding: 8px 16px;
     background-color: #004e7d;
     color: white;
     border: none;
     border-radius: 4px;
     cursor: pointer;
     font-size: 14px;
-  }
-  
-  .form-field .button-row button:hover {
+}
+
+button:hover {
     background-color: #00334d;
-  }
-  
-  .form-field .button-row .move-up::before {
-    content: '↑';
-  }
-  
-  .form-field .button-row .move-down::before {
-    content: '↓';
-  }
-  
-  textarea {
-    height: 80px;
-    resize: vertical;
-  }
-  
-  button {
-    padding: 10px 20px;
-    background-color: #004e7d;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-  }
-  
-  button:hover {
-    background-color: #00334d;
-  }
-  
-  .new-item-form {
+}
+
+.new-item-form {
     margin-top: 20px;
-  }
-  
-  .new-item-form div {
+}
+
+.new-item-form div {
     margin-bottom: 10px;
-  }
-  
-  .new-item-form label {
+}
+
+.new-item-form label {
     font-weight: bold;
-  }
-  
-  .new-item-form input[type="text"] {
+    font-size: 14px;
+}
+
+.new-item-form input[type="text"] {
     width: calc(100% - 20px);
-  }
-  
+}
+
+.success-message {
+    color: green;
+    font-weight: bold;
+    margin-bottom: 10px;
+    text-align: center;
+}
+
+.error {
+    color: red;
+    font-size: 12px;
+    margin-top: 5px;
+}

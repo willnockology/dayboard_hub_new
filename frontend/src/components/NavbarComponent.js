@@ -81,7 +81,7 @@ const NavbarComponent = ({ setToken }) => {
                   onClick={toggleDropdown} 
                   className="navbar-button navbar-dropdown-toggle"
                 >
-                  Vessels <span className={`dropdown-indicator ${dropdownOpen ? 'open' : ''}`}>&#9662;</span>
+                  Admin <span className={`dropdown-indicator ${dropdownOpen ? 'open' : ''}`}>&#9662;</span>
                 </button>
                 {dropdownOpen && (
                   <ul className="navbar-dropdown-menu">
@@ -89,7 +89,7 @@ const NavbarComponent = ({ setToken }) => {
                       <Link to="/user-management" className="navbar-button" onClick={closeDropdown}>Users</Link>
                     </li>
                     <li>
-                      <Link to="/vessel-form" className="navbar-button" onClick={closeDropdown}>Add/Update Vessel</Link>
+                      <Link to="/vessel-form" className="navbar-button" onClick={closeDropdown}>Vessels</Link>
                     </li>
                     <li>
                       <Link to="/form-editor" className="navbar-button" onClick={closeDropdown}>Forms</Link>

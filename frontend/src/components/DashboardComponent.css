@@ -25,7 +25,6 @@
 /* Sidebar and content layout */
 .dashboard-layout {
   display: flex;
-  padding-top: 60px; /* Adjust for the navbar height */
   height: 100vh; /* Ensure it takes the full height of the viewport */
 }
 

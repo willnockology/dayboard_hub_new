@@ -23,7 +23,7 @@ const FormEditorComponent = () => {
     min: ['no min'],
     max: ['no max'],
   });
-  const [isAddingNew, setIsAddingNew] = useState(false);
+  const [formType, setFormType] = useState(''); // 'add' or 'update'
   const [newItemName, setNewItemName] = useState('');
   const [errors, setErrors] = useState({});
   const [successMessage, setSuccessMessage] = useState('');
@@ -33,11 +33,11 @@ const FormEditorComponent = () => {
   ];
 
   useEffect(() => {
-    if (!isAddingNew) {
+    if (formType !== 'add') {
       fetchSubcategories();
       fetchVesselParams();
     }
-  }, [isAddingNew]);
+  }, [formType]);
 
   const fetchVesselParams = async () => {
     try {
@@ -99,11 +99,12 @@ const FormEditorComponent = () => {
   const handleItemChange = (e) => {
     const itemId = e.target.value;
     if (itemId === 'new') {
-      setIsAddingNew(true);
+      setFormType('add');
       setFormFields([]);
     } else {
       const item = items.find(i => i._id === itemId);
       setSelectedItem(item);
+      setFormType('update');
       if (item && item._id) {
         fetchFormFields(item._id);
       }
@@ -121,7 +122,7 @@ const FormEditorComponent = () => {
 
       const fields = response.data.fields.map(field => ({
         field_name: field.field_name || '',
-        field_description: field.field_description || '', // Changed from field_title to field_description
+        field_description: field.field_description || '', 
         field_type: field.field_type || 'text',
         options: ['dropdown', 'radio'].includes(field.field_type) ? field.options || [] : undefined,
         required: field.required || false,
@@ -177,7 +178,7 @@ const FormEditorComponent = () => {
     try {
       const updatedFields = formFields.map(field => ({
         field_name: field.field_name || '',
-        field_description: field.field_description || '', // Changed from field_title to field_description
+        field_description: field.field_description || '',
         field_type: field.field_type || 'text',
         options: ['dropdown', 'radio'].includes(field.field_type) ? field.options || [] : undefined,
         required: field.required || false,
@@ -200,7 +201,7 @@ const FormEditorComponent = () => {
 
       const token = localStorage.getItem('authToken');
 
-      if (selectedItem && selectedItem !== 'new' && selectedItem._id) {
+      if (formType === 'update' && selectedItem && selectedItem._id) {
         await axios.put(`http://localhost:5001/api/forms/definitions/${selectedItem._id}`, payload, {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -215,11 +216,11 @@ const FormEditorComponent = () => {
       }
 
       fetchSubcategories();
-      setIsAddingNew(false);
+      setFormType('');
       setSuccessMessage('Form saved successfully');
       setTimeout(() => {
         setSuccessMessage('');
-        window.location.reload(); // Refresh the page
+        window.location.reload();
       }, 2000);
     } catch (error) {
       console.error('Error saving form:', error);
@@ -273,36 +274,15 @@ const FormEditorComponent = () => {
 
   return (
     <div className="form-editor-container">
-      <h1>Edit Form</h1>
+      <h1>{formType === 'add' ? 'Add New Form' : 'Edit Form'}</h1>
       {successMessage && <div className="success-message">{successMessage}</div>}
-      {!isAddingNew && (
+      {!formType && (
         <div className="form-editor-controls">
-          <select value={selectedCategory} onChange={handleCategoryChange}>
-            <option value="">Select Category</option>
-            <option value="Form or Checklist">Form or Checklist</option>
-            <option value="Document">Document</option>
-          </select>
-          {selectedCategory && (
-            <select value={selectedSubcategory} onChange={handleSubcategoryChange}>
-              <option value="">Select Subcategory</option>
-              {subcategories.map(subcategory => (
-                <option key={subcategory} value={subcategory}>{subcategory}</option>
-              ))}
-            </select>
-          )}
-          {selectedSubcategory && (
-            <select value={selectedItem ? selectedItem._id : ''} onChange={handleItemChange}>
-              <option value="">Select Item</option>
-              {items.map(item => (
-                <option key={item._id} value={item._id}>{item.form_name}</option>
-              ))}
-              <option value="new">Add New</option>
-            </select>
-          )}
-          <button onClick={() => setIsAddingNew(true)}>Add New</button>
+          <button onClick={() => setFormType('add')}>Add New Form</button>
+          <button onClick={() => setFormType('update')}>Update Existing Form</button>
         </div>
       )}
-      {isAddingNew && (
+      {formType === 'add' && (
         <div className="new-item-form">
           <div className="form-editor-controls">
             <select value={selectedCategory} onChange={handleCategoryChange}>
@@ -325,147 +305,192 @@ const FormEditorComponent = () => {
               onChange={(e) => setNewItemName(e.target.value)}
             />
             {errors.form_name && <p className="error">{errors.form_name}</p>}
-            <div>
-              <label>Minimum Applicability:</label>
-              {applicabilityOptions.map(option => (
-                <label key={option}>
-                  <input
-                    type="checkbox"
-                    checked={applicabilityRange.min.includes(option)}
-                    onChange={(e) => handleApplicabilityChange('min', option, e.target.checked)}
-                  />
-                  {option}
-                </label>
-              ))}
-            </div>
-            <div>
-              <label>Maximum Applicability:</label>
-              {['no max', '500 GT'].map(option => (
-                <label key={option}>
-                  <input
-                    type="checkbox"
-                    checked={applicabilityRange.max.includes(option)}
-                    onChange={(e) => handleApplicabilityChange('max', option, e.target.checked)}
-                  />
-                  {option}
-                </label>
-              ))}
-            </div>
-            <div>
-              <h3>Flag States</h3>
-              {vesselParams.flagStates.map(flag => (
-                <label key={flag}>
-                  <input
-                    type="checkbox"
-                    checked={selectedParams.flagStates.includes(flag)}
-                    onChange={(e) => handleParamChange('flagStates', flag, e.target.checked)}
-                  />
-                  {flag}
-                </label>
-              ))}
-            </div>
-            <div>
-              <h3>Type of Registrations</h3>
-              {vesselParams.typeOfRegistrations.map(type => (
-                <label key={type}>
-                  <input
-                    type="checkbox"
-                    checked={selectedParams.typeOfRegistrations.includes(type)}
-                    onChange={(e) => handleParamChange('typeOfRegistrations', type, e.target.checked)}
-                  />
-                  {type}
-                </label>
-              ))}
-            </div>
-            <div>
-              <h3>Type of Vessels</h3>
-              {vesselParams.typeOfVessels.map(type => (
-                <label key={type}>
-                  <input
-                    type="checkbox"
-                    checked={selectedParams.typeOfVessels.includes(type)}
-                    onChange={(e) => handleParamChange('typeOfVessels', type, e.target.checked)}
-                  />
-                  {type}
-                </label>
-              ))}
-            </div>
-            <div className="form-fields">
-              {formFields.map((field, index) => (
-                <div key={index} className="form-field">
-                  <div className="field-row">
-                    <div className="field-column">
-                      <label>Field Name</label>
-                      <input
-                        type="text"
-                        value={field.field_name}
-                        onChange={(e) => handleFieldChange(index, 'field_name', e.target.value)}
-                        placeholder="Field Name"
-                      />
-                      {errors[`field_name_${index}`] && <p className="error">{errors[`field_name_${index}`]}</p>}
-                    </div>
-                    <div className="field-column">
-                      <label>Field Description</label>
-                      <input
-                        type="text"
-                        value={field.field_description} // Changed from field_title to field_description
-                        onChange={(e) => handleFieldChange(index, 'field_description', e.target.value)} // Changed from field_title to field_description
-                        placeholder="Field Description"
-                      />
-                    </div>
-                    <div className="field-column">
-                      <label>Field Type</label>
-                      <select
-                        value={field.field_type}
-                        onChange={(e) => handleFieldChange(index, 'field_type', e.target.value)}
-                      >
-                        <option value="text">Text</option>
-                        <option value="dropdown">Dropdown</option>
-                        <option value="date">Date</option>
-                        <option value="checkbox">Checkbox</option>
-                        <option value="paragraph">Paragraph</option>
-                        <option value="radio">Radio</option>
-                        <option value="image">Image</option>
-                        <option value="file">File</option>
-                        <option value="richText">Rich Text</option>
-                        <option value="rating">Rating</option>
-                        <option value="number">Number</option>
-                        <option value="slider">Slider</option>
-                        <option value="time">Time</option>
-                        <option value="toggle">Toggle</option>
-                      </select>
-                    </div>
-                    <div className="field-column">
-                      <label>Required</label>
+          </div>
+          
+          <table className="applicability-table">
+            <thead>
+              <tr>
+                <th></th>
+                <th>Minimum Applicability</th>
+                <th>Maximum Applicability</th>
+                <th>Flag States</th>
+                <th>Type of Registrations</th>
+                <th>Type of Vessels</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Applicability</td>
+                <td>
+                  {applicabilityOptions.map(option => (
+                    <label key={option} className="custom-checkbox-container">
                       <input
                         type="checkbox"
-                        checked={field.required}
-                        onChange={(e) => handleRequiredChange(index, e.target.checked)}
+                        className="custom-checkbox"
+                        checked={applicabilityRange.min.includes(option)}
+                        onChange={(e) => handleApplicabilityChange('min', option, e.target.checked)}
                       />
-                    </div>
+                      <span>{option}</span>
+                    </label>
+                  ))}
+                </td>
+                <td>
+                  {['no max', '500 GT'].map(option => (
+                    <label key={option} className="custom-checkbox-container">
+                      <input
+                        type="checkbox"
+                        className="custom-checkbox"
+                        checked={applicabilityRange.max.includes(option)}
+                        onChange={(e) => handleApplicabilityChange('max', option, e.target.checked)}
+                      />
+                      <span>{option}</span>
+                    </label>
+                  ))}
+                </td>
+                <td>
+                  {vesselParams.flagStates.map(flag => (
+                    <label key={flag} className="custom-checkbox-container">
+                      <input
+                        type="checkbox"
+                        className="custom-checkbox"
+                        checked={selectedParams.flagStates.includes(flag)}
+                        onChange={(e) => handleParamChange('flagStates', flag, e.target.checked)}
+                      />
+                      <span>{flag}</span>
+                    </label>
+                  ))}
+                </td>
+                <td>
+                  {vesselParams.typeOfRegistrations.map(type => (
+                    <label key={type} className="custom-checkbox-container">
+                      <input
+                        type="checkbox"
+                        className="custom-checkbox"
+                        checked={selectedParams.typeOfRegistrations.includes(type)}
+                        onChange={(e) => handleParamChange('typeOfRegistrations', type, e.target.checked)}
+                      />
+                      <span>{type}</span>
+                    </label>
+                  ))}
+                </td>
+                <td>
+                  {vesselParams.typeOfVessels.map(type => (
+                    <label key={type} className="custom-checkbox-container">
+                      <input
+                        type="checkbox"
+                        className="custom-checkbox"
+                        checked={selectedParams.typeOfVessels.includes(type)}
+                        onChange={(e) => handleParamChange('typeOfVessels', type, e.target.checked)}
+                      />
+                      <span>{type}</span>
+                    </label>
+                  ))}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div className="form-fields">
+            {formFields.map((field, index) => (
+              <div key={index} className="form-field">
+                <div className="field-row">
+                  <div className="field-column">
+                    <label>Field Name</label>
+                    <input
+                      type="text"
+                      value={field.field_name}
+                      onChange={(e) => handleFieldChange(index, 'field_name', e.target.value)}
+                      placeholder="Field Name"
+                    />
+                    {errors[`field_name_${index}`] && <p className="error">{errors[`field_name_${index}`]}</p>}
                   </div>
-                  {['dropdown', 'radio'].includes(field.field_type) && (
-                    <textarea
-                      value={field.options ? field.options.join('\n') : ''}
-                      onChange={(e) => handleFieldChange(index, 'options', e.target.value.split('\n'))}
-                      placeholder="Dropdown or radio options (one per line)"
-                    ></textarea>
-                  )}
-                  <div className="button-row">
-                    <button onClick={() => handleMoveField(index, 'up')} className="move-up"></button>
-                    <button onClick={() => handleMoveField(index, 'down')} className="move-down"></button>
-                    <button onClick={() => handleDeleteField(index)}>Delete</button>
+                  <div className="field-column">
+                    <label>Field Description</label>
+                    <input
+                      type="text"
+                      value={field.field_description}
+                      onChange={(e) => handleFieldChange(index, 'field_description', e.target.value)}
+                      placeholder="Field Description"
+                    />
+                  </div>
+                  <div className="field-column">
+                    <label>Field Type</label>
+                    <select
+                      value={field.field_type}
+                      onChange={(e) => handleFieldChange(index, 'field_type', e.target.value)}
+                    >
+                      <option value="text">Text</option>
+                      <option value="dropdown">Dropdown</option>
+                      <option value="date">Date</option>
+                      <option value="checkbox">Checkbox</option>
+                      <option value="paragraph">Paragraph</option>
+                      <option value="radio">Radio</option>
+                      <option value="image">Image</option>
+                      <option value="file">File</option>
+                      <option value="richText">Rich Text</option>
+                      <option value="rating">Rating</option>
+                      <option value="number">Number</option>
+                      <option value="slider">Slider</option>
+                      <option value="time">Time</option>
+                      <option value="toggle">Toggle</option>
+                    </select>
+                  </div>
+                  <div className="field-column">
+                    <label>Required</label>
+                    <input
+                      type="checkbox"
+                      className="custom-checkbox"
+                      checked={field.required}
+                      onChange={(e) => handleRequiredChange(index, e.target.checked)}
+                    />
                   </div>
                 </div>
-              ))}
-              <button onClick={handleAddField}>Add Field</button>
-            </div>
+                {['dropdown', 'radio'].includes(field.field_type) && (
+                  <textarea
+                    value={field.options ? field.options.join('\n') : ''}
+                    onChange={(e) => handleFieldChange(index, 'options', e.target.value.split('\n'))}
+                    placeholder="Dropdown or radio options (one per line)"
+                  ></textarea>
+                )}
+                <div className="button-row">
+                  <button onClick={() => handleMoveField(index, 'up')} className="move-up"></button>
+                  <button onClick={() => handleMoveField(index, 'down')} className="move-down"></button>
+                  <button onClick={() => handleDeleteField(index)}>Delete</button>
+                </div>
+              </div>
+            ))}
+            <button onClick={handleAddField}>Add Field</button>
           </div>
           <button onClick={handleSave}>Save</button>
-          <button onClick={() => setIsAddingNew(false)}>Cancel</button>
+          <button onClick={() => setFormType('')}>Cancel</button>
         </div>
       )}
-      {selectedItem && selectedItem !== 'new' && (
+      {formType === 'update' && (
+        <div className="form-editor-controls">
+          <select value={selectedCategory} onChange={handleCategoryChange}>
+            <option value="">Select Category</option>
+            <option value="Form or Checklist">Form or Checklist</option>
+            <option value="Document">Document</option>
+          </select>
+          {selectedCategory && (
+            <select value={selectedSubcategory} onChange={handleSubcategoryChange}>
+              <option value="">Select Subcategory</option>
+              {subcategories.map(subcategory => (
+                <option key={subcategory} value={subcategory}>{subcategory}</option>
+              ))}
+            </select>
+          )}
+          {selectedSubcategory && (
+            <select value={selectedItem ? selectedItem._id : ''} onChange={handleItemChange}>
+              <option value="">Select Item</option>
+              {items.map(item => (
+                <option key={item._id} value={item._id}>{item.form_name}</option>
+              ))}
+            </select>
+          )}
+        </div>
+      )}
+      {formType === 'update' && selectedItem && (
         <div className="form-fields">
           {formFields.map((field, index) => (
             <div key={index} className="form-field">
@@ -484,8 +509,8 @@ const FormEditorComponent = () => {
                   <label>Field Description</label>
                   <input
                     type="text"
-                    value={field.field_description} // Changed from field_title to field_description
-                    onChange={(e) => handleFieldChange(index, 'field_description', e.target.value)} // Changed from field_title to field_description
+                    value={field.field_description}
+                    onChange={(e) => handleFieldChange(index, 'field_description', e.target.value)}
                     placeholder="Field Description"
                   />
                 </div>
@@ -515,6 +540,7 @@ const FormEditorComponent = () => {
                   <label>Required</label>
                   <input
                     type="checkbox"
+                    className="custom-checkbox"
                     checked={field.required}
                     onChange={(e) => handleRequiredChange(index, e.target.checked)}
                   />
