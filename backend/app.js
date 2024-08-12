@@ -10,6 +10,7 @@ const chatRoutes = require('./routes/chatRoutes');
 const itemRoutes = require('./routes/itemRoutes');
 const formRoutes = require('./routes/formRoutes');
 const vesselRoutes = require('./routes/vesselRoutes');
+const ncrRoutes = require('./routes/ncrRoutes'); // Import the NCR routes
 const { notFound, errorHandler } = require('./middleware/errorMiddleware');
 
 dotenv.config();
@@ -38,6 +39,9 @@ app.use('/api/forms', formRoutes);
 
 console.log('Registering vessel routes...');
 app.use('/api/vessels', vesselRoutes);
+
+console.log('Registering NCR routes...'); // Log the registration of NCR routes
+app.use('/api/ncrs', ncrRoutes); // Register the NCR routes
 
 // Serve static files from the 'uploads' directory
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));

@@ -1,5 +1,3 @@
-// Full updated code with the trash icon color change
-
 import React, { useState, useEffect } from 'react';
 import { useHistory } from 'react-router-dom';
 import axios from 'axios';
@@ -380,15 +378,15 @@ function DashboardComponent({ setToken }) {
     if (item.completed && item.pdfPath) {
       return 'blue';
     }
+
     const dueDate = new Date(item.dueDate);
     const currentDate = new Date();
-    if (dueDate < currentDate) {
-      return 'red';
-    } else if (dueDate < new Date(currentDate.getTime() + 7 * 24 * 60 * 60 * 1000)) {
-      return 'orange';
-    } else {
-      return 'green';
-    }
+    const dateDiff = (dueDate - currentDate) / (1000 * 60 * 60 * 24); // Calculate date difference in days
+
+    if (dateDiff > 90) return 'green';
+    if (dateDiff <= 90 && dateDiff > 30) return 'yellow';
+    if (dateDiff <= 30 && dateDiff > 0) return 'orange';
+    return 'red';
   };
 
   const handleCompleteForm = async (formDefinitionId) => {

@@ -11,7 +11,8 @@ import ContactComponent from './components/ContactComponent';
 import UserManagementComponent from './components/UserManagementComponent';
 import CrewModuleComponent from './components/CrewModuleComponent';
 import FormEditorComponent from './components/FormEditorComponent';
-import VesselFormComponent from './components/VesselFormComponent'; // New Component
+import VesselFormComponent from './components/VesselFormComponent';
+import NCRComponent from './components/NCRComponent'; // Consolidated NCR Component
 
 import './global.css';
 
@@ -56,6 +57,17 @@ const App = () => {
             <Route path="/form-editor">
               <FormEditorComponent token={token} />
             </Route>
+            {/* NCR Routes */}
+            <Route path="/ncrs/new">
+              <NCRComponent token={token} />
+            </Route>
+            <Route path="/ncrs/edit/:id">
+              <NCRComponent token={token} />
+            </Route>
+            <Route path="/ncrs">
+              <NCRComponent token={token} />
+            </Route>
+            {/* Default Route */}
             <Route exact path="/">
               <LoginComponent setToken={setToken} />
             </Route>

@@ -66,6 +66,14 @@ const NavbarComponent = ({ setToken }) => {
             </li>
             <li>
               <Link 
+                to="/ncrs" 
+                className={`navbar-button ${location.pathname === '/ncrs' ? 'active' : ''}`}
+              >
+                NCRs
+              </Link>
+            </li>
+            <li>
+              <Link 
                 to="/contact" 
                 className={`navbar-button ${location.pathname === '/contact' ? 'active' : ''}`}
               >

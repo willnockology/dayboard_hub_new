@@ -6,50 +6,21 @@ const Vessel = require('../models/vesselModel');
 // @access  Private/Superuser
 const registerVessel = asyncHandler(async (req, res) => {
   try {
-    const {
-      name,
-      imoNumber,
-      flagState,
-      grossTonnage,
-      regulatoryLength,
-      typeOfRegistration,
-      typeOfVessel,
-      callSign,
-      portOfRegistry,
-      numberOfPeople
-    } = req.body;
+    const vesselData = req.body;
 
-    console.log('Registering new vessel with data:', req.body);
+    const requiredFields = [
+      'name', 'imoNumber', 'flagState', 'grossTonnage', 'regulatoryLength',
+      'typeOfRegistration', 'typeOfVessel', 'callSign', 'portOfRegistry', 'numberOfPeople'
+    ];
 
-    if (
-      !name ||
-      !imoNumber ||
-      !flagState ||
-      !grossTonnage ||
-      !regulatoryLength ||
-      !typeOfRegistration ||
-      !typeOfVessel ||
-      !callSign ||
-      !portOfRegistry ||
-      !numberOfPeople
-    ) {
-      res.status(400);
-      throw new Error('Please fill in all fields');
+    for (const field of requiredFields) {
+      if (!vesselData[field]) {
+        res.status(400);
+        throw new Error('Please fill in all required fields');
+      }
     }
 
-    const vessel = new Vessel({
-      name,
-      imoNumber,
-      flagState,
-      grossTonnage,
-      regulatoryLength,
-      typeOfRegistration,
-      typeOfVessel,
-      callSign,
-      portOfRegistry,
-      numberOfPeople
-    });
-
+    const vessel = new Vessel(vesselData);
     const createdVessel = await vessel.save();
     res.status(201).json(createdVessel);
   } catch (error) {
@@ -63,7 +34,6 @@ const registerVessel = asyncHandler(async (req, res) => {
 // @access  Private/Superuser
 const getVessels = asyncHandler(async (req, res) => {
   try {
-    console.log('Fetching all vessels...');
     const vessels = await Vessel.find();
     res.json(vessels);
   } catch (error) {
@@ -77,14 +47,11 @@ const getVessels = asyncHandler(async (req, res) => {
 // @access  Private (Superuser, Company User, Captain)
 const getVesselById = asyncHandler(async (req, res) => {
   try {
-    console.log(`Fetching vessel with ID: ${req.params.id}`);
     const vessel = await Vessel.findById(req.params.id);
 
     if (vessel) {
-      console.log('Vessel found:', vessel);
       res.json(vessel);
     } else {
-      console.log('Vessel not found');
       res.status(404).json({ message: 'Vessel not found' });
     }
   } catch (error) {
@@ -97,40 +64,14 @@ const getVesselById = asyncHandler(async (req, res) => {
 // @route   PUT /api/vessels/:id
 // @access  Private (Superuser, Company User, Captain)
 const updateVessel = asyncHandler(async (req, res) => {
-  const {
-    name,
-    imoNumber,
-    flagState,
-    grossTonnage,
-    regulatoryLength,
-    typeOfRegistration,
-    typeOfVessel,
-    callSign,
-    portOfRegistry,
-    numberOfPeople
-  } = req.body;
-
   try {
-    console.log(`Updating vessel with ID: ${req.params.id}`);
     const vessel = await Vessel.findById(req.params.id);
 
     if (vessel) {
-      vessel.name = name || vessel.name;
-      vessel.imoNumber = imoNumber || vessel.imoNumber;
-      vessel.flagState = flagState || vessel.flagState;
-      vessel.grossTonnage = grossTonnage || vessel.grossTonnage;
-      vessel.regulatoryLength = regulatoryLength || vessel.regulatoryLength;
-      vessel.typeOfRegistration = typeOfRegistration || vessel.typeOfRegistration;
-      vessel.typeOfVessel = typeOfVessel || vessel.typeOfVessel;
-      vessel.callSign = callSign || vessel.callSign;
-      vessel.portOfRegistry = portOfRegistry || vessel.portOfRegistry;
-      vessel.numberOfPeople = numberOfPeople || vessel.numberOfPeople;
-
+      Object.assign(vessel, req.body);
       const updatedVessel = await vessel.save();
-      console.log('Vessel updated:', updatedVessel);
       res.json(updatedVessel);
     } else {
-      console.log('Vessel not found');
       res.status(404).json({ message: 'Vessel not found' });
     }
   } catch (error) {
@@ -144,17 +85,16 @@ const updateVessel = asyncHandler(async (req, res) => {
 // @access  Private
 const getVesselParams = asyncHandler(async (req, res) => {
   try {
-    console.log('Fetching distinct flagStates');
     const flagStates = await Vessel.distinct('flagState');
-    console.log('Fetching distinct typeOfRegistrations');
     const typeOfRegistrations = await Vessel.distinct('typeOfRegistration');
-    console.log('Fetching distinct typeOfVessels');
     const typeOfVessels = await Vessel.distinct('typeOfVessel');
+    const cruisingAreas = ['USA', 'Bahamas', 'Caribbean', 'Mediterranean', 'Canada', 'South Pacific'];
 
     res.json({
       flagStates,
       typeOfRegistrations,
       typeOfVessels,
+      cruisingAreas,
     });
   } catch (error) {
     console.error('Error fetching vessel parameters:', error);
