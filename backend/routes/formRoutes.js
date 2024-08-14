@@ -5,12 +5,13 @@ const {
   getFormDefinitions,
   createFormDefinition,
   updateFormDefinition,
+  deleteFormDefinition, // Import the deleteFormDefinition function
   getFormData,
   createItem,
   submitFormData,
   getCategoriesByVessel,
   getSubcategoriesByCategory,
-  getItemsBySubcategory, // Ensure this is imported correctly
+  getItemsBySubcategory,
   getVesselParams
 } = require('../controllers/formController');
 
@@ -19,12 +20,13 @@ router.get('/definitions/:id', getFormDefinition);
 router.get('/definitions', getFormDefinitions);
 router.post('/definitions', createFormDefinition);
 router.put('/definitions/:id', updateFormDefinition);
+router.delete('/definitions/:id', deleteFormDefinition); // Add the DELETE route
 router.get('/data/:id', getFormData);
 router.post('/data', submitFormData);
 router.post('/items', createItem);
 router.get('/categories/:vesselId', getCategoriesByVessel);
 router.get('/subcategories/:category', getSubcategoriesByCategory);
-router.get('/items/:subcategory', getItemsBySubcategory); // Ensure this route is correct
+router.get('/items/:subcategory', getItemsBySubcategory);
 router.get('/vessels/params', getVesselParams);
 
 module.exports = router;

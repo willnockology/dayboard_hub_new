@@ -81,7 +81,20 @@ const parseGrossTonnage = (gross_tonnage, label) => {
 // @route   POST /api/forms/definitions
 // @access  Private
 const createFormDefinition = asyncHandler(async (req, res) => {
-  const { form_name, category, fields, subcategory, gross_tonnage_min, gross_tonnage_max, people_min, length_min, flagStates, typeOfRegistrations, typeOfVessels } = req.body;
+  const {
+    form_name,
+    category,
+    fields,
+    subcategory,
+    applicableVesselTypes,
+    applicableFlagStates,
+    applicableRegistrations,
+    gross_tonnage_min,
+    gross_tonnage_max,
+    length_min,
+    length_max,
+    hiddenVessels
+  } = req.body;
 
   console.log('Received request body:', req.body);
 
@@ -108,13 +121,14 @@ const createFormDefinition = asyncHandler(async (req, res) => {
       required: field.required || false,
     })),
     subcategory,
+    applicableVesselTypes: Array.isArray(applicableVesselTypes) ? applicableVesselTypes : [],
+    applicableFlagStates: Array.isArray(applicableFlagStates) ? applicableFlagStates : [],
+    applicableRegistrations: Array.isArray(applicableRegistrations) ? applicableRegistrations : [],
     gross_tonnage_min: parsedGrossTonnageMin,
     gross_tonnage_max: parsedGrossTonnageMax,
-    people_min: Array.isArray(people_min) ? people_min : [],
-    length_min: Array.isArray(length_min) ? length_min : [],
-    flagStates: Array.isArray(flagStates) ? flagStates : [],
-    typeOfRegistrations: Array.isArray(typeOfRegistrations) ? typeOfRegistrations : [],
-    typeOfVessels: Array.isArray(typeOfVessels) ? typeOfVessels : [],
+    length_min: length_min || null,
+    length_max: length_max || null,
+    hiddenVessels: Array.isArray(hiddenVessels) ? hiddenVessels : [],
   });
 
   try {
@@ -135,7 +149,20 @@ const updateFormDefinition = asyncHandler(async (req, res) => {
     return res.status(400).json({ message: 'Invalid form ID' });
   }
 
-  const { form_name, category, fields, subcategory, gross_tonnage_min, gross_tonnage_max, people_min, length_min, flagStates, typeOfRegistrations, typeOfVessels } = req.body;
+  const {
+    form_name,
+    category,
+    fields,
+    subcategory,
+    applicableVesselTypes,
+    applicableFlagStates,
+    applicableRegistrations,
+    gross_tonnage_min,
+    gross_tonnage_max,
+    length_min,
+    length_max,
+    hiddenVessels
+  } = req.body;
 
   console.log('Received request body for update:', req.body);
 
@@ -167,13 +194,14 @@ const updateFormDefinition = asyncHandler(async (req, res) => {
     required: field.required || false,
   }));
   form.subcategory = subcategory;
+  form.applicableVesselTypes = Array.isArray(applicableVesselTypes) ? applicableVesselTypes : [];
+  form.applicableFlagStates = Array.isArray(applicableFlagStates) ? applicableFlagStates : [];
+  form.applicableRegistrations = Array.isArray(applicableRegistrations) ? applicableRegistrations : [];
   form.gross_tonnage_min = parsedGrossTonnageMin;
   form.gross_tonnage_max = parsedGrossTonnageMax;
-  form.people_min = Array.isArray(people_min) ? people_min : [];
-  form.length_min = Array.isArray(length_min) ? length_min : [];
-  form.flagStates = Array.isArray(flagStates) ? flagStates : [];
-  form.typeOfRegistrations = Array.isArray(typeOfRegistrations) ? typeOfRegistrations : [];
-  form.typeOfVessels = Array.isArray(typeOfVessels) ? typeOfVessels : [];
+  form.length_min = length_min || null;
+  form.length_max = length_max || null;
+  form.hiddenVessels = Array.isArray(hiddenVessels) ? hiddenVessels : [];
 
   try {
     const updatedForm = await form.save();
@@ -182,6 +210,26 @@ const updateFormDefinition = asyncHandler(async (req, res) => {
     console.error('Error updating form:', error);
     res.status(500).json({ message: 'Error updating form', error });
   }
+});
+
+// @desc    Delete form definition
+// @route   DELETE /api/forms/definitions/:id
+// @access  Private
+const deleteFormDefinition = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    return res.status(400).json({ message: 'Invalid form ID' });
+  }
+
+  const form = await FormDefinition.findById(id);
+
+  if (!form) {
+    return res.status(404).json({ message: 'Form definition not found' });
+  }
+
+  await form.remove();
+  res.json({ message: 'Form removed successfully' });
 });
 
 // @desc    Get form data
@@ -368,6 +416,7 @@ module.exports = {
   getFormDefinitions,
   createFormDefinition,
   updateFormDefinition,
+  deleteFormDefinition, // Ensure this is exported
   getFormData,
   createItem,
   submitFormData,

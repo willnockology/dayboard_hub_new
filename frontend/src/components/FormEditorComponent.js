@@ -1,43 +1,106 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faTrashAlt, faEdit } from '@fortawesome/free-solid-svg-icons';
 import './FormEditorComponent.css';
 
 const FormEditorComponent = () => {
-  const [subcategories, setSubcategories] = useState([]);
-  const [items, setItems] = useState([]);
-  const [selectedCategory, setSelectedCategory] = useState('');
-  const [selectedSubcategory, setSelectedSubcategory] = useState('');
-  const [selectedItem, setSelectedItem] = useState(null);
-  const [formFields, setFormFields] = useState([]);
-  const [vesselParams, setVesselParams] = useState({
-    flagStates: [],
-    typeOfRegistrations: [],
-    typeOfVessels: [],
-  });
-  const [selectedParams, setSelectedParams] = useState({
-    flagStates: [],
-    typeOfRegistrations: [],
-    typeOfVessels: [],
-  });
-  const [applicabilityRange, setApplicabilityRange] = useState({
-    min: ['no min'],
-    max: ['no max'],
-  });
-  const [formType, setFormType] = useState(''); // 'add' or 'update'
-  const [newItemName, setNewItemName] = useState('');
-  const [errors, setErrors] = useState({});
-  const [successMessage, setSuccessMessage] = useState('');
-
-  const applicabilityOptions = [
-    'no min', '15+ Persons', '16+ persons', '24 meters', '80 GT', '100 GT', '300 GT', '400 GT', '500 GT', '1000 GT'
+  const categories = [
+    { id: 1, name: 'Form or Checklist' },
+    { id: 2, name: 'Document' },
+    { id: 3, name: 'Track a Date' },
+    { id: 4, name: 'Crew' },
   ];
 
+  const subCategories = [
+    { id: 1, name: 'Crew', categoryId: 1 },
+    { id: 2, name: 'Engineering', categoryId: 1 },
+    { id: 3, name: 'Permits to Work', categoryId: 1 },
+    { id: 4, name: 'Security', categoryId: 1 },
+    { id: 5, name: 'SMS', categoryId: 1 },
+    { id: 6, name: 'Class', categoryId: 2 },
+    { id: 7, name: 'Crew', categoryId: 2 },
+    { id: 8, name: 'Equipment', categoryId: 2 },
+    { id: 9, name: 'Flag', categoryId: 2 },
+    { id: 10, name: 'Insurance', categoryId: 2 },
+    { id: 11, name: 'Plans & Manuals', categoryId: 2 },
+    { id: 12, name: 'SOP', categoryId: 2 },
+    { id: 13, name: 'Risk Assessment', categoryId: 2 },
+    { id: 14, name: 'MSDS', categoryId: 2 },
+    { id: 15, name: 'Standing Orders', categoryId: 2 },
+    { id: 16, name: 'Statutory', categoryId: 2 },
+    { id: 17, name: 'Certificate of Competency (CoC)', categoryId: 4 },
+    { id: 18, name: 'Certificate of Endorsement (CoE)', categoryId: 4 },
+    { id: 19, name: 'Global Maritime Distress and Safety System (GMDSS) Certificate', categoryId: 4 },
+    { id: 20, name: 'Basic Safety Training (BST) Certificate', categoryId: 4 },
+    { id: 21, name: 'Medical Certificate (ENG1 or Equivalent)', categoryId: 4 },
+    { id: 22, name: 'Seafarer’s Identification and Record Book (SIRB) / Seaman’s Book', categoryId: 4 },
+    { id: 23, name: 'Security Awareness Training Certificate', categoryId: 4 },
+    { id: 24, name: 'Proficiency in Survival Craft and Rescue Boats (PSCRB)', categoryId: 4 },
+    { id: 25, name: 'Advanced Firefighting Certificate', categoryId: 4 },
+    { id: 26, name: 'Proficiency in Fast Rescue Boats Certificate', categoryId: 4 },
+    { id: 27, name: 'Crowd Management Training Certificate', categoryId: 4 },
+    { id: 28, name: 'Crisis Management and Human Behavior Training Certificate', categoryId: 4 },
+    { id: 29, name: 'Dangerous Goods Training Certificate', categoryId: 4 },
+    { id: 30, name: 'Ship Security Officer (SSO) Certificate', categoryId: 4 },
+    { id: 31, name: 'Proficiency in Designated Security Duties (PDSD) Certificate', categoryId: 4 },
+    { id: 32, name: 'Bridge Resource Management (BRM) / Engine Room Resource Management (ERM) Certificate', categoryId: 4 },
+    { id: 33, name: 'Electronic Chart Display and Information System (ECDIS) Certificate', categoryId: 4 },
+    { id: 34, name: 'Tankerman Endorsement / Specialized Training for Oil, Chemical, or Liquefied Gas Tankers Certificate', categoryId: 4 },
+    { id: 35, name: 'High Voltage Training Certificate', categoryId: 4 },
+    { id: 36, name: 'Shipboard Safety Officer Certificate', categoryId: 4 },
+  ];
+
+  const [forms, setForms] = useState([]);
+  const [selectedCategory, setSelectedCategory] = useState('');
+  const [selectedSubcategory, setSelectedSubcategory] = useState('');
+  const [newItemName, setNewItemName] = useState('');
+  const [formFields, setFormFields] = useState([]);
+  const [isCreatingNewForm, setIsCreatingNewForm] = useState(false);
+  const [errors, setErrors] = useState({});
+  const [successMessage, setSuccessMessage] = useState('');
+  const [editingFormId, setEditingFormId] = useState(null);
+
+  // State for vessel filtering
+  const vesselTypes = [
+    'Container Ship',
+    'Yacht',
+    'Bulk Carrier',
+    'Chemical Carrier',
+    'Product Carrier',
+    'Crude Oil Carrier',
+    'LNG',
+  ];
+
+  const [flagStates, setFlagStates] = useState([]);
+  const [registrations, setRegistrations] = useState([]);
+  const [selectedVesselTypes, setSelectedVesselTypes] = useState(vesselTypes);
+  const [selectedFlagStates, setSelectedFlagStates] = useState([]);
+  const [selectedRegistrations, setSelectedRegistrations] = useState([]);
+  const [grossTonnageMin, setGrossTonnageMin] = useState(0);
+  const [grossTonnageMax, setGrossTonnageMax] = useState(999999999);
+  const [lengthMin, setLengthMin] = useState(0);
+  const [lengthMax, setLengthMax] = useState(999999999);
+  const [showApplicability, setShowApplicability] = useState(false);
+
   useEffect(() => {
-    if (formType !== 'add') {
-      fetchSubcategories();
-      fetchVesselParams();
+    fetchForms();
+    fetchVesselParams();
+  }, []);
+
+  const fetchForms = async () => {
+    try {
+      const token = localStorage.getItem('authToken');
+      const response = await axios.get('http://localhost:5001/api/forms/definitions', {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setForms(response.data);
+    } catch (error) {
+      console.error('Error fetching forms:', error);
     }
-  }, [formType]);
+  };
 
   const fetchVesselParams = async () => {
     try {
@@ -47,91 +110,26 @@ const FormEditorComponent = () => {
           Authorization: `Bearer ${token}`,
         },
       });
+      setFlagStates(response.data.flagStates);
+      setRegistrations(response.data.typeOfRegistrations);
 
-      setVesselParams(response.data);
-      setSelectedParams({
-        flagStates: response.data.flagStates,
-        typeOfRegistrations: response.data.typeOfRegistrations,
-        typeOfVessels: response.data.typeOfVessels,
-      });
+      // Set default selection to all options
+      setSelectedFlagStates(response.data.flagStates);
+      setSelectedRegistrations(response.data.typeOfRegistrations);
     } catch (error) {
-      console.error('Error fetching vessel parameters:', error);
-    }
-  };
-
-  const fetchSubcategories = async () => {
-    try {
-      const token = localStorage.getItem('authToken');
-      const response = await axios.get('http://localhost:5001/api/forms/definitions', {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      const subcategories = [...new Set(response.data.map(form => form.subcategory))];
-      setSubcategories(subcategories);
-      setItems(response.data);
-    } catch (error) {
-      console.error('Error fetching subcategories:', error);
+      console.error('Error fetching vessel params:', error);
     }
   };
 
   const handleCategoryChange = (e) => {
-    const category = e.target.value;
-    setSelectedCategory(category);
+    setSelectedCategory(e.target.value);
     setSelectedSubcategory('');
-    setSelectedItem(null);
     setFormFields([]);
   };
 
   const handleSubcategoryChange = (e) => {
-    const subcategory = e.target.value;
-    setSelectedSubcategory(subcategory);
-    setSelectedItem(null);
+    setSelectedSubcategory(e.target.value);
     setFormFields([]);
-    fetchItems(subcategory);
-  };
-
-  const fetchItems = (subcategory) => {
-    const filteredItems = items.filter(item => item.subcategory === subcategory);
-    setItems(filteredItems);
-  };
-
-  const handleItemChange = (e) => {
-    const itemId = e.target.value;
-    if (itemId === 'new') {
-      setFormType('add');
-      setFormFields([]);
-    } else {
-      const item = items.find(i => i._id === itemId);
-      setSelectedItem(item);
-      setFormType('update');
-      if (item && item._id) {
-        fetchFormFields(item._id);
-      }
-    }
-  };
-
-  const fetchFormFields = async (itemId) => {
-    try {
-      const token = localStorage.getItem('authToken');
-      const response = await axios.get(`http://localhost:5001/api/forms/definitions/${itemId}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      const fields = response.data.fields.map(field => ({
-        field_name: field.field_name || '',
-        field_description: field.field_description || '', 
-        field_type: field.field_type || 'text',
-        options: ['dropdown', 'radio'].includes(field.field_type) ? field.options || [] : undefined,
-        required: field.required || false,
-      }));
-
-      setFormFields(fields);
-    } catch (error) {
-      console.error('Error fetching form fields:', error);
-    }
   };
 
   const handleFieldChange = (index, field, value) => {
@@ -149,11 +147,18 @@ const FormEditorComponent = () => {
     setFormFields(updatedFields);
   };
 
+  const handleCheckboxChange = (value, list, setList) => {
+    const updatedList = list.includes(value)
+      ? list.filter(item => item !== value)
+      : [...list, value];
+    setList(updatedList);
+  };
+
   const validateForm = () => {
     let valid = true;
     const newErrors = {};
 
-    if (!newItemName && (!selectedItem || selectedItem === 'new')) {
+    if (!newItemName) {
       newErrors.form_name = 'Form name is required';
       valid = false;
     }
@@ -184,25 +189,24 @@ const FormEditorComponent = () => {
         required: field.required || false,
       }));
 
-      const min = applicabilityRange.min.includes('no min') ? null : applicabilityRange.min;
-      const max = applicabilityRange.max.includes('no max') ? null : applicabilityRange.max;
-
       const payload = {
-        form_name: selectedItem && selectedItem !== 'new' ? selectedItem.form_name : newItemName,
+        form_name: newItemName,
         category: selectedCategory,
         fields: updatedFields,
         subcategory: selectedSubcategory,
-        gross_tonnage_min: min,
-        gross_tonnage_max: max,
-        flagStates: selectedParams.flagStates,
-        typeOfRegistrations: selectedParams.typeOfRegistrations,
-        typeOfVessels: selectedParams.typeOfVessels,
+        applicableVesselTypes: selectedVesselTypes,
+        applicableFlagStates: selectedFlagStates,
+        applicableRegistrations: selectedRegistrations,
+        gross_tonnage_min: grossTonnageMin,
+        gross_tonnage_max: grossTonnageMax,
+        length_min: lengthMin,
+        length_max: lengthMax,
       };
 
       const token = localStorage.getItem('authToken');
 
-      if (formType === 'update' && selectedItem && selectedItem._id) {
-        await axios.put(`http://localhost:5001/api/forms/definitions/${selectedItem._id}`, payload, {
+      if (editingFormId) {
+        await axios.put(`http://localhost:5001/api/forms/definitions/${editingFormId}`, payload, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -215,8 +219,8 @@ const FormEditorComponent = () => {
         });
       }
 
-      fetchSubcategories();
-      setFormType('');
+      fetchForms();
+      setIsCreatingNewForm(false);
       setSuccessMessage('Form saved successfully');
       setTimeout(() => {
         setSuccessMessage('');
@@ -230,338 +234,292 @@ const FormEditorComponent = () => {
     }
   };
 
-  const handleMoveField = (index, direction) => {
-    const updatedFields = [...formFields];
-    const targetIndex = direction === 'up' ? index - 1 : index + 1;
-
-    if (targetIndex < 0 || targetIndex >= updatedFields.length) return;
-
-    const temp = updatedFields[targetIndex];
-    updatedFields[targetIndex] = updatedFields[index];
-    updatedFields[index] = temp;
-
-    setFormFields(updatedFields);
+  const handleEdit = (form) => {
+    setSelectedCategory(form.category);
+    setSelectedSubcategory(form.subcategory);
+    setNewItemName(form.form_name);
+    setFormFields(form.fields);
+    setSelectedVesselTypes(form.applicableVesselTypes || vesselTypes);
+    setSelectedFlagStates(form.applicableFlagStates || []);
+    setSelectedRegistrations(form.applicableRegistrations || []);
+    setGrossTonnageMin(form.gross_tonnage_min || 0);
+    setGrossTonnageMax(form.gross_tonnage_max || 999999999);
+    setLengthMin(form.length_min || 0);
+    setLengthMax(form.length_max || 999999999);
+    setEditingFormId(form._id);
+    setIsCreatingNewForm(true);
   };
 
-  const handleParamChange = (type, value, checked) => {
-    setSelectedParams(prev => ({
-      ...prev,
-      [type]: checked
-        ? [...prev[type], value]
-        : prev[type].filter(item => item !== value),
-    }));
-  };
-
-  const handleApplicabilityChange = (type, value, checked) => {
-    setApplicabilityRange(prev => ({
-      ...prev,
-      [type]: checked
-        ? [...prev[type], value]
-        : prev[type].filter(item => item !== value),
-    }));
-  };
-
-  const handleRequiredChange = (index, checked) => {
-    const updatedFields = [...formFields];
-    updatedFields[index].required = checked;
-    setFormFields(updatedFields);
-  };
-
-  const staticSubcategories = {
-    'Form or Checklist': ['SMS', 'Contingency Plan', 'Security', 'Crew', 'Permits to Work'],
-    Document: ['Flag', 'Class', 'Crew', 'Statutory', 'Insurance'],
+  const handleDelete = async (formId) => {
+    if (window.confirm('Are you sure you want to delete this form?')) {
+      try {
+        const token = localStorage.getItem('authToken');
+        await axios.delete(`http://localhost:5001/api/forms/definitions/${formId}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        fetchForms();
+      } catch (error) {
+        console.error('Error deleting form:', error);
+      }
+    }
   };
 
   return (
     <div className="form-editor-container">
-      <h1>{formType === 'add' ? 'Add New Form' : 'Edit Form'}</h1>
+      <h1>Form Editor</h1>
       {successMessage && <div className="success-message">{successMessage}</div>}
-      {!formType && (
-        <div className="form-editor-controls">
-          <button onClick={() => setFormType('add')}>Add New Form</button>
-          <button onClick={() => setFormType('update')}>Update Existing Form</button>
-        </div>
-      )}
-      {formType === 'add' && (
-        <div className="new-item-form">
-          <div className="form-editor-controls">
-            <select value={selectedCategory} onChange={handleCategoryChange}>
-              <option value="">Select Category</option>
-              <option value="Form or Checklist">Form or Checklist</option>
-              <option value="Document">Document</option>
-            </select>
-            {selectedCategory && (
-              <select value={selectedSubcategory} onChange={handleSubcategoryChange}>
-                <option value="">Select Subcategory</option>
-                {staticSubcategories[selectedCategory].map(subcategory => (
-                  <option key={subcategory} value={subcategory}>{subcategory}</option>
+      
+      <button onClick={() => {
+        setIsCreatingNewForm(true);
+        setEditingFormId(null);
+        setSelectedCategory('');
+        setSelectedSubcategory('');
+        setNewItemName('');
+        setFormFields([]);
+        setSelectedVesselTypes(vesselTypes);
+        setSelectedFlagStates(flagStates);
+        setSelectedRegistrations(registrations);
+        setGrossTonnageMin(0);
+        setGrossTonnageMax(999999999);
+        setLengthMin(0);
+        setLengthMax(999999999);
+      }}>
+        Create New Form
+      </button>
+
+      <table className="forms-table">
+        <thead>
+          <tr>
+            <th>Form Name</th>
+            <th>Category</th>
+            <th>Subcategory</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {forms.map((form) => (
+            <tr key={form._id}>
+              <td>{form.form_name}</td>
+              <td>{form.category}</td>
+              <td>{form.subcategory}</td>
+              <td>
+                <button className="action-icon" onClick={() => handleEdit(form)}>
+                  <FontAwesomeIcon icon={faEdit} style={{ color: 'orange' }} />
+                </button>
+                <button className="action-icon trash-icon" onClick={() => handleDelete(form._id)}>
+                  <FontAwesomeIcon icon={faTrashAlt} />
+                </button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+
+      {isCreatingNewForm && (
+        <div className="overlay">
+          <div className="modal">
+            <h2>{editingFormId ? 'Edit Form' : 'Create New Form'}</h2>
+            <div className="form-editor-controls">
+              <select value={selectedCategory} onChange={handleCategoryChange}>
+                <option value="">Select Category</option>
+                {categories.map((category) => (
+                  <option key={category.id} value={category.name}>{category.name}</option>
                 ))}
               </select>
-            )}
-            <input
-              type="text"
-              placeholder="Enter item name"
-              value={newItemName}
-              onChange={(e) => setNewItemName(e.target.value)}
-            />
-            {errors.form_name && <p className="error">{errors.form_name}</p>}
-          </div>
-          
-          <table className="applicability-table">
-            <thead>
-              <tr>
-                <th></th>
-                <th>Minimum Applicability</th>
-                <th>Maximum Applicability</th>
-                <th>Flag States</th>
-                <th>Type of Registrations</th>
-                <th>Type of Vessels</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td>Applicability</td>
-                <td>
-                  {applicabilityOptions.map(option => (
-                    <label key={option} className="custom-checkbox-container">
-                      <input
-                        type="checkbox"
-                        className="custom-checkbox"
-                        checked={applicabilityRange.min.includes(option)}
-                        onChange={(e) => handleApplicabilityChange('min', option, e.target.checked)}
-                      />
-                      <span>{option}</span>
-                    </label>
-                  ))}
-                </td>
-                <td>
-                  {['no max', '500 GT'].map(option => (
-                    <label key={option} className="custom-checkbox-container">
-                      <input
-                        type="checkbox"
-                        className="custom-checkbox"
-                        checked={applicabilityRange.max.includes(option)}
-                        onChange={(e) => handleApplicabilityChange('max', option, e.target.checked)}
-                      />
-                      <span>{option}</span>
-                    </label>
-                  ))}
-                </td>
-                <td>
-                  {vesselParams.flagStates.map(flag => (
-                    <label key={flag} className="custom-checkbox-container">
-                      <input
-                        type="checkbox"
-                        className="custom-checkbox"
-                        checked={selectedParams.flagStates.includes(flag)}
-                        onChange={(e) => handleParamChange('flagStates', flag, e.target.checked)}
-                      />
-                      <span>{flag}</span>
-                    </label>
-                  ))}
-                </td>
-                <td>
-                  {vesselParams.typeOfRegistrations.map(type => (
-                    <label key={type} className="custom-checkbox-container">
-                      <input
-                        type="checkbox"
-                        className="custom-checkbox"
-                        checked={selectedParams.typeOfRegistrations.includes(type)}
-                        onChange={(e) => handleParamChange('typeOfRegistrations', type, e.target.checked)}
-                      />
-                      <span>{type}</span>
-                    </label>
-                  ))}
-                </td>
-                <td>
-                  {vesselParams.typeOfVessels.map(type => (
-                    <label key={type} className="custom-checkbox-container">
-                      <input
-                        type="checkbox"
-                        className="custom-checkbox"
-                        checked={selectedParams.typeOfVessels.includes(type)}
-                        onChange={(e) => handleParamChange('typeOfVessels', type, e.target.checked)}
-                      />
-                      <span>{type}</span>
-                    </label>
-                  ))}
-                </td>
-              </tr>
-            </tbody>
-          </table>
-
-          <div className="form-fields">
-            {formFields.map((field, index) => (
-              <div key={index} className="form-field">
-                <div className="field-row">
-                  <div className="field-column">
-                    <label>Field Name</label>
-                    <input
-                      type="text"
-                      value={field.field_name}
-                      onChange={(e) => handleFieldChange(index, 'field_name', e.target.value)}
-                      placeholder="Field Name"
-                    />
-                    {errors[`field_name_${index}`] && <p className="error">{errors[`field_name_${index}`]}</p>}
-                  </div>
-                  <div className="field-column">
-                    <label>Field Description</label>
-                    <input
-                      type="text"
-                      value={field.field_description}
-                      onChange={(e) => handleFieldChange(index, 'field_description', e.target.value)}
-                      placeholder="Field Description"
-                    />
-                  </div>
-                  <div className="field-column">
-                    <label>Field Type</label>
-                    <select
-                      value={field.field_type}
-                      onChange={(e) => handleFieldChange(index, 'field_type', e.target.value)}
-                    >
-                      <option value="text">Text</option>
-                      <option value="dropdown">Dropdown</option>
-                      <option value="date">Date</option>
-                      <option value="checkbox">Checkbox</option>
-                      <option value="paragraph">Paragraph</option>
-                      <option value="radio">Radio</option>
-                      <option value="image">Image</option>
-                      <option value="file">File</option>
-                      <option value="richText">Rich Text</option>
-                      <option value="rating">Rating</option>
-                      <option value="number">Number</option>
-                      <option value="slider">Slider</option>
-                      <option value="time">Time</option>
-                      <option value="toggle">Toggle</option>
-                    </select>
-                  </div>
-                  <div className="field-column">
-                    <label>Required</label>
-                    <input
-                      type="checkbox"
-                      className="custom-checkbox"
-                      checked={field.required}
-                      onChange={(e) => handleRequiredChange(index, e.target.checked)}
-                    />
-                  </div>
-                </div>
-                {['dropdown', 'radio'].includes(field.field_type) && (
-                  <textarea
-                    value={field.options ? field.options.join('\n') : ''}
-                    onChange={(e) => handleFieldChange(index, 'options', e.target.value.split('\n'))}
-                    placeholder="Dropdown or radio options (one per line)"
-                  ></textarea>
-                )}
-                <div className="button-row">
-                  <button onClick={() => handleMoveField(index, 'up')} className="move-up"></button>
-                  <button onClick={() => handleMoveField(index, 'down')} className="move-down"></button>
-                  <button onClick={() => handleDeleteField(index)}>Delete</button>
-                </div>
-              </div>
-            ))}
-            <button onClick={handleAddField}>Add Field</button>
-          </div>
-          <button onClick={handleSave}>Save</button>
-          <button onClick={() => setFormType('')}>Cancel</button>
-        </div>
-      )}
-      {formType === 'update' && (
-        <div className="form-editor-controls">
-          <select value={selectedCategory} onChange={handleCategoryChange}>
-            <option value="">Select Category</option>
-            <option value="Form or Checklist">Form or Checklist</option>
-            <option value="Document">Document</option>
-          </select>
-          {selectedCategory && (
-            <select value={selectedSubcategory} onChange={handleSubcategoryChange}>
-              <option value="">Select Subcategory</option>
-              {subcategories.map(subcategory => (
-                <option key={subcategory} value={subcategory}>{subcategory}</option>
-              ))}
-            </select>
-          )}
-          {selectedSubcategory && (
-            <select value={selectedItem ? selectedItem._id : ''} onChange={handleItemChange}>
-              <option value="">Select Item</option>
-              {items.map(item => (
-                <option key={item._id} value={item._id}>{item.form_name}</option>
-              ))}
-            </select>
-          )}
-        </div>
-      )}
-      {formType === 'update' && selectedItem && (
-        <div className="form-fields">
-          {formFields.map((field, index) => (
-            <div key={index} className="form-field">
-              <div className="field-row">
-                <div className="field-column">
-                  <label>Field Name</label>
-                  <input
-                    type="text"
-                    value={field.field_name}
-                    onChange={(e) => handleFieldChange(index, 'field_name', e.target.value)}
-                    placeholder="Field Name"
-                  />
-                  {errors[`field_name_${index}`] && <p className="error">{errors[`field_name_${index}`]}</p>}
-                </div>
-                <div className="field-column">
-                  <label>Field Description</label>
-                  <input
-                    type="text"
-                    value={field.field_description}
-                    onChange={(e) => handleFieldChange(index, 'field_description', e.target.value)}
-                    placeholder="Field Description"
-                  />
-                </div>
-                <div className="field-column">
-                  <label>Field Type</label>
-                  <select
-                    value={field.field_type}
-                    onChange={(e) => handleFieldChange(index, 'field_type', e.target.value)}
-                  >
-                    <option value="text">Text</option>
-                    <option value="dropdown">Dropdown</option>
-                    <option value="date">Date</option>
-                    <option value="checkbox">Checkbox</option>
-                    <option value="paragraph">Paragraph</option>
-                    <option value="radio">Radio</option>
-                    <option value="image">Image</option>
-                    <option value="file">File</option>
-                    <option value="richText">Rich Text</option>
-                    <option value="rating">Rating</option>
-                    <option value="number">Number</option>
-                    <option value="slider">Slider</option>
-                    <option value="time">Time</option>
-                    <option value="toggle">Toggle</option>
-                  </select>
-                </div>
-                <div className="field-column">
-                  <label>Required</label>
-                  <input
-                    type="checkbox"
-                    className="custom-checkbox"
-                    checked={field.required}
-                    onChange={(e) => handleRequiredChange(index, e.target.checked)}
-                  />
-                </div>
-              </div>
-              {['dropdown', 'radio'].includes(field.field_type) && (
-                <textarea
-                  value={field.options ? field.options.join('\n') : ''}
-                  onChange={(e) => handleFieldChange(index, 'options', e.target.value.split('\n'))}
-                  placeholder="Dropdown or radio options (one per line)"
-                ></textarea>
+              {selectedCategory && (
+                <select value={selectedSubcategory} onChange={handleSubcategoryChange}>
+                  <option value="">Select Subcategory</option>
+                  {subCategories
+                    .filter((sub) => sub.categoryId === categories.find((cat) => cat.name === selectedCategory).id)
+                    .map((subcategory) => (
+                      <option key={subcategory.id} value={subcategory.name}>{subcategory.name}</option>
+                    ))}
+                </select>
               )}
-              <div className="button-row">
-                <button onClick={() => handleMoveField(index, 'up')} className="move-up"></button>
-                <button onClick={() => handleMoveField(index, 'down')} className="move-down"></button>
-                <button onClick={() => handleDeleteField(index)}>Delete</button>
-              </div>
+              <input
+                type="text"
+                placeholder="Enter item name"
+                value={newItemName}
+                onChange={(e) => setNewItemName(e.target.value)}
+              />
+              {errors.form_name && <p className="error">{errors.form_name}</p>}
             </div>
-          ))}
-          <button onClick={handleAddField}>Add Field</button>
-          <button onClick={handleSave}>Save</button>
+
+            {/* Applicability Toggle */}
+            <button
+              className="applicability-toggle"
+              onClick={() => setShowApplicability(!showApplicability)}
+            >
+              {showApplicability ? 'Hide Applicability' : 'Show Applicability'}
+            </button>
+
+            {showApplicability && (
+              <div className="applicability-section">
+                <div className="form-editor-controls">
+                  <label>Applicable Vessel Types</label>
+                  <div className="checkbox-group">
+                    {vesselTypes.map((type) => (
+                      <label key={type} className="checkbox-label">
+                        <input
+                          type="checkbox"
+                          checked={selectedVesselTypes.includes(type)}
+                          onChange={() => handleCheckboxChange(type, selectedVesselTypes, setSelectedVesselTypes)}
+                        />
+                        {type}
+                      </label>
+                    ))}
+                  </div>
+
+                  <label>Applicable Flag States</label>
+                  <div className="checkbox-group">
+                    {flagStates.map((flag) => (
+                      <label key={flag} className="checkbox-label">
+                        <input
+                          type="checkbox"
+                          checked={selectedFlagStates.includes(flag)}
+                          onChange={() => handleCheckboxChange(flag, selectedFlagStates, setSelectedFlagStates)}
+                        />
+                        {flag}
+                      </label>
+                    ))}
+                  </div>
+
+                  <label>Applicable Registrations</label>
+                  <div className="checkbox-group">
+                    {registrations.map((reg) => (
+                      <label key={reg} className="checkbox-label">
+                        <input
+                          type="checkbox"
+                          checked={selectedRegistrations.includes(reg)}
+                          onChange={() => handleCheckboxChange(reg, selectedRegistrations, setSelectedRegistrations)}
+                        />
+                        {reg}
+                      </label>
+                    ))}
+                  </div>
+
+                  <div className="field-row">
+                    <div className="field-column">
+                      <label>Gross Tonnage (Min)</label>
+                      <input
+                        type="number"
+                        placeholder="Min Gross Tonnage"
+                        value={grossTonnageMin}
+                        onChange={(e) => setGrossTonnageMin(e.target.value)}
+                      />
+                    </div>
+                    <div className="field-column">
+                      <label>Gross Tonnage (Max)</label>
+                      <input
+                        type="number"
+                        placeholder="Max Gross Tonnage"
+                        value={grossTonnageMax}
+                        onChange={(e) => setGrossTonnageMax(e.target.value)}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="field-row">
+                    <div className="field-column">
+                      <label>Length (Min)</label>
+                      <input
+                        type="number"
+                        placeholder="Min Length"
+                        value={lengthMin}
+                        onChange={(e) => setLengthMin(e.target.value)}
+                      />
+                    </div>
+                    <div className="field-column">
+                      <label>Length (Max)</label>
+                      <input
+                        type="number"
+                        placeholder="Max Length"
+                        value={lengthMax}
+                        onChange={(e) => setLengthMax(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div className="form-fields">
+              {formFields.map((field, index) => (
+                <div key={index} className="form-field">
+                  <div className="field-row">
+                    <div className="field-column">
+                      <label>Field Name</label>
+                      <input
+                        type="text"
+                        value={field.field_name}
+                        onChange={(e) => handleFieldChange(index, 'field_name', e.target.value)}
+                        placeholder="Field Name"
+                      />
+                      {errors[`field_name_${index}`] && <p className="error">{errors[`field_name_${index}`]}</p>}
+                    </div>
+                    <div className="field-column">
+                      <label>Field Description</label>
+                      <input
+                        type="text"
+                        value={field.field_description}
+                        onChange={(e) => handleFieldChange(index, 'field_description', e.target.value)}
+                        placeholder="Field Description"
+                      />
+                    </div>
+                    <div className="field-column">
+                      <label>Field Type</label>
+                      <select
+                        value={field.field_type}
+                        onChange={(e) => handleFieldChange(index, 'field_type', e.target.value)}
+                      >
+                        {/* Options for field types */}
+                        <option value="text">Text</option>
+                        <option value="dropdown">Dropdown</option>
+                        <option value="date">Date</option>
+                        <option value="checkbox">Checkbox</option>
+                        <option value="paragraph">Paragraph</option>
+                        <option value="radio">Radio</option>
+                        <option value="image">Image</option>
+                        <option value="file">File</option>
+                        <option value="richText">Rich Text</option>
+                        <option value="rating">Rating</option>
+                        <option value="number">Number</option>
+                        <option value="slider">Slider</option>
+                        <option value="time">Time</option>
+                        <option value="toggle">Toggle</option>
+                      </select>
+                    </div>
+                    <div className="field-column">
+                      <label>Required</label>
+                      <input
+                        type="checkbox"
+                        className="custom-checkbox"
+                        checked={field.required}
+                        onChange={(e) => handleFieldChange(index, 'required', e.target.checked)}
+                      />
+                    </div>
+                  </div>
+                  {['dropdown', 'radio'].includes(field.field_type) && (
+                    <textarea
+                      value={field.options ? field.options.join('\n') : ''}
+                      onChange={(e) => handleFieldChange(index, 'options', e.target.value.split('\n'))}
+                      placeholder="Dropdown or radio options (one per line)"
+                    ></textarea>
+                  )}
+                  <div className="button-row">
+                    <button onClick={() => handleDeleteField(index)}>Delete</button>
+                  </div>
+                </div>
+              ))}
+              <button onClick={handleAddField}>Add Field</button>
+            </div>
+            <div className="modal-actions">
+              <button onClick={handleSave}>{editingFormId ? 'Save Changes' : 'Save Form'}</button>
+              <button onClick={() => setIsCreatingNewForm(false)}>Cancel</button>
+            </div>
+          </div>
         </div>
       )}
     </div>

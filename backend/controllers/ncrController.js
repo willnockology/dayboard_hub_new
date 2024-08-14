@@ -1,7 +1,6 @@
 const asyncHandler = require('express-async-handler');
 const NonConformityReport = require('../models/ncrModel');
 const Vessel = require('../models/vesselModel');
-const Counter = require('../models/counterModel'); // Import the Counter model
 
 // @desc    Create a new NCR
 // @route   POST /api/ncrs
@@ -10,6 +9,19 @@ const createNCR = asyncHandler(async (req, res) => {
   const {
     vessel,
     date,
+    title,
+    deficiencyType,
+    attachments,
+    proposedCorrectiveAction,
+    deficiencyIdentifiedBy,
+    otherDeficiencyIdentifier,
+    deficiencyRelatedTo,
+    deficiencyRelatedSection,
+    companySection,
+    companySectionReference,
+    flagNotified = false,  // Default value
+    classNotified = false,  // Default value
+    dpaComments,
     description,
     rootCause,
     correctiveAction,
@@ -27,9 +39,9 @@ const createNCR = asyncHandler(async (req, res) => {
     throw new Error('Vessel not found');
   }
 
-  // Find the last NCR for this vessel and generate the next report number
+  // Find the last NCR for this vessel to generate the next report number
   const lastNCR = await NonConformityReport.findOne({ vessel })
-    .sort({ createdAt: -1 });
+    .sort({ reportNumber: -1 });
 
   let nextReportNumber = 'NCR001';
   if (lastNCR) {
@@ -43,11 +55,24 @@ const createNCR = asyncHandler(async (req, res) => {
     vessel,
     reportNumber: nextReportNumber,
     date,
-    reportedBy, // Set the 'reportedBy' field as ObjectId
+    title,
+    deficiencyType,
+    attachments,
+    proposedCorrectiveAction,
+    deficiencyIdentifiedBy,
+    otherDeficiencyIdentifier: deficiencyIdentifiedBy === 'Other' ? otherDeficiencyIdentifier : undefined,
+    deficiencyRelatedTo,
+    deficiencyRelatedSection,
+    companySection,
+    companySectionReference,
+    flagNotified,
+    classNotified,
+    dpaComments,
+    reportedBy,
     description,
     rootCause,
     correctiveAction,
-    status: correctiveAction ? 'Pending DPA Sign Off' : 'Open', // Set status based on corrective action
+    status: correctiveAction ? 'Pending DPA Sign Off' : 'Open',
     dueDate,
     closedDate,
   });
@@ -88,6 +113,19 @@ const getNCRById = asyncHandler(async (req, res) => {
 const updateNCR = asyncHandler(async (req, res) => {
   const {
     date,
+    title,
+    deficiencyType,
+    attachments,
+    proposedCorrectiveAction,
+    deficiencyIdentifiedBy,
+    otherDeficiencyIdentifier,
+    deficiencyRelatedTo,
+    deficiencyRelatedSection,
+    companySection,
+    companySectionReference,
+    flagNotified,
+    classNotified,
+    dpaComments,
     description,
     rootCause,
     correctiveAction,
@@ -99,18 +137,30 @@ const updateNCR = asyncHandler(async (req, res) => {
 
   if (ncr) {
     ncr.date = date || ncr.date;
+    ncr.title = title || ncr.title;
+    ncr.deficiencyType = deficiencyType || ncr.deficiencyType;
+    ncr.attachments = attachments || ncr.attachments;
+    ncr.proposedCorrectiveAction = proposedCorrectiveAction || ncr.proposedCorrectiveAction;
+    ncr.deficiencyIdentifiedBy = deficiencyIdentifiedBy || ncr.deficiencyIdentifiedBy;
+    ncr.otherDeficiencyIdentifier = deficiencyIdentifiedBy === 'Other' ? otherDeficiencyIdentifier : undefined;
+    ncr.deficiencyRelatedTo = deficiencyRelatedTo || ncr.deficiencyRelatedTo;
+    ncr.deficiencyRelatedSection = deficiencyRelatedSection || ncr.deficiencyRelatedSection;
+    ncr.companySection = companySection || ncr.companySection;
+    ncr.companySectionReference = companySectionReference || ncr.companySectionReference;
+    ncr.flagNotified = flagNotified !== undefined ? flagNotified : ncr.flagNotified;
+    ncr.classNotified = classNotified !== undefined ? classNotified : ncr.classNotified;
+    ncr.dpaComments = dpaComments || ncr.dpaComments;
     ncr.description = description || ncr.description;
     ncr.rootCause = rootCause || ncr.rootCause;
     ncr.correctiveAction = correctiveAction || ncr.correctiveAction;
-    ncr.status = correctiveAction ? 'Pending DPA Sign Off' : ncr.status; // Update status based on corrective action
+    ncr.status = correctiveAction ? 'Pending DPA Sign Off' : ncr.status;
     ncr.dueDate = dueDate || ncr.dueDate;
     ncr.closedDate = closedDate || ncr.closedDate;
 
     const updatedNCR = await ncr.save();
     res.json(updatedNCR);
   } else {
-    res.status(404);
-    throw new Error('NCR not found');
+    res.status(404).throw(new Error('NCR not found'));
   }
 });
 
@@ -124,8 +174,7 @@ const deleteNCR = asyncHandler(async (req, res) => {
     await ncr.remove();
     res.json({ message: 'NCR removed' });
   } else {
-    res.status(404);
-    throw new Error('NCR not found');
+    res.status(404).throw(new Error('NCR not found'));
   }
 });
 

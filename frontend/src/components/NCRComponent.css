@@ -148,90 +148,92 @@
     display: flex;
     flex-direction: column;
     gap: 10px;
-    width: 100%; /* Ensures form takes up full width of the container */
-    box-sizing: border-box; /* Ensure padding and borders are included in the element's total width and height */
-    margin: 0 auto; /* Centers the form within its container */
+    width: 50%; /* Adjust width to make form more consolidated */
+    box-sizing: border-box;
+    margin: 0 auto;
+    padding: 20px; /* Add padding for spacing */
+    background-color: #f9f9f9; /* Light background color for contrast */
+    border-radius: 10px; /* Rounded corners for a modern look */
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); /* Soft shadow for depth */
   }
   
   .new-item-form select,
   .new-item-form input,
   .new-item-form button {
-    width: 100%; /* Ensure consistent width across form fields */
+    width: 100%;
     padding: 8px;
-    box-sizing: border-box; /* Include padding and border in element's width and height */
+    box-sizing: border-box;
   }
   
   .new-item-form input[type="date"] {
-    width: 100%; /* Consistent width */
-    padding: 8px; /* Padding to match other inputs */
-    font-size: 16px; /* Consistent font size */
-    box-sizing: border-box; /* Include padding in width */
-    height: 40px; /* Set a specific height to match other fields */
-    line-height: 1.2; /* Adjust line-height to control text height */
-    border-radius: 5px; /* Match other input fields */
-    border: 1px solid #ccc; /* Match border style of other inputs */
-    background-color: #fff; /* Ensure background color consistency */
-    appearance: none; /* Remove default browser styling */
-    -webkit-appearance: none; /* Ensure consistency in Webkit-based browsers */
-    -moz-appearance: none; /* Ensure consistency in Firefox */
+    width: 100%;
+    padding: 8px;
+    font-size: 16px;
+    box-sizing: border-box;
+    height: 40px;
+    line-height: 1.2;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+    background-color: #fff;
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
   }
   
   .new-item-form select,
   .new-item-form input {
-    height: 40px; /* Set consistent height across form fields */
+    height: 40px;
     padding: 8px;
-    box-sizing: border-box; /* Ensure padding is included in width/height calculations */
-    border-radius: 5px; /* Add consistent border radius */
-    border: 1px solid #ccc; /* Add consistent border */
-    background-color: #fff; /* Consistent background color */
+    box-sizing: border-box;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+    background-color: #fff;
   }
   
-  /* Align checkbox with label */
   .new-item-form label {
     display: flex;
     align-items: center;
-    gap: 5px; /* Add some space between checkbox and label */
+    gap: 5px;
   }
   
   .new-item-form label input[type="checkbox"] {
     margin: 0;
-    transform: scale(1.2); /* Make the checkbox slightly larger if needed */
+    transform: scale(1.2);
   }
   
-  /* Table styling */
   .table-container {
     overflow-x: auto;
-    max-width: 100%; /* Ensure it takes up available space */
-    max-height: calc(100vh - 140px); /* Adjust for navbar and some padding */
+    max-width: 100%;
+    max-height: calc(100vh - 140px);
   }
   
   table {
-    width: 100%; /* Ensure table takes full width */
-    border-collapse: collapse; /* Ensure there are no gaps between cells */
-    table-layout: auto; /* Allow columns to adjust based on content */
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: auto;
   }
   
   th, td {
-    text-align: center; /* Center text horizontally */
+    text-align: center;
     padding: 8px;
     border-bottom: 1px solid #ddd;
-    vertical-align: middle; /* Center text vertically */
-    white-space: normal; /* Allow text wrapping */
+    vertical-align: middle;
+    white-space: normal;
     overflow: hidden;
-    text-overflow: ellipsis; /* Add ellipsis for overflowing text */
-    resize: horizontal; /* Allow manual column resizing */
+    text-overflow: ellipsis;
+    resize: horizontal;
   }
   
   th {
     background-color: #004e7d;
     color: white;
     font-weight: bold;
-    font-size: 16px; /* Consistent font size for headers */
-    cursor: col-resize; /* Indicate that the column is resizable */
+    font-size: 16px;
+    cursor: col-resize;
   }
   
   th button {
-    all: unset; /* Remove default button styles */
+    all: unset;
     width: 100%;
     height: 100%;
     font-size: 16px;
@@ -241,10 +243,9 @@
   }
   
   td {
-    font-size: 14px; /* Adjust the font size for table data */
+    font-size: 14px;
   }
   
-  /* Status dot styling */
   .status-dot {
     display: inline-block;
     width: 10px;
@@ -252,31 +253,28 @@
     border-radius: 50%;
   }
   
-  /* Action icons styling */
   .action-icon {
     background: none;
     border: none;
     cursor: pointer;
-    font-size: 0.8em; /* Smaller icons */
+    font-size: 0.8em;
     padding: 5px;
   }
   
   .action-icon svg {
-    pointer-events: none; /* Make sure the icons don't interfere with button click */
+    pointer-events: none;
   }
   
-  /* Specific color for trash icon */
   .action-icon.trash-icon svg {
     color: #3eb4e4;
   }
   
-  /* Mobile responsive */
   @media (max-width: 768px) {
     .main-content {
-      font-size: 2vw; /* Adjust font size for tablets and smaller devices */
+      font-size: 2vw;
     }
     th, td {
-      font-size: 12px; /* Smaller font size on small screens */
+      font-size: 12px;
       padding: 6px;
     }
   
@@ -287,7 +285,7 @@
   
   @media (max-width: 480px) {
     .main-content {
-      font-size: 3.5vw; /* Further adjust font size for small smartphones */
+      font-size: 3.5vw;
     }
   
     .sidebar {
@@ -310,7 +308,7 @@
   
     .main-content {
       margin-left: 0;
-      width: 100%; /* Ensure main content takes full width */
+      width: 100%;
     }
   
     .sidebar-toggle-btn {
@@ -321,7 +319,6 @@
     }
   
     table {
-      font-size: 3vw; /* Adjust table font size for small screens */
+      font-size: 3vw;
     }
   }
-  

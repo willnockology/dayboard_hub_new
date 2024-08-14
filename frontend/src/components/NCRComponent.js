@@ -1,7 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useHistory, useParams } from 'react-router-dom';
 import axios from 'axios';
 import './NCRComponent.css';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faTrashAlt, faComments, faEdit } from '@fortawesome/free-solid-svg-icons';
+import ChatComponent from './ChatComponent';
 
 const NCRComponent = ({ token }) => {
   const [ncrs, setNcrs] = useState([]);
@@ -11,45 +14,56 @@ const NCRComponent = ({ token }) => {
   const [formData, setFormData] = useState({
     vessel: '',
     date: '',
-    description: '',
+    title: '',
+    deficiencyType: '',
+    deficiencyIdentifiedBy: '',
     rootCause: '',
-    correctiveAction: '',
+    proposedCorrectiveAction: '',
     dueDate: '',
-    closedDate: '',
   });
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [role, setRole] = useState('');
-  const [currentUser, setCurrentUser] = useState({});
+  const [showChat, setShowChat] = useState(null);
+  const [unreadComments, setUnreadComments] = useState({});
 
   const history = useHistory();
   const { id } = useParams();
-
   const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5001';
 
-  useEffect(() => {
-    const fetchUserRoleAndDetails = async () => {
-      try {
-        const response = await axios.get(`${apiUrl}/api/users/profile`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        setRole(response.data.role);
-        setCurrentUser(response.data);
-        if (response.data.vessel && role !== 'Superuser' && role !== 'Company User') {
-          setFormData(prevData => ({
-            ...prevData,
-            vessel: response.data.vessel._id
-          }));
-        }
-      } catch (err) {
-        setError('Failed to fetch user role.');
-      }
-    };
+  const formatDate = (dateString) => {
+    const options = { day: '2-digit', month: 'long', year: 'numeric' };
+    return new Date(dateString).toLocaleDateString('en-GB', options);
+  };
 
+  const formatDateForInput = (isoDate) => {
+    if (!isoDate) return '';
+    const date = new Date(isoDate);
+    return date.toISOString().split('T')[0]; // Convert to "yyyy-MM-dd" format
+  };
+
+  const fetchUserRoleAndDetails = useCallback(async () => {
+    try {
+      const response = await axios.get(`${apiUrl}/api/users/profile`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setRole(response.data.role);
+      if (response.data.vessel && role !== 'Superuser' && role !== 'Company User') {
+        setFormData(prevData => ({
+          ...prevData,
+          vessel: response.data.vessel._id
+        }));
+      }
+    } catch (err) {
+      setError('Failed to fetch user role.');
+    }
+  }, [apiUrl, token, role]);
+
+  useEffect(() => {
     fetchUserRoleAndDetails();
-  }, [token, apiUrl, role]);
+  }, [fetchUserRoleAndDetails]);
 
   useEffect(() => {
     if (!token) {
@@ -57,35 +71,35 @@ const NCRComponent = ({ token }) => {
     }
   }, [token, history]);
 
+  const fetchNcrs = useCallback(async () => {
+    try {
+      const response = await axios.get(`${apiUrl}/api/ncrs`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setNcrs(response.data);
+      setFilteredNcrs(response.data);
+      setLoading(false);
+    } catch (err) {
+      setError('Failed to fetch NCRs.');
+      setLoading(false);
+    }
+  }, [apiUrl, token]);
+
+  const fetchVessels = useCallback(async () => {
+    try {
+      const response = await axios.get(`${apiUrl}/api/vessels`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setVessels(response.data);
+    } catch (err) {
+      setError('Failed to fetch vessels.');
+    }
+  }, [apiUrl, token]);
+
   useEffect(() => {
-    const fetchNcrs = async () => {
-      try {
-        const response = await axios.get(`${apiUrl}/api/ncrs`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        setNcrs(response.data);
-        setFilteredNcrs(response.data);
-        setLoading(false);
-      } catch (err) {
-        setError('Failed to fetch NCRs.');
-        setLoading(false);
-      }
-    };
-
-    const fetchVessels = async () => {
-      try {
-        const response = await axios.get(`${apiUrl}/api/vessels`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        setVessels(response.data);
-      } catch (err) {
-        setError('Failed to fetch vessels.');
-      }
-    };
-
     fetchNcrs();
     fetchVessels();
-  }, [token, apiUrl]);
+  }, [fetchNcrs, fetchVessels]);
 
   useEffect(() => {
     if (selectedVessel) {
@@ -107,23 +121,18 @@ const NCRComponent = ({ token }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const payload = {
+      const formattedData = {
         ...formData,
+        date: formData.date ? new Date(formData.date).toISOString() : null,
+        dueDate: formData.dueDate ? new Date(formData.dueDate).toISOString() : null,
       };
 
-      if (role !== 'Superuser' && role !== 'Company User') {
-        payload.vessel = currentUser.vessel._id; // Auto-set vessel for Captain and Crew
-      }
-
-      console.log('Submitting NCR:', payload);  // Log the payload being submitted
-
       if (isEditing) {
-        payload.status = formData.correctiveAction ? 'Pending DPA Sign Off' : 'Open';
-        await axios.put(`${apiUrl}/api/ncrs/${id}`, payload, {
+        await axios.put(`${apiUrl}/api/ncrs/${id}`, formattedData, {
           headers: { Authorization: `Bearer ${token}` },
         });
       } else {
-        await axios.post(`${apiUrl}/api/ncrs`, payload, {
+        await axios.post(`${apiUrl}/api/ncrs`, formattedData, {
           headers: { Authorization: `Bearer ${token}` },
         });
       }
@@ -131,17 +140,18 @@ const NCRComponent = ({ token }) => {
       setFormData({
         vessel: '',
         date: '',
-        description: '',
+        title: '',
+        deficiencyType: '',
+        deficiencyIdentifiedBy: '',
         rootCause: '',
-        correctiveAction: '',
+        proposedCorrectiveAction: '',
         dueDate: '',
-        closedDate: '',
       });
       setIsEditing(false);
       setShowForm(false);
       history.push('/ncrs');
     } catch (err) {
-      console.error('Failed to submit NCR:', err);  // Log the error
+      console.error('Failed to submit NCR:', err);
       setError('Failed to submit NCR.');
     }
   };
@@ -153,7 +163,12 @@ const NCRComponent = ({ token }) => {
           const response = await axios.get(`${apiUrl}/api/ncrs/${id}`, {
             headers: { Authorization: `Bearer ${token}` },
           });
-          setFormData(response.data);
+          const fetchedData = response.data;
+          setFormData({
+            ...fetchedData,
+            date: formatDateForInput(fetchedData.date),
+            dueDate: formatDateForInput(fetchedData.dueDate),
+          });
           setIsEditing(true);
           setShowForm(true);
         } catch (err) {
@@ -180,6 +195,27 @@ const NCRComponent = ({ token }) => {
 
   const handleVesselFilterChange = (e) => {
     setSelectedVessel(e.target.value);
+  };
+
+  const markCommentsAsRead = async (documentId) => {
+    try {
+      await axios.post(`${apiUrl}/api/chats/markAsRead`, { documentId }, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setUnreadComments((prevUnreadComments) => ({
+        ...prevUnreadComments,
+        [documentId]: false,
+      }));
+    } catch (error) {
+      console.error('Error marking comments as read:', error.response ? error.response.data : error.message);
+    }
+  };
+
+  const handleToggleChat = (ncrId) => {
+    setShowChat(showChat === ncrId ? null : ncrId);
+    if (showChat !== ncrId) {
+      markCommentsAsRead(ncrId);
+    }
   };
 
   return (
@@ -236,13 +272,43 @@ const NCRComponent = ({ token }) => {
                 onChange={handleChange}
                 required
               />
-              <label>Description:</label>
-              <textarea
-                name="description"
-                value={formData.description}
+              <label>Title:</label>
+              <input
+                type="text"
+                name="title"
+                value={formData.title}
                 onChange={handleChange}
+                maxLength={50}
                 required
               />
+              <label>Type of Deficiency:</label>
+              <select
+                name="deficiencyType"
+                value={formData.deficiencyType}
+                onChange={handleChange}
+                required
+              >
+                <option value="">Select Type</option>
+                <option value="Deficiency">Deficiency</option>
+                <option value="Observation">Observation</option>
+                <option value="Non-Conformity">Non-Conformity</option>
+                <option value="Major Non-Conformity">Major Non-Conformity</option>
+              </select>
+              <label>Deficiency Identified By:</label>
+              <select
+                name="deficiencyIdentifiedBy"
+                value={formData.deficiencyIdentifiedBy}
+                onChange={handleChange}
+                required
+              >
+                <option value="">Select Identifier</option>
+                <option value="Crew">Crew</option>
+                <option value="Company">Company</option>
+                <option value="Class">Class</option>
+                <option value="Flag">Flag</option>
+                <option value="Port State Control">Port State Control</option>
+                <option value="Other">Other</option>
+              </select>
               <label>Root Cause:</label>
               <input
                 type="text"
@@ -250,11 +316,11 @@ const NCRComponent = ({ token }) => {
                 value={formData.rootCause}
                 onChange={handleChange}
               />
-              <label>Corrective Action:</label>
+              <label>Proposed Corrective Action:</label>
               <input
                 type="text"
-                name="correctiveAction"
-                value={formData.correctiveAction}
+                name="proposedCorrectiveAction"
+                value={formData.proposedCorrectiveAction}
                 onChange={handleChange}
               />
               <label>Due Date:</label>
@@ -263,13 +329,7 @@ const NCRComponent = ({ token }) => {
                 name="dueDate"
                 value={formData.dueDate}
                 onChange={handleChange}
-              />
-              <label>Closed Date:</label>
-              <input
-                type="date"
-                name="closedDate"
-                value={formData.closedDate}
-                onChange={handleChange}
+                required
               />
               <button type="submit">{isEditing ? 'Update NCR' : 'Submit NCR'}</button>
             </form>
@@ -278,28 +338,49 @@ const NCRComponent = ({ token }) => {
               <table>
                 <thead>
                   <tr>
-                    <th>Vessel</th>
+                    {(role === 'Superuser' || role === 'Company User') && <th>Vessel</th>}
                     <th>Report Number</th>
                     <th>Date</th>
-                    <th>Description</th>
+                    <th>Title</th>
+                    <th>Type</th>
                     <th>Status</th>
                     <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredNcrs.map(ncr => (
-                    <tr key={ncr._id} className={ncr.status.toLowerCase().replace(' ', '-')}>
-                      <td>{ncr.vessel.name}</td>
-                      <td>{ncr.reportNumber}</td>
-                      <td>{new Date(ncr.date).toLocaleDateString()}</td>
-                      <td>{ncr.description}</td>
-                      <td>{ncr.status}</td>
-                      <td>
-                        <button onClick={() => history.push(`/ncrs/edit/${ncr._id}`)}>Edit</button>
-                        <button onClick={() => handleDelete(ncr._id)}>Delete</button>
-                      </td>
-                    </tr>
-                  ))}
+                  {filteredNcrs.map(ncr => {
+                    const showChatForNcr = showChat === ncr._id;
+                    return (
+                      <React.Fragment key={ncr._id}>
+                        <tr className={ncr.status.toLowerCase().replace(' ', '-')}>
+                          {(role === 'Superuser' || role === 'Company User') && <td>{ncr.vessel.name}</td>}
+                          <td>{ncr.reportNumber}</td>
+                          <td>{formatDate(ncr.date)}</td>
+                          <td>{ncr.title}</td>
+                          <td>{ncr.deficiencyType}</td>
+                          <td>{ncr.status}</td>
+                          <td>
+                            <button className="action-icon" onClick={() => handleToggleChat(ncr._id)}>
+                              <FontAwesomeIcon icon={faComments} style={{ color: showChatForNcr ? 'black' : unreadComments[ncr._id] ? 'orange' : '#3eb4e4' }} />
+                            </button>
+                            <button className="action-icon" onClick={() => history.push(`/ncrs/edit/${ncr._id}`)}>
+                              <FontAwesomeIcon icon={faEdit} style={{ color: 'orange' }} />
+                            </button>
+                            <button className="action-icon trash-icon" onClick={() => handleDelete(ncr._id)}>
+                              <FontAwesomeIcon icon={faTrashAlt} />
+                            </button>
+                          </td>
+                        </tr>
+                        {showChatForNcr && (
+                          <tr key={`chat-${ncr._id}`} className="chat-row">
+                            <td colSpan={role === 'Superuser' || role === 'Company User' ? '7' : '6'}>
+                              <ChatComponent documentId={ncr._id} itemName={ncr.title} markAsRead={markCommentsAsRead} />
+                            </td>
+                          </tr>
+                        )}
+                      </React.Fragment>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
