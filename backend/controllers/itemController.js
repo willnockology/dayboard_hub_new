@@ -1,5 +1,6 @@
 const asyncHandler = require('express-async-handler');
 const Item = require('../models/itemModel');
+const FormDefinition = require('../models/formDefinitionModel');
 
 // @desc    Get all items or items by subcategory
 // @route   GET /api/items
@@ -7,9 +8,6 @@ const Item = require('../models/itemModel');
 const getItems = asyncHandler(async (req, res) => {
   const { subcategory } = req.query;
   const user = req.user;
-
-  console.log('Request received. User:', user);
-  console.log('Query params:', req.query);
 
   let query = {};
   if (user.role !== 'Superuser') {
@@ -20,13 +18,10 @@ const getItems = asyncHandler(async (req, res) => {
     query.subcategory = subcategory;
   }
 
-  console.log('Query:', query);
-
   try {
     const items = await Item.find(query).populate('vessel');
     res.json(items);
   } catch (error) {
-    console.error('Error fetching items:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -54,16 +49,18 @@ const createItem = asyncHandler(async (req, res) => {
     recurrenceBasis
   } = req.body;
 
-  console.log('Received request body:', req.body);
-  console.log('Received files:', req.files);
-
   const attachments = req.files ? req.files.map(file => file.filename) : [];  // Store only the filename
 
-  const itemName = name === 'custom' ? customName : name;
+  // Fetch the form definition to get the form_name
+  const formDefinition = await FormDefinition.findById(formDefinitionId);
+  if (!formDefinition) {
+    return res.status(404).json({ message: 'Form definition not found' });
+  }
+
+  const itemName = name === 'custom' ? customName : formDefinition.form_name;
 
   // Validate required fields
   if (!itemName || !category || !dueDate || !vessel || !role || !formDefinitionId) {
-    console.error('Validation error: Missing required fields');
     return res.status(400).json({ message: 'All required fields must be filled' });
   }
 
@@ -71,7 +68,6 @@ const createItem = asyncHandler(async (req, res) => {
   const recurrenceData = {};
   if (isRecurring === 'true') {  // 'true' is received as a string from the client
     if (!recurrenceFrequency || !recurrenceInterval || !recurrenceBasis) {
-      console.error('Validation error: Missing recurrence fields');
       return res.status(400).json({ message: 'Recurrence fields must be provided for recurring items' });
     }
     recurrenceData.recurrenceFrequency = recurrenceFrequency;
@@ -80,7 +76,7 @@ const createItem = asyncHandler(async (req, res) => {
   }
 
   const newItemData = {
-    name: itemName,
+    name: itemName, // Use form_name from FormDefinition
     category,
     subcategory,
     dueDate,
@@ -109,7 +105,6 @@ const createItem = asyncHandler(async (req, res) => {
     const createdItem = await newItem.save();
     res.status(201).json(createdItem);
   } catch (error) {
-    console.error('Error creating item:', error);
     res.status(400).json({ message: 'Error creating item', error: error.message });
   }
 });
