@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { useHistory } from 'react-router-dom';
 import axios from 'axios';
-import Modal from 'react-modal'; // Import react-modal
+import Modal from 'react-modal';
 import ChatComponent from './ChatComponent';
 import './DashboardComponent.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -38,7 +37,7 @@ function DashboardComponent({ setToken }) {
     recurrenceInterval: '',
     recurrenceBasis: 'initial',
   });
-  
+
   const [categories, setCategories] = useState([]);
   const [subcategories, setSubcategories] = useState([]);
   const [itemOptions, setItemOptions] = useState([]);
@@ -55,9 +54,10 @@ function DashboardComponent({ setToken }) {
   const [showChat, setShowChat] = useState(null);
   const [unreadComments, setUnreadComments] = useState({});
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-  const [isModalOpen, setIsModalOpen] = useState(false); // State for modal
-
-  const history = useHistory();
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isFormModalOpen, setIsFormModalOpen] = useState(false);
+  const [selectedFormDefinition, setSelectedFormDefinition] = useState(null);
+  const [formFields, setFormFields] = useState({});
 
   const fetchItems = async (subcategory = '') => {
     try {
@@ -159,24 +159,28 @@ function DashboardComponent({ setToken }) {
     const fetchFormDefinitions = async () => {
       try {
         const token = localStorage.getItem('authToken');
+        if (!token) {
+          throw new Error('Authentication token is missing');
+        }
+    
         const response = await axios.get('http://localhost:5001/api/forms/definitions', {
           headers: {
             Authorization: `Bearer ${token}`,
           },
           params: {
             vessel: newItem.vessel,
-          }
+          },
         });
+    
         const formDefinitions = response.data;
-  
-        console.log('Fetched Form Definitions:', formDefinitions);
-  
+    
         const categories = [...new Set(formDefinitions.map(form => form.category))];
         setCategories(categories);
-  
+    
         setItemOptions(formDefinitions);
       } catch (error) {
         console.error('Error fetching form definitions:', error);
+        setError('Error fetching form definitions.');
       }
     };
   
@@ -250,6 +254,15 @@ function DashboardComponent({ setToken }) {
         ...prevItem,
         formDefinitionId: selectedItem ? selectedItem._id : '',
       }));
+
+      // Set the form fields when a form is selected
+      if (selectedItem) {
+        const fields = selectedItem.fields.reduce((acc, field) => {
+          acc[field.field_name] = '';
+          return acc;
+        }, {});
+        setFormFields(fields);
+      }
     }
   };  
   
@@ -289,7 +302,6 @@ function DashboardComponent({ setToken }) {
         let itemName = newItem.name === 'custom' ? newItem.customName : '';
 
         if (!itemName) {
-            // Assuming you have `itemOptions` which holds the form definitions
             const selectedForm = itemOptions.find(
                 (form) => form._id === newItem.formDefinitionId
             );
@@ -329,6 +341,11 @@ function DashboardComponent({ setToken }) {
             formData.append('recurrenceBasis', newItem.recurrenceBasis);
         }
 
+        // Add dynamic form fields to the formData
+        Object.keys(formFields).forEach((fieldName) => {
+          formData.append(fieldName, formFields[fieldName]);
+        });
+
         const response = await axios.post('http://localhost:5001/api/items', formData, {
             headers: {
                 Authorization: `Bearer ${token}`,
@@ -354,6 +371,7 @@ function DashboardComponent({ setToken }) {
             type: '',
             customType: '',
         });
+        setFormFields({}); // Clear form fields after submission
         setIsModalOpen(false);
         fetchItems();
         setValidationErrors([]);
@@ -361,7 +379,7 @@ function DashboardComponent({ setToken }) {
         setError('Error adding item');
         console.error('Error adding item:', error.response ? error.response.data : error.message);
     }
-};
+  };
 
   const handleDelete = async (id) => {
     try {
@@ -393,11 +411,38 @@ function DashboardComponent({ setToken }) {
   };
 
   const handleCompleteForm = async (formDefinitionId) => {
-    if (formDefinitionId) {
-      history.push(`/form/${formDefinitionId}`);
-    } else {
-      console.error('Form definition ID not found');
+    try {
+      const token = localStorage.getItem('authToken');
+      const response = await axios.get(`http://localhost:5001/api/forms/definitions/${formDefinitionId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      const formDefinition = response.data;
+      setSelectedFormDefinition(formDefinition);
+      setIsFormModalOpen(true);
+    } catch (error) {
+      console.error('Error fetching form definition:', error);
     }
+  };
+
+  const handleFileChange = (e, fieldName) => {
+    setFormFields((prevFormFields) => ({
+      ...prevFormFields,
+      [fieldName]: e.target.files[0],
+    }));
+  };
+
+  const handleFieldChange = (e, fieldName) => {
+    setFormFields((prevFormFields) => ({
+      ...prevFormFields,
+      [fieldName]: e.target.value,
+    }));
+  };
+
+  const closeFormModal = () => {
+    setIsFormModalOpen(false);
+    setSelectedFormDefinition(null);
   };
 
   const filteredAndSortedItems = () => {
@@ -696,7 +741,6 @@ function DashboardComponent({ setToken }) {
                   <option value="custom">Custom</option>
                 </select>
 
-
                 {newItem.name === 'custom' && (
                   <input
                     type="text"
@@ -708,6 +752,24 @@ function DashboardComponent({ setToken }) {
                     required
                   />
                 )}
+
+                {/* Render dynamic form fields based on selected form definition */}
+                {selectedFormDefinition && selectedFormDefinition.fields.map((field) => (
+                  <div key={field._id} className="form-field">
+                    <label>{field.field_name}</label>
+                    {field.field_type === 'file' ? (
+                      <input type="file" name={field.field_name} onChange={(e) => handleFileChange(e, field.field_name)} />
+                    ) : (
+                      <input
+                        type={field.field_type}
+                        name={field.field_name}
+                        value={formFields[field.field_name] || ''}
+                        onChange={(e) => handleFieldChange(e, field.field_name)}
+                        required={field.required}
+                      />
+                    )}
+                  </div>
+                ))}
               </>
             )}
 
@@ -785,6 +847,41 @@ function DashboardComponent({ setToken }) {
             <button type="submit">Add Item</button>
           </form>
           <button onClick={closeModal}>Close</button>
+        </Modal>
+
+        {/* Form Modal */}
+        <Modal
+          isOpen={isFormModalOpen}
+          onRequestClose={closeFormModal}
+          contentLabel="Complete Form"
+          className="modal"
+          overlayClassName="modal-overlay"
+          style={{ content: { width: '80%', height: '90%', margin: 'auto' } }}
+        >
+          <button onClick={closeFormModal} className="modal-close-button">
+            &times;
+          </button>
+          {selectedFormDefinition && (
+            <form onSubmit={handleSubmit} className="new-item-form">
+              {selectedFormDefinition.fields.map((field) => (
+                <div key={field._id} className="form-field">
+                  <label>{field.field_name}</label>
+                  {field.field_type === 'file' ? (
+                    <input type="file" name={field.field_name} onChange={(e) => handleFileChange(e, field.field_name)} />
+                  ) : (
+                    <input
+                      type={field.field_type}
+                      name={field.field_name}
+                      value={formFields[field.field_name] || ''}
+                      onChange={(e) => handleFieldChange(e, field.field_name)}
+                      required={field.required}
+                    />
+                  )}
+                </div>
+              ))}
+              <button type="submit">Submit Form</button>
+            </form>
+          )}
         </Modal>
 
         {error && <p>{error}</p>}

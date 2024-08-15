@@ -320,23 +320,60 @@ td {
   }
 }
 
-/* Add these styles at the bottom of DashboardComponent.css */
+/* General modal styling */
 .modal {
-  position: absolute;
-  top: 50%;
+  position: fixed;
+  top: 90px; /* 10px below the navbar, assuming the navbar is 60px high */
   left: 50%;
-  right: auto;
-  bottom: auto;
-  transform: translate(-50%, -50%);
+  transform: translateX(-50%);
   background-color: white;
   padding: 20px;
-  max-width: 500px;
-  width: 100%;
+  width: 80%;  /* Adjust the width to fit the screen */
+  max-width: 600px;  /* Maximum width of the modal */
+  max-height: calc(100vh - 80px);  /* Ensures the modal doesn't go off-screen, leaving 10px at the bottom */
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
   border-radius: 8px;
-  z-index: 1000;
+  overflow-y: auto;  /* Enable scrolling if content exceeds modal height */
+  box-sizing: border-box;
 }
 
+/* Ensure the content within the modal does not exceed the modal's width */
+.modal form {
+  width: 100%;  /* Ensure form takes full width of modal */
+}
+
+.modal form > div {
+  width: 100%;  /* Ensure each form field takes full width of the modal */
+  box-sizing: border-box;
+}
+
+.modal form input,
+.modal form select,
+.modal form textarea,
+.modal form button {
+  width: 100%;  /* Ensure input fields, selects, textareas, and buttons take full width */
+  max-width: 100%;  /* Prevent fields from overflowing */
+  box-sizing: border-box;
+}
+
+/* Button alignment */
+.modal form button[type="submit"] {
+  align-self: flex-end;
+  padding: 10px 20px;
+}
+
+/* Modal close button */
+.modal-close-button {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: none;
+  border: none;
+  font-size: 1.5em;
+  cursor: pointer;
+}
+
+/* Modal overlay */
 .modal-overlay {
   position: fixed;
   top: 0;

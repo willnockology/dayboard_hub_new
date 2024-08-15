@@ -3,7 +3,6 @@ import { BrowserRouter as Router, Route, Switch } from 'react-router-dom';
 import DashboardComponent from './components/DashboardComponent';
 import LoginComponent from './components/LoginComponent';
 import ProfileComponent from './components/ProfileComponent';
-import DynamicFormComponent from './components/DynamicFormComponent';
 import ViewFormComponent from './components/ViewFormComponent';
 import NavbarComponent from './components/NavbarComponent';
 import FooterComponent from './components/FooterComponent';
@@ -42,7 +41,6 @@ const App = () => {
             <Route path="/dashboard">
               <DashboardComponent setToken={setToken} />
             </Route>
-            <Route path="/form/:id" component={DynamicFormComponent} />
             <Route path="/form/view/:id" component={ViewFormComponent} />
             <Route path="/contact" component={ContactComponent} />
             <Route path="/vessel-form">

@@ -18,8 +18,9 @@
   }
   
   .navbar-logo-image {
-    height: 35px;
+    height: 50px;
     margin-right: 15px;
+    margin-top: 10px;
   }
   
   /* Sidebar and content layout */
