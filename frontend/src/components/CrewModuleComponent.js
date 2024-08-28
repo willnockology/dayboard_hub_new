@@ -6,6 +6,7 @@ import AvatarEditor from 'react-avatar-editor';
 import './CrewModuleComponent.css';
 
 const CrewModuleComponent = () => {
+  console.log("countryList: ", countryList);
   const [crew, setCrew] = useState([]);
   const [vessels, setVessels] = useState([]);
   const [showForm, setShowForm] = useState(false);

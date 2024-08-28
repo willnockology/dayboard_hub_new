@@ -54,12 +54,16 @@
 /* Active state for the navbar menu */
 .navbar-menu.is-active {
   display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
 }
 
 /* Unordered list styling in the navbar */
 .navbar-menu ul {
   list-style: none;
   display: flex;
+  align-items: center;
   gap: 20px;
   padding: 0;
   margin: 0;
@@ -68,6 +72,8 @@
 /* List item styling */
 .navbar-menu ul li {
   position: relative;
+  display: flex;
+  
 }
 
 /* Navbar button styles */

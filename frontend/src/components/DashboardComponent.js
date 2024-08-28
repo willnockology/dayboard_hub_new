@@ -122,7 +122,7 @@ function DashboardComponent({ setToken }) {
         }));
       }
     } catch (error) {
-      setError('Error fetching user role');
+      setError('There was an error fetching the user role, please login again.');
     }
   };
   

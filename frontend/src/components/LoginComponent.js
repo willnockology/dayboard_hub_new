@@ -41,12 +41,14 @@ function LoginComponent({ setToken }) {
   };
 
   return (
-    <div>
+    <div class="login-container" >
       <h1>Login</h1>
       {error && <p>{error}</p>}
       <form onSubmit={handleSubmit}>
-        <div>
-          <label htmlFor="username">Username:</label>
+        <div className='login-form-user-password' >
+          <label htmlFor="username">
+            Username:
+          </label>
           <input
             type="text"
             id="username"
@@ -55,8 +57,10 @@ function LoginComponent({ setToken }) {
             required
           />
         </div>
-        <div>
-          <label htmlFor="password">Password:</label>
+        <div class='login-form-user-password'>
+          <label htmlFor="password">
+            Password:
+          </label>
           <input
             type="password"
             id="password"
@@ -65,7 +69,9 @@ function LoginComponent({ setToken }) {
             required
           />
         </div>
-        <button type="submit">Login</button>
+        <button type="submit">
+          Login
+        </button>
       </form>
     </div>
   );
