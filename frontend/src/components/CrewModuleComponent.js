@@ -237,12 +237,22 @@ const CrewModuleComponent = () => {
   return (
     <div className="crew-module-container">
       <h1>Crew Module</h1>
-      <button onClick={() => {
-        setShowForm(!showForm);
-        resetForm();
-      }} className="toggle-form-button">
-        {showForm ? 'Hide Form' : 'Add New Crew'}
-      </button>
+      
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+        <button 
+          onClick={() => {
+            setShowForm(!showForm);
+            resetForm();
+          }} 
+          className="toggle-form-button">
+          {showForm ? 'Hide Form' : 'Add New Crew'}
+        </button>
+        <button 
+          onClick={() => window.print()} 
+          className="print-button">
+            Print Crew List
+        </button>
+      </div>
 
       {showForm && (
         <form onSubmit={handleSubmit} className="new-crew-form">
