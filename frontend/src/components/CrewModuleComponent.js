@@ -6,7 +6,7 @@ import AvatarEditor from 'react-avatar-editor';
 import './CrewModuleComponent.css';
 
 const CrewModuleComponent = () => {
-  console.log("countryList: ", countryList);
+  // console.log("countryList: ", countryList);
   const [crew, setCrew] = useState([]);
   const [vessels, setVessels] = useState([]);
   const [showForm, setShowForm] = useState(false);
@@ -45,9 +45,9 @@ const CrewModuleComponent = () => {
           Authorization: `Bearer ${token}`,
         },
       });
-      setCrew(response.data);
+      setCrew(response?.data);
       const user = JSON.parse(localStorage.getItem('user'));
-      setUserRole(user.role);
+      // setUserRole(user?.role); //breaking
     } catch (error) {
       console.error('Error fetching crew:', error);
     }
