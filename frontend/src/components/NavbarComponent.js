@@ -10,6 +10,7 @@ const NavbarComponent = ({ setToken }) => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const history = useHistory();
   const location = useLocation();
+  const isUserLoggedIn = !!localStorage.getItem('authToken');
 
   const toggleMenu = () => {
     setIsOpen(!isOpen);
@@ -41,13 +42,16 @@ const NavbarComponent = ({ setToken }) => {
             <img src={logoSrc} alt="Logo" className="navbar-logo-image" />
           </Link>
         </div>
-        <button className="navbar-toggle" onClick={toggleMenu}>
+        <button className="navbar-toggle" 
+                onClick={toggleMenu}>
           <span className="navbar-toggle-icon"></span>
           <span className="navbar-toggle-icon"></span>
           <span className="navbar-toggle-icon"></span>
         </button>
+
         <div className={`navbar-menu ${isOpen ? 'is-active' : ''}`}>
           <ul>
+          {isUserLoggedIn && (
             <li>
               <Link 
                 to="/dashboard" 
@@ -56,6 +60,8 @@ const NavbarComponent = ({ setToken }) => {
                 Dashboard
               </Link>
             </li>
+          )}
+          {isUserLoggedIn && (
             <li>
               <Link 
                 to="/crew" 
@@ -64,6 +70,8 @@ const NavbarComponent = ({ setToken }) => {
                 Crew
               </Link>
             </li>
+          )}
+            {isUserLoggedIn && (
             <li>
               <Link 
                 to="/ncrs" 
@@ -72,6 +80,7 @@ const NavbarComponent = ({ setToken }) => {
                 NCRs
               </Link>
             </li>
+            )}
             <li>
               <Link 
                 to="/contact" 
@@ -80,7 +89,7 @@ const NavbarComponent = ({ setToken }) => {
                 Contact
               </Link>
             </li>
-            {user && user.role === 'Superuser' && (
+            {user && user.role === 'Superuser' && isUserLoggedIn &&  (
               <li 
                 className="navbar-dropdown" 
                 onMouseLeave={closeDropdown}
@@ -110,11 +119,19 @@ const NavbarComponent = ({ setToken }) => {
               </li>
             )}
             <li>
-              <button onClick={handleLogout} className="navbar-button logout-button">Logout</button>
+            {isUserLoggedIn && (
+              <button 
+                onClick={handleLogout} 
+                className="navbar-button logout-button">
+                Logout
+              </button>
+            )}
             </li>
+
           </ul>
         </div>
-      </div>
+     
+     </div>
     </nav>
   );
 };
