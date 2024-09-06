@@ -245,7 +245,8 @@ const CrewModuleComponent = () => {
             resetForm();
           }} 
           className="toggle-form-button">
-          {showForm ? 'Hide Form' : 'Add New Crew'}
+          {(userRole !== 'Crew Manager' || userRole !== 'Admin') 
+          ? (showForm ? 'Hide Form' : 'Add New Crew') : 'View Crew'}
         </button>
         <button 
           onClick={() => window.print()} 
@@ -481,7 +482,7 @@ const CrewModuleComponent = () => {
                     {['Superuser', 'Company User', 'Captain'].includes(userRole) && (
                       <>
                         <button onClick={() => handleEditCrew(c)}>Edit</button>
-                        <button onClick={() => handleDeleteCrew(c._id)}>Delete</button>
+                        <button onClick={() => handleDeleteCrew(c._id)}>Delete Make Archive</button>
                       </>
                     )}
                   </td>
