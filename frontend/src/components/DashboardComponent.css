@@ -66,21 +66,20 @@
 .sidebar.collapsed {
   width: 60px;
   padding: 10px;
+  margin-top: 10px;
 }
 
 .sidebar-toggle-container {
   display: flex;
-  justify-content: center;
-  padding: 10px;
+  padding: 10px 10px 10px 1px;
 }
-
 .sidebar-toggle-btn {
   cursor: pointer;
   padding: 10px;
   background-color: #004e7d;
   color: white;
   border-radius: 5px;
-  text-align: center;
+  text-align: left;
 }
 
 .filters {
@@ -99,8 +98,9 @@
 .new-item-form button {
   display: block;
   width: 100%; /* Ensure consistent width across all elements */
-  margin-bottom: 10px;
+  margin-bottom: 4px;
   padding: 8px;
+  border-radius: 5px;
   box-sizing: border-box; /* Include padding and border in element's width and height */
 }
 
@@ -110,6 +110,7 @@
   border: none;
   border-radius: 5px;
   cursor: pointer;
+  
   text-align: center;
 }
 
@@ -126,13 +127,14 @@
 .add-item-button {
   background-color: #FFA500 !important; /* Orange background */
   color: white !important; /* White text color */
-  padding: 10px !important;
+  padding: 10px 0 !important;
   border: none !important;
   border-radius: 5px !important;
   cursor: pointer !important;
-  width: 100% !important; /* Ensures it matches the width of the container */
+  width: 30% !important; /* Ensures it matches the width of the container */
   text-align: center !important;
   font-weight: bold !important;
+  margin: 10px 0;
 }
 
 .add-item-button:hover {
@@ -185,12 +187,12 @@
 .new-item-form label {
   display: flex;
   align-items: center;
-  gap: 5px; /* Add some space between checkbox and label */
+  gap: 2px; /* Add some space between checkbox and label */
 }
 
 .new-item-form label input[type="checkbox"] {
   margin: 0;
-  transform: scale(1.2); /* Make the checkbox slightly larger if needed */
+  transform: scale(0.7); /* Make the checkbox slightly larger if needed */
 }
 
 /* Table styling */
@@ -310,6 +312,7 @@ td {
 
   .sidebar-toggle-btn {
     position: fixed;
+    margin-top: 10px;
     right: 10px;
     top: 80px;
     z-index: 1001;

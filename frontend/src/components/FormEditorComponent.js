@@ -329,7 +329,10 @@ const FormEditorComponent = () => {
                 ))}
               </select>
               {selectedCategory && (
-                <select value={selectedSubcategory} onChange={handleSubcategoryChange}>
+                <select 
+                  value={selectedSubcategory} 
+                  onChange={handleSubcategoryChange}
+                >
                   <option value="">Select Subcategory</option>
                   {subCategories
                     .filter((sub) => sub.categoryId === categories.find((cat) => cat.name === selectedCategory).id)
@@ -338,12 +341,19 @@ const FormEditorComponent = () => {
                     ))}
                 </select>
               )}
-              <input
-                type="text"
-                placeholder="Enter item name"
-                value={newItemName}
-                onChange={(e) => setNewItemName(e.target.value)}
-              />
+              
+             
+              
+                {selectedSubcategory !== 'Crew' && (
+                  <input
+                  type="text"
+                  style={{ width: '97%' }}
+                  placeholder="Enter item name"
+                  value={newItemName}
+                  onChange={(e) => setNewItemName(e.target.value)}
+                  />
+                )}
+                
               {errors.form_name && <p className="error">{errors.form_name}</p>}
             </div>
 
@@ -515,9 +525,17 @@ const FormEditorComponent = () => {
               ))}
               <button onClick={handleAddField}>Add Field</button>
             </div>
-            <div className="modal-actions">
-              <button onClick={handleSave}>{editingFormId ? 'Save Changes' : 'Save Form'}</button>
-              <button onClick={() => setIsCreatingNewForm(false)}>Cancel</button>
+            <div className="modal-actions"
+            >
+              <button 
+                onClick={handleSave}
+              >
+                {editingFormId ? 'Save Changes' : 'Save Form'}
+                </button>
+              <button 
+                onClick={() => setIsCreatingNewForm(false)}>
+                Cancel
+              </button>
             </div>
           </div>
         </div>

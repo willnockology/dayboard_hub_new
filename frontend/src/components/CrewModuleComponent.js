@@ -6,6 +6,7 @@ import AvatarEditor from 'react-avatar-editor';
 import './CrewModuleComponent.css';
 
 const CrewModuleComponent = () => {
+  // console.log("countryList: ", countryList);
   const [crew, setCrew] = useState([]);
   const [vessels, setVessels] = useState([]);
   const [showForm, setShowForm] = useState(false);
@@ -44,9 +45,9 @@ const CrewModuleComponent = () => {
           Authorization: `Bearer ${token}`,
         },
       });
-      setCrew(response.data);
+      setCrew(response?.data);
       const user = JSON.parse(localStorage.getItem('user'));
-      setUserRole(user.role);
+      // setUserRole(user?.role); //breaking
     } catch (error) {
       console.error('Error fetching crew:', error);
     }
@@ -236,12 +237,23 @@ const CrewModuleComponent = () => {
   return (
     <div className="crew-module-container">
       <h1>Crew Module</h1>
-      <button onClick={() => {
-        setShowForm(!showForm);
-        resetForm();
-      }} className="toggle-form-button">
-        {showForm ? 'Hide Form' : 'Add New Crew'}
-      </button>
+      
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+        <button 
+          onClick={() => {
+            setShowForm(!showForm);
+            resetForm();
+          }} 
+          className="toggle-form-button">
+          {(userRole !== 'Crew Manager' || userRole !== 'Admin') 
+          ? (showForm ? 'Hide Form' : 'Add New Crew') : 'View Crew'}
+        </button>
+        <button 
+          onClick={() => window.print()} 
+          className="print-button">
+            Print Crew List
+        </button>
+      </div>
 
       {showForm && (
         <form onSubmit={handleSubmit} className="new-crew-form">
@@ -470,7 +482,7 @@ const CrewModuleComponent = () => {
                     {['Superuser', 'Company User', 'Captain'].includes(userRole) && (
                       <>
                         <button onClick={() => handleEditCrew(c)}>Edit</button>
-                        <button onClick={() => handleDeleteCrew(c._id)}>Delete</button>
+                        <button onClick={() => handleDeleteCrew(c._id)}>Delete Make Archive</button>
                       </>
                     )}
                   </td>

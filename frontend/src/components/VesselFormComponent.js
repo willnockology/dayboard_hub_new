@@ -205,7 +205,12 @@ const VesselFormComponent = ({ token }) => {
       {message && <p>{message}</p>}
       {formMode === null && (
         <div>
-          <button onClick={() => setFormMode('add')}>Add New Vessel</button>
+          <button 
+            style={{ marginRight: '10px' }} 
+            onClick={() => setFormMode('add')}
+          >
+            Add New Vessel
+          </button>
           <button onClick={() => setFormMode('update')}>Update Existing Vessel</button>
         </div>
       )}

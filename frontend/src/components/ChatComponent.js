@@ -136,6 +136,7 @@ function ChatComponent({ documentId, itemName, markAsRead }) {
       <form onSubmit={handleSubmit} className="chat-form">
         <div className="chat-input-container">
           <input
+            style={{ width: '90%' }}
             type="text"
             value={message}
             onChange={(e) => setMessage(e.target.value)}
@@ -144,10 +145,17 @@ function ChatComponent({ documentId, itemName, markAsRead }) {
             required
           />
           <input
+            style={{ width: '90%', marginTop: '10px', paddingLeft: '5px' }}
             type="file"
             onChange={(e) => setAttachment(e.target.files[0])}
           />
-          <button type="submit">Send</button>
+          <br />
+          <button
+            style={{ marginTop: '10px' }}
+            type="submit"
+          >
+            Send
+          </button>
         </div>
       </form>
     </div>

@@ -14,12 +14,20 @@
     justify-content: space-between;
     align-items: center;
     width: 90%;
-    margin: 0 auto;
+    margin-left: 40px;
+    margin-right: 20px;
   }
+  @media (max-width: 768px) {
+    .navbar-container {
+      flex-direction: column;
+      align-items: center;
+      margin-top: 50px ;
+    }}
   
   .navbar-logo-image {
     height: 50px;
     margin-right: 15px;
+    margin-left: 0px;
     margin-top: 10px;
   }
   
@@ -71,8 +79,8 @@
   
   .sidebar-toggle-container {
     display: flex;
-    justify-content: center;
-    padding: 10px;
+    justify-content: left;
+    padding: 10px 10px 10px 1px;
   }
   
   .sidebar-toggle-btn {
@@ -109,6 +117,8 @@
     border: 1px solid #ccc;
     width: auto; /* Ensure select box doesn't take full width */
   }
+
+ 
   
   .add-item-button {
     background-color: #FFA500;
@@ -232,6 +242,9 @@
     font-size: 16px;
     cursor: col-resize;
   }
+  th:hover {
+    background-color: #00334d;
+  }
   
   th button {
     all: unset;
@@ -290,20 +303,21 @@
     }
   
     .sidebar {
-      width: 100%;
-      height: auto;
+      width: 92%;
+
       position: fixed;
       top: 60px;
-      left: -100%;
-      transition: left 0.3s ease;
+
+      transition: left 0.4s ease;
       z-index: 1000;
     }
   
     .sidebar.open {
-      left: 0;
+      left: 9%;
     }
   
     .sidebar.collapsed {
+      left: 100%;
       width: 100%;
     }
   

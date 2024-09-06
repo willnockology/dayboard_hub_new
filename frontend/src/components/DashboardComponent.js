@@ -122,7 +122,7 @@ function DashboardComponent({ setToken }) {
         }));
       }
     } catch (error) {
-      setError('Error fetching user role');
+      setError('There was an error fetching the user role, please login again.');
     }
   };
   
@@ -846,7 +846,12 @@ function DashboardComponent({ setToken }) {
 
             <button type="submit">Add Item</button>
           </form>
-          <button onClick={closeModal}>Close</button>
+          <button 
+            onClick={closeModal}
+            style={{ marginTop: '20px' }}
+          >
+            Close
+          </button>
         </Modal>
 
         {/* Form Modal */}
