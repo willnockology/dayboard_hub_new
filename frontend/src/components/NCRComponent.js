@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, Fragment } from 'react';
 import { useHistory, useParams } from 'react-router-dom';
 import axios from 'axios';
 import './NCRComponent.css';
@@ -244,6 +244,7 @@ const NCRComponent = ({ token }) => {
           </div>
 
           {showForm ? (
+            <Fragment>
             <form className="ncr-form" onSubmit={handleSubmit}>
               {(role === 'Superuser' || role === 'Company User') && (
                 <>
@@ -331,8 +332,16 @@ const NCRComponent = ({ token }) => {
                 onChange={handleChange}
                 required
               />
-              <button type="submit">{isEditing ? 'Update NCR' : 'Submit NCR'}</button>
-            </form>
+                </form>
+              <button 
+                className='submit-NCR-button'
+                type="submit"
+                >
+                  {isEditing ? 'Update NCR' : 'Submit NCR'}
+              </button>
+              
+
+              </Fragment>
           ) : (
             <div className="ncr-list">
               <table>

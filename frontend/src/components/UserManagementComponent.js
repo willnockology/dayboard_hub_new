@@ -173,8 +173,30 @@ const UserManagementComponent = () => {
   return (
     <div>
       <h1>User Management</h1>
-      <button onClick={() => setFormType('add')}>Add New User</button>
-      <button onClick={() => setFormType('update')}>Update Existing User</button>
+      <button 
+        onClick={() => {
+          setFormType('add');
+          setUserDetails({
+            firstName: '',
+            lastName: '',
+            email: '',
+            phoneNumber: '',
+            position: '',
+            nationality: '',
+            passportNumber: '',
+            photo: null,
+          });
+        }}
+        style={{ marginRight: '5px' }}
+        >
+          Add New User
+      </button>
+      <button 
+        onClick={() => setFormType('update')}
+        style={{ marginLeft: '5px', marginRight: '5px' }}
+        >
+          Update Existing User
+      </button>
       {formType === 'update' && (
         <select onChange={handleUserSelect} value={selectedUser?._id || ''}>
           <option value="">Select a user to update</option>

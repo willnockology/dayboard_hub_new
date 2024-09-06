@@ -187,12 +187,12 @@
 .new-item-form label {
   display: flex;
   align-items: center;
-  gap: 5px; /* Add some space between checkbox and label */
+  gap: 2px; /* Add some space between checkbox and label */
 }
 
 .new-item-form label input[type="checkbox"] {
   margin: 0;
-  transform: scale(1.2); /* Make the checkbox slightly larger if needed */
+  transform: scale(0.7); /* Make the checkbox slightly larger if needed */
 }
 
 /* Table styling */

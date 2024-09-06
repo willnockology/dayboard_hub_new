@@ -846,7 +846,12 @@ function DashboardComponent({ setToken }) {
 
             <button type="submit">Add Item</button>
           </form>
-          <button onClick={closeModal}>Close</button>
+          <button 
+            onClick={closeModal}
+            style={{ marginTop: '20px' }}
+          >
+            Close
+          </button>
         </Modal>
 
         {/* Form Modal */}

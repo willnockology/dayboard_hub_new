@@ -101,10 +101,19 @@
     margin-top: 20px;
 }
 
-.modal-actions button {
+.modal-actions button:first-child {
     flex: 1;
-    margin: 0 5px;
+    margin-left: 0;
+    margin-right: 5px;
 }
+
+.modal-actions button:last-child {
+    flex: 1;
+    margin-right: 0;
+    margin-left: 5px;
+}
+
+
 
 .forms-table {
     width: 100%;
