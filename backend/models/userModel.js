@@ -8,11 +8,11 @@ const userSchema = mongoose.Schema({
   },
   lastName: {
     type: String,
-    required: false,
+    required: true,  // Last name should typically be required
   },
   username: {
     type: String,
-    required: false,
+    required: true,  // Username should be required for unique identification
     unique: true,
   },
   email: {
@@ -22,11 +22,11 @@ const userSchema = mongoose.Schema({
   },
   password: {
     type: String,
-    required: false,
+    required: true,  // Password should be required
   },
   role: {
     type: String,
-    required: false,
+    required: true,  // Role should be required to define user permissions
   },
   assignedVessels: [
     {
@@ -85,11 +85,14 @@ userSchema.methods.matchPassword = async function (enteredPassword) {
 
 // Method to hash password before saving user data
 userSchema.pre('save', async function (next) {
+  // Only hash the password if it has been modified (or is new)
   if (!this.isModified('password')) {
-    next();
+    return next();
   }
 
+  // Generate a salt
   const salt = await bcrypt.genSalt(10);
+  // Hash the password using the salt
   this.password = await bcrypt.hash(this.password, salt);
   next();
 });

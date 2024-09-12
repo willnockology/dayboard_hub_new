@@ -265,26 +265,20 @@ function DashboardComponent({ setToken }) {
       }
     }
   };  
-  
-  const validateForm = () => {
-    const errors = [];
-    if (!newItem.category) errors.push('Category is required');
-    if ((newItem.category === 'Form or Checklist' || newItem.category === 'Document') && !newItem.subcategory)
-      errors.push('Subcategory is required');
-    if ((newItem.category === 'Form or Checklist' || newItem.category === 'Document') && !newItem.name && !newItem.customName)
-      errors.push('Item name is required');
-    if (newItem.category === 'Track a Date' && !newItem.title) errors.push('Title is required');
-    if (!newItem.dueDate) errors.push('Due date is required');
-    if (!newItem.vessel && (role === 'Superuser' || role === 'Company User')) errors.push('Vessel is required');
-    if (newItem.formDefinitionId === '669edf84beec7dd7fcd9b5f0' && !newItem.type) errors.push('Type is required');
-    return errors;
-  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const errors = validateForm();
-    if (errors.length > 0) {
-        setValidationErrors(errors);
+
+    // Simple validation for form fields
+    const fieldErrors = [];
+    Object.keys(formFields).forEach((fieldName) => {
+        if (!formFields[fieldName]) {
+            fieldErrors.push(`${fieldName} is required`);
+        }
+    });
+
+    if (fieldErrors.length > 0) {
+        setValidationErrors(fieldErrors);
         return;
     }
 
@@ -292,94 +286,44 @@ function DashboardComponent({ setToken }) {
         const token = localStorage.getItem('authToken');
         const formData = new FormData();
 
-        formData.append('category', newItem.category);
-        formData.append('dueDate', newItem.dueDate);
-        formData.append('vessel', newItem.vessel);
-        formData.append('role', newItem.role);
-        formData.append('formDefinitionId', newItem.formDefinitionId);
-
-        // Fetch the form_name using the formDefinitionId before appending it to the formData
-        let itemName = newItem.name === 'custom' ? newItem.customName : '';
-
-        if (!itemName) {
-            const selectedForm = itemOptions.find(
-                (form) => form._id === newItem.formDefinitionId
-            );
-            if (selectedForm) {
-                itemName = selectedForm.form_name;
-            } else {
-                setError('Form name not found.');
-                return;
-            }
-        }
-
-        if (newItem.formDefinitionId === '669edf84beec7dd7fcd9b5f0') {
-            const typeName = newItem.type === 'Other' ? newItem.customType : newItem.type;
-            itemName += ` - ${typeName}`;
-        }
-
-        formData.append('name', itemName);
-
-        if (newItem.category === 'Form or Checklist' || newItem.category === 'Document') {
-            formData.append('subcategory', newItem.subcategory);
-        }
-
-        if (newItem.category === 'Track a Date') {
-            formData.append('title', newItem.title);
-        }
-
-        if (newItem.category === 'Document' && newItem.attachments.length > 0) {
-            newItem.attachments.forEach((file) => {
-                formData.append('attachments', file);
-            });
-        }
-
-        if (newItem.isRecurring) {
-            formData.append('isRecurring', newItem.isRecurring);
-            formData.append('recurrenceFrequency', newItem.recurrenceFrequency);
-            formData.append('recurrenceInterval', newItem.recurrenceInterval);
-            formData.append('recurrenceBasis', newItem.recurrenceBasis);
-        }
-
         // Add dynamic form fields to the formData
         Object.keys(formFields).forEach((fieldName) => {
-          formData.append(fieldName, formFields[fieldName]);
+            formData.append(`fields.${fieldName}`, formFields[fieldName]);
         });
 
-        const response = await axios.post('http://localhost:5001/api/items', formData, {
+        formData.append('formDefinitionId', selectedFormDefinition._id);
+        formData.append('completedBy', 'User ID or Name'); // Replace with actual user ID or name
+        formData.append('completedAt', new Date().toISOString()); // Current date and time
+        formData.append('itemId', newItem._id); // Assuming `newItem._id` is available
+
+        // Submit the form data to the backend
+        const response = await axios.post('http://localhost:5001/api/forms/data', formData, {
             headers: {
                 Authorization: `Bearer ${token}`,
             },
         });
 
-        setItems([...items, response.data]);
-        setNewItem({
-            name: '',
-            category: '',
-            subcategory: '',
-            dueDate: '',
-            attachments: [],
-            title: '',
-            vessel: '',
-            customName: '',
-            role: newItem.role,
-            formDefinitionId: '',
-            isRecurring: false,
-            recurrenceFrequency: '',
-            recurrenceInterval: '',
-            recurrenceBasis: 'initial',
-            type: '',
-            customType: '',
-        });
-        setFormFields({}); // Clear form fields after submission
-        setIsModalOpen(false);
+        // Update the item with the form submission details if needed
+        if (newItem._id) {
+            const updatedItem = {
+                ...newItem,
+                completed: true,
+                pdfPath: response.data.pdfPath, // Assuming response contains pdfPath
+            };
+            setItems(items.map(item => item._id === newItem._id ? updatedItem : item));
+        }
+
+        // Clear form fields and reset states after submission
+        setFormFields({});
+        setIsFormModalOpen(false);
         fetchItems();
         setValidationErrors([]);
     } catch (error) {
-        setError('Error adding item');
-        console.error('Error adding item:', error.response ? error.response.data : error.message);
+        setError('Error submitting form');
+        console.error('Error submitting form:', error.response ? error.response.data : error.message);
+        console.log('Response data:', error.response?.data);
     }
-  };
+};
 
   const handleDelete = async (id) => {
     try {
@@ -760,13 +704,14 @@ function DashboardComponent({ setToken }) {
                     {field.field_type === 'file' ? (
                       <input type="file" name={field.field_name} onChange={(e) => handleFileChange(e, field.field_name)} />
                     ) : (
-                      <input
-                        type={field.field_type}
-                        name={field.field_name}
-                        value={formFields[field.field_name] || ''}
-                        onChange={(e) => handleFieldChange(e, field.field_name)}
-                        required={field.required}
-                      />
+                    <input
+                      type={field.field_type}
+                      name={field.field_name}
+                      value={formFields[field.field_name] || ''}
+                      onChange={(e) => handleFieldChange(e, field.field_name)}
+                      required={field.required}
+                    />
+
                     )}
                   </div>
                 ))}

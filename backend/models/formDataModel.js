@@ -43,10 +43,22 @@ const formDataSchema = mongoose.Schema(
       lat: {
         type: Number,
         required: true,
+        validate: {
+          validator: function (v) {
+            return v >= -90 && v <= 90;
+          },
+          message: props => `${props.value} is not a valid latitude! Latitude must be between -90 and 90.`,
+        },
       },
       long: {
         type: Number,
         required: true,
+        validate: {
+          validator: function (v) {
+            return v >= -180 && v <= 180;
+          },
+          message: props => `${props.value} is not a valid longitude! Longitude must be between -180 and 180.`,
+        },
       },
     },
   },

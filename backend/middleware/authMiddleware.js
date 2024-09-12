@@ -3,60 +3,60 @@ const asyncHandler = require('express-async-handler');
 const User = require('../models/userModel');
 
 const protect = asyncHandler(async (req, res, next) => {
-  let token;
+    let token;
 
-  if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
-    try {
-      token = req.headers.authorization.split(' ')[1];
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      req.user = await User.findById(decoded.id).select('-password');
+    if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+        try {
+            token = req.headers.authorization.split(' ')[1];
+            console.log('Token:', token); // Debugging token
 
-      if (!req.user) {
-        console.error('User not found with this token');
-        res.status(401);
-        throw new Error('Not authorized, user not found');
-      }
+            const decoded = jwt.verify(token, process.env.JWT_SECRET);
+            console.log('Decoded token:', decoded); // Debugging decoded token
 
-      console.log('Authenticated user:', req.user.username);
-      next();
-    } catch (error) {
-      console.error('Token verification failed:', error.message);
-      res.status(401);
-      throw new Error('Not authorized, token failed');
+            req.user = await User.findById(decoded.id).select('-password');
+            console.log('User found:', req.user); // Debugging user object
+
+            if (!req.user) {
+                console.error('User not found');
+                return res.status(401).json({ message: 'Not authorized, user not found' });
+            }
+
+            next();
+        } catch (error) {
+            console.error('Token error:', error.message);
+            return res.status(401).json({ message: 'Not authorized, token failed' });
+        }
+    } else {
+        console.error('No token provided');
+        return res.status(401).json({ message: 'Not authorized, no token' });
     }
-  } else {
-    console.error('No token provided');
-    res.status(401);
-    throw new Error('Not authorized, no token');
-  }
 });
 
 const superuser = (req, res, next) => {
-  if (req.user && req.user.role === 'Superuser') {
-    next();
-  } else {
-    res.status(401);
-    throw new Error('Not authorized as a superuser');
-  }
+    if (req.user && req.user.role === 'Superuser') {
+        next();
+    } else {
+        console.error('Not authorized as a superuser');
+        res.status(401).json({ message: 'Not authorized as a superuser' });
+    }
 };
 
 const userOrSuperuser = (req, res, next) => {
-  if (req.user && (['Superuser', 'Company User', 'Captain', 'Crew'].includes(req.user.role))) {
-    next();
-  } else {
-    res.status(401);
-    throw new Error('Not authorized as a user');
-  }
+    if (req.user && ['Superuser', 'Company User', 'Captain', 'Crew'].includes(req.user.role)) {
+        next();
+    } else {
+        console.error('Not authorized as a user');
+        res.status(401).json({ message: 'Not authorized as a user' });
+    }
 };
 
-// New checkRole middleware function
 const checkRole = (req, res, next) => {
-  if (req.user && (req.user.role === 'Superuser' || req.user.role === 'Company User' || req.user.role === 'Captain')) {
-    next();
-  } else {
-    res.status(403);
-    throw new Error('Forbidden');
-  }
+    if (req.user && ['Superuser', 'Company User', 'Captain'].includes(req.user.role)) {
+        next();
+    } else {
+        console.error('Forbidden: User does not have the required role');
+        res.status(403).json({ message: 'Forbidden' });
+    }
 };
 
 module.exports = { protect, superuser, userOrSuperuser, checkRole };

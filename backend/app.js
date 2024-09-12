@@ -21,7 +21,17 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Route Registrations
+// Basic route to check if the server is running
+app.get('/', (req, res) => {
+  res.send('API is running...');
+});
+
+// Unprotected test route
+app.get('/api/test-unprotected', (req, res) => {
+  res.json({ message: 'Unprotected route accessed successfully' });
+});
+
+// Route Registrations with logging
 console.log('Registering user routes...');
 app.use('/api/users', userRoutes);
 
@@ -40,8 +50,8 @@ app.use('/api/forms', formRoutes);
 console.log('Registering vessel routes...');
 app.use('/api/vessels', vesselRoutes);
 
-console.log('Registering NCR routes...'); // Log the registration of NCR routes
-app.use('/api/ncrs', ncrRoutes); // Register the NCR routes
+console.log('Registering NCR routes...');
+app.use('/api/ncrs', ncrRoutes);
 
 // Serve static files from the 'uploads' directory
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
